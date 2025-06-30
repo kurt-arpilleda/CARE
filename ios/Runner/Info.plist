@@ -45,5 +45,38 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+      <string>https</string>
+      <string>http</string>
+    </array>
+
+    <!-- Network Security Configuration -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <!-- Allow arbitrary loads for development -->
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+        <!-- Allow local networking -->
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+        <!-- Specific domain exceptions -->
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>126.209.7.246</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+                <key>NSExceptionRequiresForwardSecrecy</key>
+                <false/>
+                <key>NSExceptionMinimumTLSVersion</key>
+                <string>TLSv1.2</string>
+            </dict>
+        </dict>
+    </dict>
 </dict>
 </plist>
