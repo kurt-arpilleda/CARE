@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:unique_identifier/unique_identifier.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {

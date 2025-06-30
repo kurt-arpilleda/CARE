@@ -122,7 +122,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
         Fluttertoast.showToast(msg: 'Signup successful');
         Navigator.pop(context);
       } else {
-        Fluttertoast.showToast(msg: response['message'] ?? 'Signup failed');
+        // Specifically handle "Email already exists" case
+        if (response['message']?.contains('Email already exists') ?? false) {
+          Fluttertoast.showToast(msg: 'This email is already registered');
+        } else {
+          Fluttertoast.showToast(msg: response['message'] ?? 'Signup failed');
+        }
       }
     } catch (e) {
       Fluttertoast.showToast(msg: 'Error: ${e.toString()}');
@@ -438,3 +443,4 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 }
+
