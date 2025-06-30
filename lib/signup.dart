@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'signup.dart';
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+
+class SignUpScreen extends StatelessWidget {
+  const SignUpScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -24,10 +24,10 @@ class LoginScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const FlutterLogo(size:80),
-                  const SizedBox(height: 40),
+                  const FlutterLogo(size: 60),
+                  const SizedBox(height: 30),
                   const Text(
-                    'LOG IN',
+                    'SIGN UP',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 28,
@@ -36,19 +36,95 @@ class LoginScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   const Text(
-                    'Please sign in to continue',
+                    'Create your account',
                     style: TextStyle(
                       color: Color(0xFFF6FAFD),
                       fontSize: 16,
                     ),
                   ),
                   const SizedBox(height: 30),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.9),
+                            hintText: 'First Name',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.9),
+                            hintText: 'Surname',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      hintText: 'Gender',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    items: ['Male', 'Female'].map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    onChanged: (_) {},
+                  ),
+                  const SizedBox(height: 20),
                   TextField(
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: Colors.white.withOpacity(0.9),
                       hintText: 'Email or Phone Number',
-                      prefixIcon: const Icon(Icons.email),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      hintText: 'Mobile Number',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    keyboardType: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      hintText: 'Password',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide.none,
@@ -61,30 +137,18 @@ class LoginScreen extends StatelessWidget {
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: Colors.white.withOpacity(0.9),
-                      hintText: 'Password',
-                      prefixIcon: const Icon(Icons.lock),
+                      hintText: 'Confirm Password',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide.none,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {},
-                      child: const Text(
-                        'Forgot Password?',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 30),
                   ElevatedButton(
                     onPressed: () {},
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF1A3D63),
+                      backgroundColor: Color(0xFF4A7FA7),
                       foregroundColor: Color(0xFFF6FAFD),
                       minimumSize: const Size(double.infinity, 50),
                       shape: RoundedRectangleBorder(
@@ -93,7 +157,7 @@ class LoginScreen extends StatelessWidget {
                       elevation: 5,
                     ),
                     child: const Text(
-                      'SIGN IN',
+                      'SIGN UP',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -134,7 +198,7 @@ class LoginScreen extends StatelessWidget {
                           width: 24,
                         ),
                         const SizedBox(width: 10),
-                        const Text('Sign in with Google'),
+                        const Text('Sign up with Google'),
                       ],
                     ),
                   ),
@@ -143,18 +207,15 @@ class LoginScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text(
-                        "Don't have an account?",
+                        "Already have an account?",
                         style: TextStyle(color: Colors.white70),
                       ),
                       TextButton(
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const SignUpScreen()),
-                          );
+                          Navigator.pop(context);
                         },
                         child: const Text(
-                          'Sign Up',
+                          'Sign In',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
