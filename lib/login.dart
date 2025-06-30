@@ -30,7 +30,7 @@ class LoginScreen extends StatelessWidget {
                     'LOG IN',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 28,
+                      fontSize: 30,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

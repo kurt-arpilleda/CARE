@@ -37,7 +37,7 @@ class ApiService {
   Future<Map<String, dynamic>> fetchProfile(String idNumber) async {
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        final uri = Uri.parse("${apiUrl}V4/Others/Kurt/ArkLinkAPI/kurt_fetchProfile.php?idNumber=$idNumber");
+        final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_fetchProfile.php?idNumber=$idNumber");
         final response = await httpClient.get(uri).timeout(requestTimeout);
 
         if (response.statusCode == 200) {
@@ -63,7 +63,7 @@ class ApiService {
   Future<void> updateLanguageFlag(String idNumber, int languageFlag) async {
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        final uri = Uri.parse("${apiUrl}V4/Others/Kurt/ArkLinkAPI/kurt_updateLanguage.php");
+        final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_updateLanguage.php");
         final response = await httpClient.post(
           uri,
           body: {
