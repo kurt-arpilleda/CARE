@@ -29,6 +29,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
+  // Track which fields have been interacted with
+  final Set<String> _touchedFields = {};
+
   // Validation methods
   String? _validateRequired(String? value, String fieldName) {
     if (value == null || value.isEmpty) {
@@ -92,6 +95,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> _submitForm() async {
+    // Mark all fields as touched when submitting
+    setState(() {
+      _touchedFields.addAll([
+        'firstName',
+        'surName',
+        'email',
+        'phone',
+        'password',
+        'confirmPassword',
+      ]);
+    });
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -200,8 +215,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 borderRadius: BorderRadius.circular(10),
                                 borderSide: BorderSide.none,
                               ),
+                              errorText: _touchedFields.contains('firstName')
+                                  ? _validateRequired(_firstNameController.text, 'First name')
+                                  : null,
                             ),
-                            validator: (value) => _validateRequired(value, 'First name'),
+                            onChanged: (value) {
+                              setState(() {
+                                _touchedFields.add('firstName');
+                              });
+                            },
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -216,8 +238,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 borderRadius: BorderRadius.circular(10),
                                 borderSide: BorderSide.none,
                               ),
+                              errorText: _touchedFields.contains('surName')
+                                  ? _validateRequired(_surNameController.text, 'Surname')
+                                  : null,
                             ),
-                            validator: (value) => _validateRequired(value, 'Surname'),
+                            onChanged: (value) {
+                              setState(() {
+                                _touchedFields.add('surName');
+                              });
+                            },
                           ),
                         ),
                       ],
@@ -232,6 +261,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
                         ),
+                        errorText: _touchedFields.contains('accountType') && _accountType == null
+                            ? 'Account type is required'
+                            : null,
                       ),
                       value: _accountType,
                       items: ['Driver', 'Shop Owner'].map((String value) {
@@ -243,9 +275,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       onChanged: (value) {
                         setState(() {
                           _accountType = value;
+                          _touchedFields.add('accountType');
                         });
                       },
-                      validator: (value) => value == null ? 'Account type is required' : null,
                     ),
                     const SizedBox(height: 20),
                     DropdownButtonFormField<String>(
@@ -257,6 +289,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
                         ),
+                        errorText: _touchedFields.contains('gender') && _gender == null
+                            ? 'Gender is required'
+                            : null,
                       ),
                       value: _gender,
                       items: ['Male', 'Female'].map((String value) {
@@ -268,9 +303,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       onChanged: (value) {
                         setState(() {
                           _gender = value;
+                          _touchedFields.add('gender');
                         });
                       },
-                      validator: (value) => value == null ? 'Gender is required' : null,
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
@@ -283,8 +318,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
                         ),
+                        errorText: _touchedFields.contains('email')
+                            ? _validateEmailOrPhone(_emailController.text)
+                            : null,
                       ),
-                      validator: _validateEmailOrPhone,
+                      onChanged: (value) {
+                        setState(() {
+                          _touchedFields.add('email');
+                        });
+                      },
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
@@ -297,9 +339,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
                         ),
+                        errorText: _touchedFields.contains('phone')
+                            ? _validatePhone(_phoneController.text)
+                            : null,
                       ),
                       keyboardType: TextInputType.phone,
-                      validator: _validatePhone,
+                      onChanged: (value) {
+                        setState(() {
+                          _touchedFields.add('phone');
+                        });
+                      },
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
@@ -324,8 +373,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             });
                           },
                         ),
+                        errorText: _touchedFields.contains('password')
+                            ? _validatePassword(_passwordController.text)
+                            : null,
                       ),
-                      validator: _validatePassword,
+                      onChanged: (value) {
+                        setState(() {
+                          _touchedFields.add('password');
+                          // Also validate confirm password when password changes
+                          if (_touchedFields.contains('confirmPassword')) {
+                            _touchedFields.add('confirmPassword');
+                          }
+                        });
+                      },
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
@@ -350,8 +410,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             });
                           },
                         ),
+                        errorText: _touchedFields.contains('confirmPassword')
+                            ? _validateConfirmPassword(_confirmPasswordController.text)
+                            : null,
                       ),
-                      validator: _validateConfirmPassword,
+                      onChanged: (value) {
+                        setState(() {
+                          _touchedFields.add('confirmPassword');
+                        });
+                      },
                     ),
                     const SizedBox(height: 30),
                     ElevatedButton(
@@ -443,4 +510,3 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 }
-
