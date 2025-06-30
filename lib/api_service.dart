@@ -66,6 +66,51 @@ class ApiService {
     throw Exception("API is unreachable after $maxRetries attempts");
   }
 
+  Future<Map<String, dynamic>> login({
+    required String email,
+    required String password,
+  }) async {
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_login.php");
+        final response = await httpClient.post(
+          uri,
+          body: {
+            'email': email,
+            'password': password,
+          },
+        ).timeout(requestTimeout);
+
+        if (response.statusCode == 200) {
+          return jsonDecode(response.body);
+        }
+        throw Exception("HTTP ${response.statusCode}");
+      } catch (e) {
+        print("Attempt $attempt failed: $e");
+        if (attempt < maxRetries) {
+          final delay = initialRetryDelay * (1 << (attempt - 1));
+          await Future.delayed(delay);
+        }
+      }
+    }
+    throw Exception("API is unreachable after $maxRetries attempts");
+  }
+
+  Future<void> saveAuthToken(String token) async {
+    final prefs = await _prefs;
+    await prefs.setString('authToken', token);
+  }
+
+  Future<String?> getAuthToken() async {
+    final prefs = await _prefs;
+    return prefs.getString('authToken');
+  }
+
+  Future<void> clearAuthToken() async {
+    final prefs = await _prefs;
+    await prefs.remove('authToken');
+  }
+
   static void setupHttpOverrides() {
     HttpOverrides.global = MyHttpOverrides();
   }

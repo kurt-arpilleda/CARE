@@ -2,14 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'splashScreen.dart';
 import 'login.dart';
+import 'dashboard.dart';
+import 'api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  bool isFirstOpen = prefs.getBool('isFirstOpen') ?? true;
+  ApiService.setupHttpOverrides();
+
+  final prefs = await SharedPreferences.getInstance();
+  final isFirstOpen = prefs.getBool('isFirstOpen') ?? true;
+  final authToken = prefs.getString('authToken');
 
   runApp(MyApp(
-    initialRoute: isFirstOpen ? '/splash' : '/login',
+    initialRoute: isFirstOpen
+        ? '/splash'
+        : authToken != null
+        ? '/dashboard'
+        : '/login',
   ));
 }
 
@@ -34,6 +43,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/splash': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
+        '/dashboard': (context) => const DashboardScreen(),
       },
     );
   }
