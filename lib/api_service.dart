@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 class ApiService {
   static const String apiUrl = "https://126.209.7.246/";
@@ -13,6 +14,7 @@ class ApiService {
 
   late http.Client httpClient;
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+  final Uuid _uuid = const Uuid();
 
   ApiService() {
     httpClient = _createHttpClient();
@@ -22,6 +24,18 @@ class ApiService {
     final HttpClient client = HttpClient()
       ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
     return IOClient(client);
+  }
+
+  Future<String> _getOrCreateDeviceId() async {
+    final prefs = await _prefs;
+    String? deviceId = prefs.getString('deviceId');
+
+    if (deviceId == null || deviceId.isEmpty) {
+      deviceId = _uuid.v4();
+      await prefs.setString('deviceId', deviceId);
+    }
+
+    return deviceId;
   }
 
   Future<Map<String, dynamic>> signUp({
@@ -70,6 +84,8 @@ class ApiService {
     required String email,
     required String password,
   }) async {
+    final deviceId = await _getOrCreateDeviceId();
+
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_login.php");
@@ -78,6 +94,7 @@ class ApiService {
           body: {
             'email': email,
             'password': password,
+            'deviceId': deviceId,
           },
         ).timeout(requestTimeout);
 
@@ -109,6 +126,11 @@ class ApiService {
   Future<void> clearAuthToken() async {
     final prefs = await _prefs;
     await prefs.remove('authToken');
+  }
+
+  Future<String?> getDeviceId() async {
+    final prefs = await _prefs;
+    return prefs.getString('deviceId');
   }
 
   static void setupHttpOverrides() {
