@@ -63,6 +63,12 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _revalidateForm() {
+    if (_formKey.currentState != null) {
+      _formKey.currentState!.validate();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -83,6 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
               padding: const EdgeInsets.all(24),
               child: Form(
                 key: _formKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -107,6 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 30),
                     TextFormField(
                       controller: _emailController,
+                      onChanged: (_) => _revalidateForm(),
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.9),
@@ -118,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
+                        if (value == null || value.trim().isEmpty) {
                           return 'Please enter your email';
                         }
                         return null;
@@ -128,6 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: true,
+                      onChanged: (_) => _revalidateForm(),
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.9),
@@ -139,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
+                        if (value == null || value.trim().isEmpty) {
                           return 'Please enter your password';
                         }
                         return null;
@@ -169,9 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         elevation: 5,
                       ),
                       child: _isLoading
-                          ? const CircularProgressIndicator(
-                        color: Colors.white,
-                      )
+                          ? const CircularProgressIndicator(color: Colors.white)
                           : const Text(
                         'SIGN IN',
                         style: TextStyle(
