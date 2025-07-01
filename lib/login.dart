@@ -15,12 +15,16 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _apiService = ApiService();
+  final FocusNode _emailFocusNode = FocusNode();
+  final FocusNode _passwordFocusNode = FocusNode();
   bool _isLoading = false;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -62,7 +66,6 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
   }
-
 
   void _revalidateForm() {
     if (_formKey.currentState != null) {
@@ -115,7 +118,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 30),
                     TextFormField(
                       controller: _emailController,
+                      focusNode: _emailFocusNode,
+                      textInputAction: TextInputAction.next,
                       onChanged: (_) => _revalidateForm(),
+                      onFieldSubmitted: (_) {
+                        if (_formKey.currentState!.validate()) {
+                          FocusScope.of(context).requestFocus(_passwordFocusNode);
+                        }
+                      },
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.9),
@@ -136,8 +146,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _passwordController,
+                      focusNode: _passwordFocusNode,
                       obscureText: true,
+                      textInputAction: TextInputAction.done,
                       onChanged: (_) => _revalidateForm(),
+                      onFieldSubmitted: (_) => _login(), // triggers sign in
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.9),
