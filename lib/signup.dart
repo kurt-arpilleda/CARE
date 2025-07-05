@@ -95,7 +95,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> _submitForm() async {
-    // Mark all fields as touched when submitting
     setState(() {
       _touchedFields.addAll([
         'firstName',
@@ -104,10 +103,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
         'phone',
         'password',
         'confirmPassword',
+        'accountType',
+        'gender',
       ]);
     });
+    if (!_touchedFields.contains('password') && _passwordController.text.isNotEmpty) {
+      _touchedFields.add('password');
+    }
+    if (!_touchedFields.contains('confirmPassword') && _confirmPasswordController.text.isNotEmpty) {
+      _touchedFields.add('confirmPassword');
+    }
 
-    if (!_formKey.currentState!.validate()) {
+    // Validate all fields
+    bool isValid = _formKey.currentState!.validate();
+
+    if (!isValid) {
       return;
     }
 
@@ -118,6 +128,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     if (_gender == null) {
       Fluttertoast.showToast(msg: 'Please select gender');
+      return;
+    }
+
+    // Check if passwords match (additional safety check)
+    if (_passwordController.text != _confirmPasswordController.text) {
+      Fluttertoast.showToast(msg: 'Passwords do not match');
       return;
     }
 
@@ -137,7 +153,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
         Fluttertoast.showToast(msg: 'Signup successful');
         Navigator.pop(context);
       } else {
-        // Specifically handle "Email already exists" case
         if (response['message']?.contains('Email already exists') ?? false) {
           Fluttertoast.showToast(msg: 'This email is already registered');
         } else {
@@ -220,62 +235,71 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                     const SizedBox(height: 30),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _firstNameController,
-                            style: const TextStyle(
-                                fontFamily: 'Lato-Italic',
-                                fontWeight: FontWeight.w600
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              children: [
+                                TextFormField(
+                                  controller: _firstNameController,
+                                  style: const TextStyle(
+                                      fontFamily: 'Lato-Italic',
+                                      fontWeight: FontWeight.w600),
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: Colors.white.withOpacity(0.9),
+                                    hintText: 'First Name',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    errorText: _touchedFields.contains('firstName')
+                                        ? _validateRequired(_firstNameController.text, 'First name')
+                                        : null,
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _touchedFields.add('firstName');
+                                    });
+                                  },
+                                ),
+                              ],
                             ),
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: Colors.white.withOpacity(0.9),
-                              hintText: 'First Name',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: BorderSide.none,
-                              ),
-                              errorText: _touchedFields.contains('firstName')
-                                  ? _validateRequired(_firstNameController.text, 'First name')
-                                  : null,
-                            ),
-                            onChanged: (value) {
-                              setState(() {
-                                _touchedFields.add('firstName');
-                              });
-                            },
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _surNameController,
-                            style: const TextStyle(
-                                fontFamily: 'Lato-Italic',
-                                fontWeight: FontWeight.w600
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                TextFormField(
+                                  controller: _surNameController,
+                                  style: const TextStyle(
+                                      fontFamily: 'Lato-Italic',
+                                      fontWeight: FontWeight.w600),
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: Colors.white.withOpacity(0.9),
+                                    hintText: 'Surname',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    errorText: _touchedFields.contains('surName')
+                                        ? _validateRequired(_surNameController.text, 'Surname')
+                                        : null,
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _touchedFields.add('surName');
+                                    });
+                                  },
+                                ),
+                              ],
                             ),
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: Colors.white.withOpacity(0.9),
-                              hintText: 'Surname',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: BorderSide.none,
-                              ),
-                              errorText: _touchedFields.contains('surName')
-                                  ? _validateRequired(_surNameController.text, 'Surname')
-                                  : null,
-                            ),
-                            onChanged: (value) {
-                              setState(() {
-                                _touchedFields.add('surName');
-                              });
-                            },
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 20),
                     DropdownButtonFormField<String>(
@@ -425,14 +449,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           },
                         )
                             : null,
+                        errorText: (_touchedFields.contains('password') || _passwordController.text.isNotEmpty)
+                            ? _validatePassword(_passwordController.text)
+                            : null,
                       ),
                       onChanged: (value) {
                         setState(() {
                           _touchedFields.add('password');
                           // Also validate confirm password when password changes
-                          if (_touchedFields.contains('confirmPassword')) {
-                            _touchedFields.add('confirmPassword');
-                          }
+                          _touchedFields.add('confirmPassword');
                         });
                       },
                     ),
@@ -464,6 +489,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             });
                           },
                         )
+                            : null,
+                        errorText: (_touchedFields.contains('confirmPassword') || _confirmPasswordController.text.isNotEmpty)
+                            ? _validateConfirmPassword(_confirmPasswordController.text)
                             : null,
                       ),
                       onChanged: (value) {

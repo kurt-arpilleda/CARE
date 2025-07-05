@@ -20,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _showPassword = false;
   bool _passwordHasInput = false;
+
   @override
   void initState() {
     super.initState();
@@ -30,6 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     });
   }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -46,49 +48,43 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
+    // Validate returns true if the form is valid, or false otherwise.
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
 
-    setState(() => _isLoading = true);
+      try {
+        final response = await _apiService.login(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
 
-    try {
-      final response = await _apiService.login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-
-      if (response['success'] == true) {
-        await _apiService.saveAuthToken(response['token']);
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const DashboardScreen()),
-          );
+        if (response['success'] == true) {
+          await _apiService.saveAuthToken(response['token']);
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const DashboardScreen()),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(response['message'] ?? 'Login failed')),
+            );
+          }
         }
-      } else {
+      } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Login failed')),
+            SnackBar(content: Text('Error: ${e.toString()}')),
           );
         }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  void _revalidateForm() {
-    if (_formKey.currentState != null) {
-      _formKey.currentState!.validate();
     }
   }
 
@@ -112,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
               padding: const EdgeInsets.all(24),
               child: Form(
                 key: _formKey,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
+                autovalidateMode: AutovalidateMode.disabled, // Changed to disabled
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -132,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Shadow(
                             offset: Offset(1.5, 1.5),
                             blurRadius: 3.0,
-                            color: Colors.black54, // soft, visible shadow
+                            color: Colors.black54,
                           ),
                         ],
                       ),
@@ -147,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Shadow(
                             offset: Offset(1, 1),
                             blurRadius: 2.0,
-                            color: Colors.black45, // adds just enough contrast
+                            color: Colors.black45,
                           ),
                         ],
                       ),
@@ -157,15 +153,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _emailController,
                       focusNode: _emailFocusNode,
                       textInputAction: TextInputAction.next,
-                      onChanged: (_) => _revalidateForm(),
                       onFieldSubmitted: (_) {
-                        if (_formKey.currentState!.validate()) {
-                          FocusScope.of(context).requestFocus(_passwordFocusNode);
-                        }
+                        FocusScope.of(context).requestFocus(_passwordFocusNode);
                       },
                       style: const TextStyle(
-                        fontFamily: 'Lato-Italic',
-                        fontWeight: FontWeight.w600
+                          fontFamily: 'Lato-Italic',
+                          fontWeight: FontWeight.w600
                       ),
                       decoration: InputDecoration(
                         filled: true,
@@ -190,7 +183,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       focusNode: _passwordFocusNode,
                       obscureText: !_showPassword,
                       textInputAction: TextInputAction.done,
-                      onChanged: (_) => _revalidateForm(),
                       onFieldSubmitted: (_) => _login(),
                       style: const TextStyle(
                           fontFamily: 'Lato-Italic',
