@@ -18,15 +18,34 @@ class _LoginScreenState extends State<LoginScreen> {
   final FocusNode _emailFocusNode = FocusNode();
   final FocusNode _passwordFocusNode = FocusNode();
   bool _isLoading = false;
-
+  bool _showPassword = false;
+  bool _passwordHasInput = false;
+  @override
+  void initState() {
+    super.initState();
+    _passwordController.addListener(_onPasswordChanged);
+    _passwordFocusNode.addListener(() {
+      if (!_passwordFocusNode.hasFocus) {
+        setState(() => _showPassword = false);
+      }
+    });
+  }
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
+    _passwordController.removeListener(_onPasswordChanged);
     super.dispose();
   }
+
+  void _onPasswordChanged() {
+    setState(() {
+      _passwordHasInput = _passwordController.text.isNotEmpty;
+    });
+  }
+
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
@@ -97,14 +116,25 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const FlutterLogo(size: 80),
-                    const SizedBox(height: 40),
+                    Image.asset(
+                      'assets/images/icon.png',
+                      width: 120,
+                      height: 120,
+                    ),
+                    const SizedBox(height: 20),
                     const Text(
                       'LOG IN',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 30,
+                        fontSize: 35,
                         fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(
+                            offset: Offset(1.5, 1.5),
+                            blurRadius: 3.0,
+                            color: Colors.black54, // soft, visible shadow
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -113,6 +143,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         color: Color(0xFFF6FAFD),
                         fontSize: 16,
+                        shadows: [
+                          Shadow(
+                            offset: Offset(1, 1),
+                            blurRadius: 2.0,
+                            color: Colors.black45, // adds just enough contrast
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 30),
@@ -126,6 +163,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           FocusScope.of(context).requestFocus(_passwordFocusNode);
                         }
                       },
+                      style: const TextStyle(
+                        fontFamily: 'Lato-Italic',
+                        fontWeight: FontWeight.w600
+                      ),
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.9),
@@ -147,15 +188,30 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextFormField(
                       controller: _passwordController,
                       focusNode: _passwordFocusNode,
-                      obscureText: true,
+                      obscureText: !_showPassword,
                       textInputAction: TextInputAction.done,
                       onChanged: (_) => _revalidateForm(),
-                      onFieldSubmitted: (_) => _login(), // triggers sign in
+                      onFieldSubmitted: (_) => _login(),
+                      style: const TextStyle(
+                          fontFamily: 'Lato-Italic',
+                          fontWeight: FontWeight.w600
+                      ),
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.9),
                         hintText: 'Password',
                         prefixIcon: const Icon(Icons.lock),
+                        suffixIcon: _passwordFocusNode.hasFocus && _passwordHasInput
+                            ? IconButton(
+                          icon: Icon(
+                            _showPassword ? Icons.visibility : Icons.visibility_off,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() => _showPassword = !_showPassword);
+                          },
+                        )
+                            : null,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,

@@ -183,14 +183,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const FlutterLogo(size: 60),
-                    const SizedBox(height: 30),
+                    Image.asset(
+                      'assets/images/icon.png',
+                      width: 120,
+                      height: 120,
+                    ),
+                    const SizedBox(height: 10),
                     const Text(
                       'SIGN UP',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 28,
+                        fontSize: 30,
                         fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(
+                            offset: Offset(1.5, 1.5),
+                            blurRadius: 3.0,
+                            color: Colors.black54, // soft shadow for contrast
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -199,6 +210,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       style: TextStyle(
                         color: Color(0xFFF6FAFD),
                         fontSize: 16,
+                        shadows: [
+                          Shadow(
+                            offset: Offset(1, 1),
+                            blurRadius: 2.0,
+                            color: Colors.black45, // subtle shadow for contrast
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 30),
@@ -207,6 +225,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         Expanded(
                           child: TextFormField(
                             controller: _firstNameController,
+                            style: const TextStyle(
+                                fontFamily: 'Lato-Italic',
+                                fontWeight: FontWeight.w600
+                            ),
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: Colors.white.withOpacity(0.9),
@@ -230,6 +252,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         Expanded(
                           child: TextFormField(
                             controller: _surNameController,
+                            style: const TextStyle(
+                                fontFamily: 'Lato-Italic',
+                                fontWeight: FontWeight.w600
+                            ),
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: Colors.white.withOpacity(0.9),
@@ -266,6 +292,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             : null,
                       ),
                       value: _accountType,
+                      style: const TextStyle(
+                        fontFamily: 'Lato-Italic',
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                        fontSize: 16,
+                      ),
                       items: ['Driver', 'Shop Owner'].map((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
@@ -294,6 +326,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             : null,
                       ),
                       value: _gender,
+                      style: const TextStyle(
+                        fontFamily: 'Lato-Italic',
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                        fontSize: 16,
+                      ),
                       items: ['Male', 'Female'].map((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
@@ -310,6 +348,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _emailController,
+                      style: const TextStyle(
+                        fontFamily: 'Lato-Italic',
+                        fontWeight: FontWeight.w600,
+                      ),
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.9),
@@ -331,6 +373,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _phoneController,
+                      style: const TextStyle(
+                        fontFamily: 'Lato-Italic',
+                        fontWeight: FontWeight.w600,
+                      ),
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.9),
@@ -354,6 +400,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
+                      style: const TextStyle(
+                        fontFamily: 'Lato-Italic',
+                        fontWeight: FontWeight.w600,
+                      ),
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.9),
@@ -362,9 +412,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
                         ),
-                        suffixIcon: IconButton(
+                        suffixIcon: _passwordController.text.isNotEmpty
+                            ? IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
                             color: Colors.grey,
                           ),
                           onPressed: () {
@@ -372,9 +423,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               _obscurePassword = !_obscurePassword;
                             });
                           },
-                        ),
-                        errorText: _touchedFields.contains('password')
-                            ? _validatePassword(_passwordController.text)
+                        )
                             : null,
                       ),
                       onChanged: (value) {
@@ -391,6 +440,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     TextFormField(
                       controller: _confirmPasswordController,
                       obscureText: _obscureConfirmPassword,
+                      style: const TextStyle(
+                        fontFamily: 'Lato-Italic',
+                        fontWeight: FontWeight.w600,
+                      ),
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.9),
@@ -399,9 +452,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
                         ),
-                        suffixIcon: IconButton(
+                        suffixIcon: _confirmPasswordController.text.isNotEmpty
+                            ? IconButton(
                           icon: Icon(
-                            _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                            _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
                             color: Colors.grey,
                           ),
                           onPressed: () {
@@ -409,9 +463,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               _obscureConfirmPassword = !_obscureConfirmPassword;
                             });
                           },
-                        ),
-                        errorText: _touchedFields.contains('confirmPassword')
-                            ? _validateConfirmPassword(_confirmPasswordController.text)
+                        )
                             : null,
                       ),
                       onChanged: (value) {
