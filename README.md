@@ -1,6 +1,6 @@
-# care
+# cares
 
-CARE (Comprehensive Auto Repair & Emergency Services)
+CARES (Comprehensive Auto Repair & Emergency Services)
 
 ## Getting Started
 
