@@ -1,5 +1,5 @@
 name: care
-description: "CARE (Comprehensive Auto Repair & Emergency Services)"
+description: "CARES (Comprehensive Auto Repair & Emergency Services)"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -35,7 +35,7 @@ dev_dependencies:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/images/icon.png"
+  image_path: "assets/images/icon.jpg"
 flutter:
   uses-material-design: true
   assets:
