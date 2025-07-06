@@ -285,7 +285,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         suffixIcon: _passwordFocusNode.hasFocus && _passwordHasInput
                             ? IconButton(
                           icon: Icon(
-                            _showPassword ? Icons.visibility : Icons.visibility_off,
+                            _showPassword ? Icons.visibility_off : Icons.visibility,
                             color: Colors.grey,
                           ),
                           onPressed: () {

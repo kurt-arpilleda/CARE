@@ -6,7 +6,7 @@ class ForgotPasswordDialog extends StatefulWidget {
   const ForgotPasswordDialog({Key? key}) : super(key: key);
 
   @override
-  _ForgotPasswordDialogState createState() => _ForgotPasswordDialogState();
+  State<ForgotPasswordDialog> createState() => _ForgotPasswordDialogState();
 }
 
 class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
@@ -54,54 +54,105 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Reset Password'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.85,
+        child: Stack(
           children: [
-            Text(
-              'Enter your email to receive a password reset link',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.email),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.lock_reset, size: 28, color: Colors.blue),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Reset Password',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Enter your email to receive a password reset link',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.email),
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your email';
+                        }
+                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                          return 'Please enter a valid email';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red.shade400,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: _isLoading ? null : _resetPassword,
+                          child: _isLoading
+                              ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                              : const Text(
+                            'Reset Password',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter your email';
-                }
-                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                  return 'Please enter a valid email';
-                }
-                return null;
-              },
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: InkWell(
+                onTap: () => Navigator.of(context).pop(),
+                borderRadius: BorderRadius.circular(20),
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(Icons.close, size: 20),
+                ),
+              ),
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _resetPassword,
-          child: _isLoading
-              ? const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
-              : const Text('Reset Password'),
-        ),
-      ],
     );
   }
 }
