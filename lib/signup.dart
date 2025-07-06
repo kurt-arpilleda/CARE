@@ -482,7 +482,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         suffixIcon: _confirmPasswordController.text.isNotEmpty
                             ? IconButton(
                           icon: Icon(
-                            _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                            _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
                             color: Colors.grey,
                           ),
                           onPressed: () {
