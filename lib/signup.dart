@@ -559,6 +559,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   email: googleUser.email,
                                   googleId: googleUser.id,
                                   userType: userType,
+                                  photoUrl: googleUser.photoUrl ?? '',
                                 );
 
                                 if (response['success'] == true) {
@@ -571,7 +572,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             } catch (e) {
                               Fluttertoast.showToast(msg: 'Google sign-up failed: ${e.toString()}');
                             } finally {
-                              // Always sign out after attempting Google signup
                               await GoogleSignInService.signOut();
                             }
                           }

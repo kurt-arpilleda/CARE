@@ -86,6 +86,7 @@ class ApiService {
     required String email,
     required String googleId,
     required int userType,
+    required String photoUrl,
   }) async {
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -95,13 +96,14 @@ class ApiService {
           body: {
             'firstName': firstName,
             'surName': surName,
-            'gender': '0', // Default to 0 (Male) as we might not get gender from Google
+            'gender': '0',
             'email': email,
-            'phoneNum': '', // Empty for Google signup
+            'phoneNum': '',
             'userType': userType.toString(),
-            'password': '', // Empty for Google signup
-            'signupType': '1', // 1 for Google signup
+            'password': '',
+            'signupType': '1',
             'googleId': googleId,
+            'photoUrl': photoUrl,
           },
         ).timeout(requestTimeout);
 
