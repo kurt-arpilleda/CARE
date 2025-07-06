@@ -189,7 +189,31 @@ class ApiService {
     }
     throw Exception("API is unreachable after $maxRetries attempts");
   }
+  Future<Map<String, dynamic>> sendPasswordResetEmail({
+    required String email,
+  }) async {
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_reset_password.php");
+        final response = await httpClient.post(
+          uri,
+          body: {'email': email},
+        ).timeout(requestTimeout);
 
+        if (response.statusCode == 200) {
+          return jsonDecode(response.body);
+        }
+        throw Exception("HTTP ${response.statusCode}");
+      } catch (e) {
+        print("Attempt $attempt failed: $e");
+        if (attempt < maxRetries) {
+          final delay = initialRetryDelay * (1 << (attempt - 1));
+          await Future.delayed(delay);
+        }
+      }
+    }
+    throw Exception("API is unreachable after $maxRetries attempts");
+  }
   Future<void> saveAuthToken(String token) async {
     await _secureStorage.write(key: 'authToken', value: token);
   }

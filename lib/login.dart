@@ -5,6 +5,7 @@ import 'api_service.dart';
 import 'dashboard.dart';
 import 'google_signin_service.dart';
 import 'dialog/account_type_dialog.dart';
+import 'dialog/forgot_password_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -308,7 +309,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => const ForgotPasswordDialog(),
+                          );
+                        },
                         child: const Text(
                           'Forgot Password?',
                           style: TextStyle(color: Colors.white70),
