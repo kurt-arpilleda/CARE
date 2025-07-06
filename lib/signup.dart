@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'api_service.dart';
-
+import 'package:google_sign_in/google_sign_in.dart';
+import 'google_signin_service.dart';
+import 'dialog/account_type_dialog.dart';
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
 
@@ -536,7 +538,48 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 20),
                     OutlinedButton(
-                      onPressed: () {},
+                      onPressed: () async {
+                        try {
+                          final googleUser = await GoogleSignInService.signIn();
+                          if (googleUser != null) {
+                            try {
+                              final userType = await showAccountTypeDialog(context);
+                              if (userType != null) {
+                                String firstName = '';
+                                String surName = '';
+
+                                if (googleUser.displayName != null) {
+                                  final names = googleUser.displayName!.split(' ');
+                                  firstName = names.isNotEmpty ? names[0] : '';
+                                  surName = names.length > 1 ? names.sublist(1).join(' ') : '';
+                                }
+                                final response = await _apiService.signUpWithGoogle(
+                                  firstName: firstName,
+                                  surName: surName,
+                                  email: googleUser.email,
+                                  googleId: googleUser.id,
+                                  userType: userType,
+                                );
+
+                                if (response['success'] == true) {
+                                  Fluttertoast.showToast(msg: 'Google signup successful');
+                                  Navigator.pop(context);
+                                } else {
+                                  Fluttertoast.showToast(msg: response['message'] ?? 'Google signup failed');
+                                }
+                              }
+                            } catch (e) {
+                              Fluttertoast.showToast(msg: 'Google sign-up failed: ${e.toString()}');
+                            } finally {
+                              // Always sign out after attempting Google signup
+                              await GoogleSignInService.signOut();
+                            }
+                          }
+                        } catch (e) {
+                          Fluttertoast.showToast(msg: 'Google sign-in failed: ${e.toString()}');
+                          await GoogleSignInService.signOut();
+                        }
+                      },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
                         side: const BorderSide(color: Colors.white),

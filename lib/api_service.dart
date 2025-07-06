@@ -80,7 +80,45 @@ class ApiService {
     }
     throw Exception("API is unreachable after $maxRetries attempts");
   }
+  Future<Map<String, dynamic>> signUpWithGoogle({
+    required String firstName,
+    required String surName,
+    required String email,
+    required String googleId,
+    required int userType,
+  }) async {
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_signup.php");
+        final response = await httpClient.post(
+          uri,
+          body: {
+            'firstName': firstName,
+            'surName': surName,
+            'gender': '0', // Default to 0 (Male) as we might not get gender from Google
+            'email': email,
+            'phoneNum': '', // Empty for Google signup
+            'userType': userType.toString(),
+            'password': '', // Empty for Google signup
+            'signupType': '1', // 1 for Google signup
+            'googleId': googleId,
+          },
+        ).timeout(requestTimeout);
 
+        if (response.statusCode == 200) {
+          return jsonDecode(response.body);
+        }
+        throw Exception("HTTP ${response.statusCode}");
+      } catch (e) {
+        print("Attempt $attempt failed: $e");
+        if (attempt < maxRetries) {
+          final delay = initialRetryDelay * (1 << (attempt - 1));
+          await Future.delayed(delay);
+        }
+      }
+    }
+    throw Exception("API is unreachable after $maxRetries attempts");
+  }
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
