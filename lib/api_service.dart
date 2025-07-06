@@ -10,8 +10,6 @@ import 'package:uuid/uuid.dart';
 class ApiService {
   static const String apiUrl = "https://126.209.7.246/";
   static const Duration requestTimeout = Duration(seconds: 5);
-  static const int maxRetries = 6;
-  static const Duration initialRetryDelay = Duration(seconds: 1);
 
   late http.Client httpClient;
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
@@ -30,12 +28,10 @@ class ApiService {
 
   Future<String> _getOrCreateDeviceId() async {
     String? deviceId = await _secureStorage.read(key: 'deviceId');
-
     if (deviceId == null || deviceId.isEmpty) {
       deviceId = _uuid.v4();
       await _secureStorage.write(key: 'deviceId', value: deviceId);
     }
-
     return deviceId;
   }
 
@@ -49,36 +45,25 @@ class ApiService {
     required String password,
     required int signupType,
   }) async {
-    for (int attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_signup.php");
-        final response = await httpClient.post(
-          uri,
-          body: {
-            'firstName': firstName,
-            'surName': surName,
-            'gender': gender.toString(),
-            'email': email,
-            'phoneNum': phoneNum,
-            'userType': userType.toString(),
-            'password': password,
-            'signupType': signupType.toString(),
-          },
-        ).timeout(requestTimeout);
+    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_signup.php");
+    final response = await httpClient.post(
+      uri,
+      body: {
+        'firstName': firstName,
+        'surName': surName,
+        'gender': gender.toString(),
+        'email': email,
+        'phoneNum': phoneNum,
+        'userType': userType.toString(),
+        'password': password,
+        'signupType': signupType.toString(),
+      },
+    ).timeout(requestTimeout);
 
-        if (response.statusCode == 200) {
-          return jsonDecode(response.body);
-        }
-        throw Exception("HTTP ${response.statusCode}");
-      } catch (e) {
-        print("Attempt $attempt failed: $e");
-        if (attempt < maxRetries) {
-          final delay = initialRetryDelay * (1 << (attempt - 1));
-          await Future.delayed(delay);
-        }
-      }
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
     }
-    throw Exception("API is unreachable after $maxRetries attempts");
+    throw Exception("HTTP ${response.statusCode}");
   }
 
   Future<Map<String, dynamic>> signUpWithGoogle({
@@ -89,38 +74,27 @@ class ApiService {
     required int userType,
     required String photoUrl,
   }) async {
-    for (int attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_signup.php");
-        final response = await httpClient.post(
-          uri,
-          body: {
-            'firstName': firstName,
-            'surName': surName,
-            'gender': '0',
-            'email': email,
-            'phoneNum': '',
-            'userType': userType.toString(),
-            'password': '',
-            'signupType': '1',
-            'googleId': googleId,
-            'photoUrl': photoUrl,
-          },
-        ).timeout(requestTimeout);
+    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_signup.php");
+    final response = await httpClient.post(
+      uri,
+      body: {
+        'firstName': firstName,
+        'surName': surName,
+        'gender': '0',
+        'email': email,
+        'phoneNum': '',
+        'userType': userType.toString(),
+        'password': '',
+        'signupType': '1',
+        'googleId': googleId,
+        'photoUrl': photoUrl,
+      },
+    ).timeout(requestTimeout);
 
-        if (response.statusCode == 200) {
-          return jsonDecode(response.body);
-        }
-        throw Exception("HTTP ${response.statusCode}");
-      } catch (e) {
-        print("Attempt $attempt failed: $e");
-        if (attempt < maxRetries) {
-          final delay = initialRetryDelay * (1 << (attempt - 1));
-          await Future.delayed(delay);
-        }
-      }
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
     }
-    throw Exception("API is unreachable after $maxRetries attempts");
+    throw Exception("HTTP ${response.statusCode}");
   }
 
   Future<Map<String, dynamic>> login({
@@ -128,32 +102,20 @@ class ApiService {
     required String password,
   }) async {
     final deviceId = await _getOrCreateDeviceId();
+    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_login.php");
+    final response = await httpClient.post(
+      uri,
+      body: {
+        'email': email,
+        'password': password,
+        'deviceId': deviceId,
+      },
+    ).timeout(requestTimeout);
 
-    for (int attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_login.php");
-        final response = await httpClient.post(
-          uri,
-          body: {
-            'email': email,
-            'password': password,
-            'deviceId': deviceId,
-          },
-        ).timeout(requestTimeout);
-
-        if (response.statusCode == 200) {
-          return jsonDecode(response.body);
-        }
-        throw Exception("HTTP ${response.statusCode}");
-      } catch (e) {
-        print("Attempt $attempt failed: $e");
-        if (attempt < maxRetries) {
-          final delay = initialRetryDelay * (1 << (attempt - 1));
-          await Future.delayed(delay);
-        }
-      }
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
     }
-    throw Exception("API is unreachable after $maxRetries attempts");
+    throw Exception("HTTP ${response.statusCode}");
   }
 
   Future<Map<String, dynamic>> loginWithGoogle({
@@ -161,59 +123,38 @@ class ApiService {
     required String googleId,
   }) async {
     final deviceId = await _getOrCreateDeviceId();
+    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_login.php");
+    final response = await httpClient.post(
+      uri,
+      body: {
+        'email': email,
+        'googleId': googleId,
+        'deviceId': deviceId,
+        'isGoogleLogin': '1',
+      },
+    ).timeout(requestTimeout);
 
-    for (int attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_login.php");
-        final response = await httpClient.post(
-          uri,
-          body: {
-            'email': email,
-            'googleId': googleId,
-            'deviceId': deviceId,
-            'isGoogleLogin': '1',
-          },
-        ).timeout(requestTimeout);
-
-        if (response.statusCode == 200) {
-          return jsonDecode(response.body);
-        }
-        throw Exception("HTTP ${response.statusCode}");
-      } catch (e) {
-        print("Attempt $attempt failed: $e");
-        if (attempt < maxRetries) {
-          final delay = initialRetryDelay * (1 << (attempt - 1));
-          await Future.delayed(delay);
-        }
-      }
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
     }
-    throw Exception("API is unreachable after $maxRetries attempts");
+    throw Exception("HTTP ${response.statusCode}");
   }
+
   Future<Map<String, dynamic>> sendPasswordResetEmail({
     required String email,
   }) async {
-    for (int attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_reset_password.php");
-        final response = await httpClient.post(
-          uri,
-          body: {'email': email},
-        ).timeout(requestTimeout);
+    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_reset_password.php");
+    final response = await httpClient.post(
+      uri,
+      body: {'email': email},
+    ).timeout(requestTimeout);
 
-        if (response.statusCode == 200) {
-          return jsonDecode(response.body);
-        }
-        throw Exception("HTTP ${response.statusCode}");
-      } catch (e) {
-        print("Attempt $attempt failed: $e");
-        if (attempt < maxRetries) {
-          final delay = initialRetryDelay * (1 << (attempt - 1));
-          await Future.delayed(delay);
-        }
-      }
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
     }
-    throw Exception("API is unreachable after $maxRetries attempts");
+    throw Exception("HTTP ${response.statusCode}");
   }
+
   Future<void> saveAuthToken(String token) async {
     await _secureStorage.write(key: 'authToken', value: token);
   }
