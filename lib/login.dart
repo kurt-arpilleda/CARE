@@ -49,7 +49,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    // Validate returns true if the form is valid, or false otherwise.
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
@@ -108,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
               padding: const EdgeInsets.all(24),
               child: Form(
                 key: _formKey,
-                autovalidateMode: AutovalidateMode.disabled, // Changed to disabled
+                autovalidateMode: AutovalidateMode.disabled,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

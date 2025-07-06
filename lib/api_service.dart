@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,6 +15,7 @@ class ApiService {
 
   late http.Client httpClient;
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   final Uuid _uuid = const Uuid();
 
   ApiService() {
@@ -27,12 +29,11 @@ class ApiService {
   }
 
   Future<String> _getOrCreateDeviceId() async {
-    final prefs = await _prefs;
-    String? deviceId = prefs.getString('deviceId');
+    String? deviceId = await _secureStorage.read(key: 'deviceId');
 
     if (deviceId == null || deviceId.isEmpty) {
       deviceId = _uuid.v4();
-      await prefs.setString('deviceId', deviceId);
+      await _secureStorage.write(key: 'deviceId', value: deviceId);
     }
 
     return deviceId;
@@ -114,23 +115,19 @@ class ApiService {
   }
 
   Future<void> saveAuthToken(String token) async {
-    final prefs = await _prefs;
-    await prefs.setString('authToken', token);
+    await _secureStorage.write(key: 'authToken', value: token);
   }
 
   Future<String?> getAuthToken() async {
-    final prefs = await _prefs;
-    return prefs.getString('authToken');
+    return await _secureStorage.read(key: 'authToken');
   }
 
   Future<void> clearAuthToken() async {
-    final prefs = await _prefs;
-    await prefs.remove('authToken');
+    await _secureStorage.delete(key: 'authToken');
   }
 
   Future<String?> getDeviceId() async {
-    final prefs = await _prefs;
-    return prefs.getString('deviceId');
+    return await _secureStorage.read(key: 'deviceId');
   }
 
   static void setupHttpOverrides() {

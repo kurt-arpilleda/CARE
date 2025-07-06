@@ -214,7 +214,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           Shadow(
                             offset: Offset(1.5, 1.5),
                             blurRadius: 3.0,
-                            color: Colors.black54, // soft shadow for contrast
+                            color: Colors.black54,
                           ),
                         ],
                       ),
@@ -229,7 +229,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           Shadow(
                             offset: Offset(1, 1),
                             blurRadius: 2.0,
-                            color: Colors.black45, // subtle shadow for contrast
+                            color: Colors.black45,
                           ),
                         ],
                       ),

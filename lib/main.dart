@@ -11,7 +11,10 @@ void main() async {
 
   final prefs = await SharedPreferences.getInstance();
   final isFirstOpen = prefs.getBool('isFirstOpen') ?? true;
-  final authToken = prefs.getString('authToken');
+
+  // Check auth token from secure storage
+  final apiService = ApiService();
+  final authToken = await apiService.getAuthToken();
 
   runApp(MyApp(
     initialRoute: isFirstOpen
