@@ -141,12 +141,12 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> sendPasswordResetEmail({
-    required String email,
+    required String emailOrPhone,
   }) async {
     final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_reset_password.php");
     final response = await httpClient.post(
       uri,
-      body: {'email': email},
+      body: {'emailOrPhone': emailOrPhone},
     ).timeout(requestTimeout);
 
     if (response.statusCode == 200) {

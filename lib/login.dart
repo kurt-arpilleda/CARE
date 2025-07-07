@@ -194,7 +194,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(5),
               child: Form(
                 key: _formKey,
                 autovalidateMode: AutovalidateMode.disabled,
@@ -247,7 +247,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                       style: const TextStyle(
                           fontFamily: 'Lato-Italic',
-                          fontWeight: FontWeight.w600
+                          fontWeight: FontWeight.w500
                       ),
                       decoration: InputDecoration(
                         filled: true,
@@ -261,7 +261,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your email';
+                          return 'Please enter your email or phone number';
                         }
                         return null;
                       },
@@ -275,7 +275,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onFieldSubmitted: (_) => _login(),
                       style: const TextStyle(
                           fontFamily: 'Lato-Italic',
-                          fontWeight: FontWeight.w600
+                          fontWeight: FontWeight.w500
                       ),
                       decoration: InputDecoration(
                         filled: true,
