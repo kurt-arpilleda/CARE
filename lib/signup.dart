@@ -42,17 +42,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return null;
   }
 
-  String? _validateEmailOrPhone(String? value) {
+  String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Email or Phone is required';
+      return 'Email is required';
     }
 
-    // Check if it's a valid email or phone number
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    final phoneRegex = RegExp(r'^[0-9]{11}$');
-
-    if (!emailRegex.hasMatch(value) && !phoneRegex.hasMatch(value)) {
-      return 'Enter a valid email or 11-digit phone number';
+    if (!emailRegex.hasMatch(value)) {
+      return 'Enter a valid email address';
     }
 
     return null;
@@ -63,9 +60,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return 'Phone number is required';
     }
 
-    final phoneRegex = RegExp(r'^[0-9]{11}$');
-    if (!phoneRegex.hasMatch(value)) {
-      return 'Enter a valid 11-digit phone number';
+    final cleanedPhone = value.replaceAll(RegExp(r'[^0-9]'), '');
+
+    final phoneRegex = RegExp(r'^09\d{9}$');
+    if (!phoneRegex.hasMatch(cleanedPhone)) {
+      return 'Enter a valid 11-digit phone number starting with 09';
     }
 
     return null;
@@ -381,15 +380,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.9),
-                        hintText: 'Email or Phone Number',
+                        hintText: 'Email',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
                         ),
                         errorText: _touchedFields.contains('email')
-                            ? _validateEmailOrPhone(_emailController.text)
+                            ? _validateEmail(_emailController.text)
                             : null,
                       ),
+                      keyboardType: TextInputType.emailAddress,
                       onChanged: (value) {
                         setState(() {
                           _touchedFields.add('email');
