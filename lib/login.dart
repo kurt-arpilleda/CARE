@@ -247,7 +247,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                       style: const TextStyle(
                           fontFamily: 'Lato-Italic',
-                          fontWeight: FontWeight.w600
+                          fontWeight: FontWeight.w500
                       ),
                       decoration: InputDecoration(
                         filled: true,
@@ -275,7 +275,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onFieldSubmitted: (_) => _login(),
                       style: const TextStyle(
                           fontFamily: 'Lato-Italic',
-                          fontWeight: FontWeight.w600
+                          fontWeight: FontWeight.w500
                       ),
                       decoration: InputDecoration(
                         filled: true,

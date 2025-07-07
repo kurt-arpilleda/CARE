@@ -248,7 +248,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   controller: _firstNameController,
                                   style: const TextStyle(
                                       fontFamily: 'Lato-Italic',
-                                      fontWeight: FontWeight.w600),
+                                      fontWeight: FontWeight.w500),
                                   decoration: InputDecoration(
                                     filled: true,
                                     fillColor: Colors.white.withOpacity(0.9),
@@ -278,7 +278,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   controller: _surNameController,
                                   style: const TextStyle(
                                       fontFamily: 'Lato-Italic',
-                                      fontWeight: FontWeight.w600),
+                                      fontWeight: FontWeight.w500),
                                   decoration: InputDecoration(
                                     filled: true,
                                     fillColor: Colors.white.withOpacity(0.9),
@@ -320,7 +320,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       value: _accountType,
                       style: const TextStyle(
                         fontFamily: 'Lato-Italic',
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                         color: Colors.black,
                         fontSize: 16,
                       ),
@@ -354,7 +354,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       value: _gender,
                       style: const TextStyle(
                         fontFamily: 'Lato-Italic',
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                         color: Colors.black,
                         fontSize: 16,
                       ),
@@ -376,7 +376,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       controller: _emailController,
                       style: const TextStyle(
                         fontFamily: 'Lato-Italic',
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                       ),
                       decoration: InputDecoration(
                         filled: true,
@@ -401,7 +401,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       controller: _phoneController,
                       style: const TextStyle(
                         fontFamily: 'Lato-Italic',
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                       ),
                       decoration: InputDecoration(
                         filled: true,
@@ -428,7 +428,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       obscureText: _obscurePassword,
                       style: const TextStyle(
                         fontFamily: 'Lato-Italic',
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                       ),
                       decoration: InputDecoration(
                         filled: true,
@@ -469,7 +469,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       obscureText: _obscureConfirmPassword,
                       style: const TextStyle(
                         fontFamily: 'Lato-Italic',
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                       ),
                       decoration: InputDecoration(
                         filled: true,
