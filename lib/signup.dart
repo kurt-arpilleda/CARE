@@ -506,8 +506,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ElevatedButton(
                       onPressed: _submitForm,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF4A7FA7),
-                        foregroundColor: Color(0xFFF6FAFD),
+                        backgroundColor: const Color(0xFF1A3D63),
+                        foregroundColor: const Color(0xFFF6FAFD),
                         minimumSize: const Size(double.infinity, 50),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
