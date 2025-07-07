@@ -11,13 +11,13 @@ class ForgotPasswordDialog extends StatefulWidget {
 
 class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _emailOrPhoneController = TextEditingController();
   final _apiService = ApiService();
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _emailOrPhoneController.dispose();
     super.dispose();
   }
 
@@ -27,7 +27,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
 
       try {
         final response = await _apiService.sendPasswordResetEmail(
-          email: _emailController.text.trim(),
+          emailOrPhone: _emailOrPhoneController.text.trim(),
         );
 
         if (response['success'] == true) {
@@ -82,24 +82,20 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Enter your email to receive a password reset link',
+                      'Enter your email or phone number to receive a password reset link',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
+                      controller: _emailOrPhoneController,
+                      keyboardType: TextInputType.text,
                       decoration: const InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: Icon(Icons.email),
+                        labelText: 'Email or Phone Number',
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
-                        }
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                          return 'Please enter a valid email';
+                          return 'Please enter your email or phone number';
                         }
                         return null;
                       },
