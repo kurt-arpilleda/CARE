@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../api_service.dart';
+import 'profile.dart';
 
 class DashboardDrawer extends StatefulWidget {
   const DashboardDrawer({Key? key}) : super(key: key);
@@ -154,7 +155,10 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                             title: const Text("Profile"),
                             onTap: () {
                               Navigator.pop(context);
-                              // Navigate to profile screen
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                              );
                             },
                           ),
                           ListTile(
@@ -214,3 +218,4 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
     super.dispose();
   }
 }
+
