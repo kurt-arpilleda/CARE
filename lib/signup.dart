@@ -193,7 +193,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ),
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(5),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5), // Added horizontal padding
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -441,7 +441,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         suffixIcon: _passwordController.text.isNotEmpty
                             ? IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
                             color: Colors.grey,
                           ),
                           onPressed: () {
@@ -482,7 +482,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         suffixIcon: _confirmPasswordController.text.isNotEmpty
                             ? IconButton(
                           icon: Icon(
-                            _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                            _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
                             color: Colors.grey,
                           ),
                           onPressed: () {

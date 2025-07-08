@@ -170,6 +170,8 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       Fluttertoast.showToast(msg: 'Google sign-in failed: ${e.toString()}');
       await GoogleSignInService.signOut();
+      await _apiService.logout();
+      await _apiService.clearAuthToken();
     } finally {
       if (mounted) {
         setState(() => _isGoogleSignInLoading = false);
@@ -194,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(5),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
               child: Form(
                 key: _formKey,
                 autovalidateMode: AutovalidateMode.disabled,
@@ -285,7 +287,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         suffixIcon: _passwordFocusNode.hasFocus && _passwordHasInput
                             ? IconButton(
                           icon: Icon(
-                            _showPassword ? Icons.visibility_off : Icons.visibility,
+                            _showPassword ? Icons.visibility : Icons.visibility_off,
                             color: Colors.grey,
                           ),
                           onPressed: () {

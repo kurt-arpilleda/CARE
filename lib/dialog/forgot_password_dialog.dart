@@ -82,15 +82,24 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Enter your email or phone number to receive a password reset link',
+                      'Enter your email or phone number to receive a password reset link to your email',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _emailOrPhoneController,
                       keyboardType: TextInputType.text,
+                      style: const TextStyle( // This controls the actual input text style
+                        fontWeight: FontWeight.normal,
+                        fontSize: 16,
+                      ),
                       decoration: const InputDecoration(
                         labelText: 'Email or Phone Number',
+                        labelStyle: TextStyle(
+                          fontWeight: FontWeight.normal,
+                          color: Colors.grey,
+                          fontSize: 16,
+                        ),
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
