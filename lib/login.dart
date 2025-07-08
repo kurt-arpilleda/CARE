@@ -196,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(5),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
               child: Form(
                 key: _formKey,
                 autovalidateMode: AutovalidateMode.disabled,
