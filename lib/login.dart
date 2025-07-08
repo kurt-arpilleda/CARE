@@ -170,6 +170,8 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       Fluttertoast.showToast(msg: 'Google sign-in failed: ${e.toString()}');
       await GoogleSignInService.signOut();
+      await _apiService.logout();
+      await _apiService.clearAuthToken();
     } finally {
       if (mounted) {
         setState(() => _isGoogleSignInLoading = false);

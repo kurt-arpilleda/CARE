@@ -9,7 +9,7 @@ import 'package:uuid/uuid.dart';
 
 class ApiService {
   static const String apiUrl = "https://126.209.7.246/";
-  static const Duration requestTimeout = Duration(seconds: 5);
+  static const Duration requestTimeout = Duration(seconds: 10);
 
   late http.Client httpClient;
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
@@ -46,24 +46,28 @@ class ApiService {
     required int signupType,
   }) async {
     final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_signup.php");
-    final response = await httpClient.post(
-      uri,
-      body: {
-        'firstName': firstName,
-        'surName': surName,
-        'gender': gender.toString(),
-        'email': email,
-        'phoneNum': phoneNum,
-        'userType': userType.toString(),
-        'password': password,
-        'signupType': signupType.toString(),
-      },
-    ).timeout(requestTimeout);
+    try {
+      final response = await httpClient.post(
+        uri,
+        body: {
+          'firstName': firstName,
+          'surName': surName,
+          'gender': gender.toString(),
+          'email': email,
+          'phoneNum': phoneNum,
+          'userType': userType.toString(),
+          'password': password,
+          'signupType': signupType.toString(),
+        },
+      ).timeout(requestTimeout);
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw Exception("HTTP ${response.statusCode}");
+    } catch (e) {
+      throw Exception("Network error: ${e.toString()}");
     }
-    throw Exception("HTTP ${response.statusCode}");
   }
 
   Future<Map<String, dynamic>> signUpWithGoogle({
@@ -75,26 +79,30 @@ class ApiService {
     required String photoUrl,
   }) async {
     final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_signup.php");
-    final response = await httpClient.post(
-      uri,
-      body: {
-        'firstName': firstName,
-        'surName': surName,
-        'gender': '0',
-        'email': email,
-        'phoneNum': '',
-        'userType': userType.toString(),
-        'password': '',
-        'signupType': '1',
-        'googleId': googleId,
-        'photoUrl': photoUrl,
-      },
-    ).timeout(requestTimeout);
+    try {
+      final response = await httpClient.post(
+        uri,
+        body: {
+          'firstName': firstName,
+          'surName': surName,
+          'gender': '0',
+          'email': email,
+          'phoneNum': '',
+          'userType': userType.toString(),
+          'password': '',
+          'signupType': '1',
+          'googleId': googleId,
+          'photoUrl': photoUrl,
+        },
+      ).timeout(requestTimeout);
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw Exception("HTTP ${response.statusCode}");
+    } catch (e) {
+      throw Exception("Network error: ${e.toString()}");
     }
-    throw Exception("HTTP ${response.statusCode}");
   }
 
   Future<Map<String, dynamic>> login({
@@ -103,19 +111,23 @@ class ApiService {
   }) async {
     final deviceId = await _getOrCreateDeviceId();
     final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_login.php");
-    final response = await httpClient.post(
-      uri,
-      body: {
-        'email': email,
-        'password': password,
-        'deviceId': deviceId,
-      },
-    ).timeout(requestTimeout);
+    try {
+      final response = await httpClient.post(
+        uri,
+        body: {
+          'email': email,
+          'password': password,
+          'deviceId': deviceId,
+        },
+      ).timeout(requestTimeout);
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw Exception("HTTP ${response.statusCode}");
+    } catch (e) {
+      throw Exception("Network error: ${e.toString()}");
     }
-    throw Exception("HTTP ${response.statusCode}");
   }
 
   Future<Map<String, dynamic>> loginWithGoogle({
@@ -124,35 +136,87 @@ class ApiService {
   }) async {
     final deviceId = await _getOrCreateDeviceId();
     final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_login.php");
-    final response = await httpClient.post(
-      uri,
-      body: {
-        'email': email,
-        'googleId': googleId,
-        'deviceId': deviceId,
-        'isGoogleLogin': '1',
-      },
-    ).timeout(requestTimeout);
+    try {
+      final response = await httpClient.post(
+        uri,
+        body: {
+          'email': email,
+          'googleId': googleId,
+          'deviceId': deviceId,
+          'isGoogleLogin': '1',
+        },
+      ).timeout(requestTimeout);
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw Exception("HTTP ${response.statusCode}");
+    } catch (e) {
+      throw Exception("Network error: ${e.toString()}");
     }
-    throw Exception("HTTP ${response.statusCode}");
   }
 
   Future<Map<String, dynamic>> sendPasswordResetEmail({
     required String emailOrPhone,
   }) async {
     final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_reset_password.php");
-    final response = await httpClient.post(
-      uri,
-      body: {'emailOrPhone': emailOrPhone},
-    ).timeout(requestTimeout);
+    try {
+      final response = await httpClient.post(
+        uri,
+        body: {'emailOrPhone': emailOrPhone},
+      ).timeout(requestTimeout);
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw Exception("HTTP ${response.statusCode}");
+    } catch (e) {
+      throw Exception("Network error: ${e.toString()}");
     }
-    throw Exception("HTTP ${response.statusCode}");
+  }
+
+  Future<Map<String, dynamic>> getUserData() async {
+    final token = await getAuthToken();
+    if (token == null) {
+      throw Exception("No auth token found");
+    }
+
+    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_get_user.php");
+    try {
+      final response = await httpClient.post(
+        uri,
+        body: {'token': token},
+      ).timeout(requestTimeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw Exception("HTTP ${response.statusCode}");
+    } catch (e) {
+      throw Exception("Network error: ${e.toString()}");
+    }
+  }
+
+  Future<Map<String, dynamic>> logout() async {
+    final token = await getAuthToken();
+    if (token == null) {
+      throw Exception("No auth token found");
+    }
+
+    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_logout.php");
+    try {
+      final response = await httpClient.post(
+        uri,
+        body: {'token': token},
+      ).timeout(requestTimeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw Exception("HTTP ${response.statusCode}");
+    } catch (e) {
+      throw Exception("Network error: ${e.toString()}");
+    }
   }
 
   Future<void> saveAuthToken(String token) async {
@@ -173,6 +237,10 @@ class ApiService {
 
   static void setupHttpOverrides() {
     HttpOverrides.global = MyHttpOverrides();
+  }
+
+  void dispose() {
+    httpClient.close();
   }
 }
 
