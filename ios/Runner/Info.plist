@@ -78,5 +78,11 @@
             </dict>
         </dict>
     </dict>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Need photo library access to upload images</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Need camera access to take photos</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Need microphone access for video recording</string>
 </dict>
 </plist>
