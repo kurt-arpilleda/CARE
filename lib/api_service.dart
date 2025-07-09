@@ -196,7 +196,40 @@ class ApiService {
       throw Exception("Network error: ${e.toString()}");
     }
   }
+  Future<Map<String, dynamic>> updateProfile({
+    required String firstName,
+    required String surName,
+    required String email,
+    required String phoneNum,
+    required int gender,
+  }) async {
+    final token = await getAuthToken();
+    if (token == null) {
+      throw Exception("No auth token found");
+    }
 
+    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_updateProfile.php");
+    try {
+      final response = await httpClient.post(
+        uri,
+        body: {
+          'token': token,
+          'firstName': firstName,
+          'surName': surName,
+          'email': email,
+          'phoneNum': phoneNum,
+          'gender': gender.toString(),
+        },
+      ).timeout(requestTimeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw Exception("HTTP ${response.statusCode}");
+    } catch (e) {
+      throw Exception("Network error: ${e.toString()}");
+    }
+  }
   Future<Map<String, dynamic>> logout() async {
     final token = await getAuthToken();
     if (token == null) {
