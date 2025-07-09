@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import '../api_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -9,69 +11,107 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final Map<String, dynamic> _userData = {
-    'firstName': 'John',
-    'surName': 'Doe',
-    'email': 'john.doe@example.com',
-    'phone': '+1 234 567 8900',
-    'photoUrl': '',
-    'userType': 'Vehicle Owner',
-    'gender': 'Male',
-    'joinedDate': 'Joined Jan 2023',
-  };
-
-  bool _isEditing = false;
+  final ApiService _apiService = ApiService();
   final _formKey = GlobalKey<FormState>();
+
+  Map<String, dynamic> _userData = {};
+  bool _isEditing = false;
+  bool _isLoading = true;
+  bool _isSaving = false;
 
   late TextEditingController _firstNameController;
   late TextEditingController _surNameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
   String _selectedGender = 'Male';
+  int _signupType = 0;
 
   @override
   void initState() {
     super.initState();
-    _firstNameController = TextEditingController(text: _userData['firstName']);
-    _surNameController = TextEditingController(text: _userData['surName']);
-    _emailController = TextEditingController(text: _userData['email']);
-    _phoneController = TextEditingController(text: _userData['phone']);
-    _selectedGender = _userData['gender'];
+    _firstNameController = TextEditingController();
+    _surNameController = TextEditingController();
+    _emailController = TextEditingController();
+    _phoneController = TextEditingController();
+    _loadUserData();
   }
 
-  @override
-  void dispose() {
-    _firstNameController.dispose();
-    _surNameController.dispose();
-    _emailController.dispose();
-    _phoneController.dispose();
-    super.dispose();
+  Future<void> _loadUserData() async {
+    try {
+      final response = await _apiService.getUserData();
+      if (response['success'] == true && response['user'] != null) {
+        setState(() {
+          _userData = response['user'];
+          _signupType = _userData['signupType'] ?? 0;
+
+          _firstNameController.text = _userData['firstName'] ?? '';
+          _surNameController.text = _userData['surName'] ?? '';
+          _emailController.text = _userData['email'] ?? '';
+          _phoneController.text = _userData['phoneNum'] ?? '';
+          _selectedGender = _userData['gender'] == 0 ? 'Male' : 'Female';
+
+          _isLoading = false;
+        });
+      } else {
+        Fluttertoast.showToast(msg: response['message'] ?? 'Failed to load user data');
+        if (mounted) Navigator.pop(context);
+      }
+    } catch (e) {
+      Fluttertoast.showToast(msg: 'Error loading profile: ${e.toString()}');
+      if (mounted) Navigator.pop(context);
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    bool hasChanges =
+        _firstNameController.text != _userData['firstName'] ||
+            _surNameController.text != _userData['surName'] ||
+            _phoneController.text != _userData['phoneNum'] ||
+            (_selectedGender == 'Male' ? 0 : 1) != _userData['gender'] ||
+            (_signupType == 0 && _emailController.text != _userData['email']);
+
+    if (!hasChanges) {
+      setState(() => _isEditing = false);
+      Fluttertoast.showToast(msg: 'No changes to save');
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      final response = await _apiService.updateProfile(
+        firstName: _firstNameController.text,
+        surName: _surNameController.text,
+        email: _signupType == 0 ? _emailController.text : _userData['email'],
+        phoneNum: _phoneController.text,
+        gender: _selectedGender == 'Male' ? 0 : 1,
+      );
+
+      if (response['success'] == true) {
+        await _loadUserData(); // Refresh user data
+        setState(() => _isEditing = false);
+        Fluttertoast.showToast(msg: 'Profile updated successfully');
+      } else {
+        Fluttertoast.showToast(msg: response['message'] ?? 'Failed to update profile');
+      }
+    } catch (e) {
+      Fluttertoast.showToast(msg: 'Error updating profile: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
   }
 
   Widget _buildProfileImage() {
-    return Stack(
-      alignment: Alignment.bottomRight,
-      children: [
-        CircleAvatar(
-          radius: 60,
-          backgroundColor: Colors.grey.shade300,
-          backgroundImage: _userData['photoUrl'].isNotEmpty
-              ? NetworkImage(_userData['photoUrl'])
-              : const AssetImage('assets/images/icon.png') as ImageProvider,
-        ),
-        if (_isEditing)
-          CircleAvatar(
-            backgroundColor: const Color(0xFF1A3D63),
-            radius: 18,
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              icon: const Icon(Icons.camera_alt, color: Colors.white, size: 18),
-              onPressed: () {
-                // TODO: Implement image picker
-              },
-            ),
-          ),
-      ],
+    return CircleAvatar(
+      radius: 60,
+      backgroundColor: Colors.grey.shade300,
+      backgroundImage: _userData['photoUrl'] != null && _userData['photoUrl'].isNotEmpty
+          ? NetworkImage(_userData['photoUrl'])
+          : const AssetImage('assets/images/icon.png') as ImageProvider,
     );
   }
 
@@ -102,7 +142,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 const SizedBox(height: 2),
                 Text(
-                  value,
+                  value.isNotEmpty ? value : 'Not set',
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
               ],
@@ -112,13 +152,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-
   Widget _buildEditableField(String label, TextEditingController controller,
-      {TextInputType? keyboardType}) {
+      {bool enabled = true, TextInputType? keyboardType, String? Function(String?)? validator}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextFormField(
         controller: controller,
+        enabled: enabled,
         keyboardType: keyboardType,
         decoration: InputDecoration(
           labelText: label,
@@ -128,7 +168,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             borderSide: const BorderSide(color: Color(0xFF1A3D63), width: 2),
           ),
         ),
-        validator: (value) {
+        validator: validator ?? (value) {
           if (value == null || value.isEmpty) {
             return 'Please enter $label';
           }
@@ -166,8 +206,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  String _formatJoinedDate(String? dateString) {
+    if (dateString == null || dateString.isEmpty) return 'Member since unknown';
+
+    try {
+      final date = DateTime.parse(dateString);
+      return 'Joined ${_getMonthName(date.month)} ${date.year}';
+    } catch (e) {
+      return 'Member since $dateString';
+    }
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return months[month - 1];
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF6FAFD),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF1A3D63),
+          elevation: 0,
+          title: const Text('My Profile'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6FAFD),
       appBar: AppBar(
@@ -202,7 +277,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildProfileImage(),
             const SizedBox(height: 16),
             Text(
-              _isEditing ? 'Edit Profile' : _userData['userType'],
+              _isEditing ? 'Edit Profile' : _userData['userType'] == 0 ? 'Driver' : 'Shop Owner',
               style: TextStyle(
                 fontSize: 16,
                 color: const Color(0xFF1A3D63).withOpacity(0.7),
@@ -216,11 +291,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 '${_userData['firstName']} ${_userData['surName']}',
                 Icons.person,
               ),
-              _buildDisplayTile('Email', _userData['email'], Icons.email),
-              _buildDisplayTile('Phone', _userData['phone'], Icons.phone),
-              _buildDisplayTile('Gender', _userData['gender'], Icons.person),
+              _buildDisplayTile('Email', _userData['email'] ?? '', Icons.email),
+              _buildDisplayTile('Phone', _userData['phoneNum'] ?? '', Icons.phone),
               _buildDisplayTile(
-                  'Member Since', _userData['joinedDate'], Icons.calendar_today),
+                'Gender',
+                _userData['gender'] == 0 ? 'Male' : 'Female',
+                Icons.person,
+              ),
+              _buildDisplayTile(
+                'Member Since',
+                _formatJoinedDate(_userData['createdAt']),
+                Icons.calendar_today,
+              ),
             ] else
               Form(
                 key: _formKey,
@@ -228,10 +310,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     _buildEditableField('First Name', _firstNameController),
                     _buildEditableField('Last Name', _surNameController),
-                    _buildEditableField('Email', _emailController,
-                        keyboardType: TextInputType.emailAddress),
-                    _buildEditableField('Phone', _phoneController,
-                        keyboardType: TextInputType.phone),
+                    _buildEditableField(
+                      'Email',
+                      _emailController,
+                      enabled: _signupType == 0,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: _signupType == 0 ? (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Email is required';
+                        }
+                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                          return 'Enter a valid email address';
+                        }
+                        return null;
+                      } : null,
+                    ),
+                    _buildEditableField(
+                      'Phone',
+                      _phoneController,
+                      keyboardType: TextInputType.phone,
+                    ),
                     _buildGenderDropdown(),
                     const SizedBox(height: 24),
                     SizedBox(
@@ -245,26 +343,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           elevation: 3,
                         ),
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            setState(() {
-                              _isEditing = false;
-                              _userData['firstName'] = _firstNameController.text;
-                              _userData['surName'] = _surNameController.text;
-                              _userData['email'] = _emailController.text;
-                              _userData['phone'] = _phoneController.text;
-                              _userData['gender'] = _selectedGender;
-                            });
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Profile updated successfully'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                          }
-                        },
-                        child: const Text(
+                        onPressed: _isSaving ? null : _saveProfile,
+                        child: _isSaving
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text(
                           'SAVE CHANGES',
                           style: TextStyle(fontSize: 16, color: Colors.white),
                         ),
@@ -277,5 +359,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _surNameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _apiService.dispose();
+    super.dispose();
   }
 }
