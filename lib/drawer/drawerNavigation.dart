@@ -107,7 +107,7 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
       );
     } else {
       return CircleAvatar(
-        backgroundImage: const AssetImage('assets/images/profile_placeholder.png'),
+        backgroundImage: const AssetImage('assets/images/icon.png'),
         child: _isLoading
             ? const CircularProgressIndicator(
           strokeWidth: 2,

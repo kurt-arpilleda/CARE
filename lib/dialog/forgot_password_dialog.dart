@@ -104,7 +104,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your email or phone number';
+                          return 'Email or phone number is required.';
                         }
                         return null;
                       },

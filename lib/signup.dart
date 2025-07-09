@@ -245,9 +245,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               children: [
                                 TextFormField(
                                   controller: _firstNameController,
+                                  textCapitalization: TextCapitalization.sentences, // 👈 this is the key
                                   style: const TextStyle(
-                                      fontFamily: 'Lato-Italic',
-                                      fontWeight: FontWeight.w500),
+                                    fontFamily: 'Lato-Italic',
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                   decoration: InputDecoration(
                                     filled: true,
                                     fillColor: Colors.white.withOpacity(0.9),
@@ -275,9 +277,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               children: [
                                 TextFormField(
                                   controller: _surNameController,
+                                  textCapitalization: TextCapitalization.sentences, // 👈 default to uppercase
                                   style: const TextStyle(
-                                      fontFamily: 'Lato-Italic',
-                                      fontWeight: FontWeight.w500),
+                                    fontFamily: 'Lato-Italic',
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                   decoration: InputDecoration(
                                     filled: true,
                                     fillColor: Colors.white.withOpacity(0.9),
