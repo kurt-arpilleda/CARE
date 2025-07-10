@@ -251,7 +251,33 @@ class ApiService {
       throw Exception("Network error: ${e.toString()}");
     }
   }
+  Future<Map<String, dynamic>> uploadProfilePicture(File imageFile) async {
+    final token = await getAuthToken();
+    if (token == null) {
+      throw Exception("No auth token found");
+    }
 
+    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_uploadImageProfile.php");
+
+    try {
+      var request = http.MultipartRequest('POST', uri);
+      request.fields['token'] = token;
+      request.files.add(await http.MultipartFile.fromPath(
+        'profile_image',
+        imageFile.path,
+      ));
+
+      final response = await request.send().timeout(requestTimeout);
+      final responseBody = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        return jsonDecode(responseBody);
+      }
+      throw Exception("HTTP ${response.statusCode}");
+    } catch (e) {
+      throw Exception("Network error: ${e.toString()}");
+    }
+  }
   Future<void> saveAuthToken(String token) async {
     await _secureStorage.write(key: 'authToken', value: token);
   }

@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../api_service.dart';
 
@@ -13,11 +15,13 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final ApiService _apiService = ApiService();
   final _formKey = GlobalKey<FormState>();
+  final ImagePicker _picker = ImagePicker();
 
   Map<String, dynamic> _userData = {};
   bool _isEditing = false;
   bool _isLoading = true;
   bool _isSaving = false;
+  File? _selectedImage;
 
   late TextEditingController _firstNameController;
   late TextEditingController _surNameController;
@@ -62,6 +66,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _showImageSourceDialog() async {
+    if (!_isEditing) return;
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text(
+          'Change Profile Picture',
+          style: TextStyle(
+            color: Color(0xFF1A3D63),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Color(0xFF1A3D63)),
+              title: const Text('Take Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: Color(0xFF1A3D63)),
+              title: const Text('Choose from Gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final pickedFile = await _picker.pickImage(source: source);
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      Fluttertoast.showToast(msg: 'Failed to pick image: ${e.toString()}');
+    }
+  }
+
+  Future<void> _uploadProfilePicture() async {
+    if (_selectedImage == null) return;
+
+    try {
+      final response = await _apiService.uploadProfilePicture(_selectedImage!);
+      if (response['success'] == true) {
+        await _loadUserData(); // Refresh user data
+        Fluttertoast.showToast(msg: 'Profile picture updated successfully');
+      } else {
+        Fluttertoast.showToast(msg: response['message'] ?? 'Failed to update profile picture');
+      }
+    } catch (e) {
+      Fluttertoast.showToast(msg: 'Error uploading profile picture: ${e.toString()}');
+    }
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -72,7 +146,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             (_selectedGender == 'Male' ? 0 : 1) != _userData['gender'] ||
             (_signupType == 0 && _emailController.text != _userData['email']);
 
-    if (!hasChanges) {
+    if (!hasChanges && _selectedImage == null) {
       setState(() => _isEditing = false);
       Fluttertoast.showToast(msg: 'No changes to save');
       return;
@@ -81,37 +155,84 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final response = await _apiService.updateProfile(
-        firstName: _firstNameController.text,
-        surName: _surNameController.text,
-        email: _signupType == 0 ? _emailController.text : _userData['email'],
-        phoneNum: _phoneController.text,
-        gender: _selectedGender == 'Male' ? 0 : 1,
-      );
-
-      if (response['success'] == true) {
-        await _loadUserData(); // Refresh user data
-        setState(() => _isEditing = false);
-        Fluttertoast.showToast(msg: 'Profile updated successfully');
-      } else {
-        Fluttertoast.showToast(msg: response['message'] ?? 'Failed to update profile');
+      // Upload image first if selected
+      if (_selectedImage != null) {
+        await _uploadProfilePicture();
       }
+
+      // Then update profile if there are changes
+      if (hasChanges) {
+        final response = await _apiService.updateProfile(
+          firstName: _firstNameController.text,
+          surName: _surNameController.text,
+          email: _signupType == 0 ? _emailController.text : _userData['email'],
+          phoneNum: _phoneController.text,
+          gender: _selectedGender == 'Male' ? 0 : 1,
+        );
+
+        if (response['success'] == true) {
+          await _loadUserData(); // Refresh user data
+          Fluttertoast.showToast(msg: 'Profile updated successfully');
+        } else {
+          Fluttertoast.showToast(msg: response['message'] ?? 'Failed to update profile');
+        }
+      }
+
+      setState(() => _isEditing = false);
     } catch (e) {
       Fluttertoast.showToast(msg: 'Error updating profile: ${e.toString()}');
     } finally {
       if (mounted) {
-        setState(() => _isSaving = false);
+        setState(() {
+          _isSaving = false;
+          _selectedImage = null;
+        });
       }
     }
   }
 
   Widget _buildProfileImage() {
-    return CircleAvatar(
-      radius: 60,
-      backgroundColor: Colors.grey.shade300,
-      backgroundImage: _userData['photoUrl'] != null && _userData['photoUrl'].isNotEmpty
-          ? NetworkImage(_userData['photoUrl'])
-          : const AssetImage('assets/images/icon.png') as ImageProvider,
+    final imageUrl = _userData['photoUrl'] != null && _userData['photoUrl'].isNotEmpty
+        ? _userData['photoUrl']!.contains('http')
+        ? _userData['photoUrl']
+        : '${ApiService.apiUrl}V4/Others/Kurt/CareAPI/profilePicture/${_userData['photoUrl']}'
+        : null;
+
+    return GestureDetector(
+      onTap: _isEditing ? _showImageSourceDialog : null,
+      child: Stack(
+        children: [
+          CircleAvatar(
+            radius: 60,
+            backgroundColor: Colors.grey.shade300,
+            backgroundImage: _selectedImage != null
+                ? FileImage(_selectedImage!)
+                : imageUrl != null
+                ? NetworkImage(imageUrl)
+                : const AssetImage('assets/images/icon.png') as ImageProvider,
+            child: _isLoading
+                ? const CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            )
+                : null,
+          ),
+          if (_isEditing)
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A3D63),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: const Icon(Icons.edit, color: Colors.white, size: 20),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
