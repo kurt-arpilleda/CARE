@@ -90,11 +90,16 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
       }
     }
   }
-
   Widget _buildProfileImage() {
-    if (_userPhotoUrl != null && _userPhotoUrl!.isNotEmpty) {
+    final imageUrl = _userPhotoUrl != null && _userPhotoUrl!.isNotEmpty
+        ? _userPhotoUrl!.contains('http')
+        ? _userPhotoUrl
+        : '${ApiService.apiUrl}V4/Others/Kurt/CareAPI/profilePicture/$_userPhotoUrl'
+        : null;
+
+    if (imageUrl != null) {
       return CircleAvatar(
-        backgroundImage: NetworkImage(_userPhotoUrl!),
+        backgroundImage: NetworkImage(imageUrl),
         onBackgroundImageError: (exception, stackTrace) {
           // If network image fails, it will show the placeholder
         },
