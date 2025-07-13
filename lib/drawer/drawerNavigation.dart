@@ -47,49 +47,63 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
         _userEmail = "Error loading";
         _isLoading = false;
       });
-      print("Failed to load user data: $e");
     }
   }
 
   Future<void> _handleLogout() async {
     if (_isLoggingOut) return;
 
-    setState(() {
-      _isLoggingOut = true;
-    });
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: const Color(0xFFF6FAFD),
+          title: const Text('Confirm Logout', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A3D63))),
+          content: const Text('Are you sure you want to logout?', style: TextStyle(color: Colors.black87)),
+          actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Logout', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isLoggingOut = true);
 
     try {
-      // Call logout API to update session
       await _apiService.logout();
-
-      // Clear local auth token
       await _apiService.clearAuthToken();
-
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/login',
-              (route) => false,
-        );
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } catch (e) {
-      // Even if logout API fails, clear local token and navigate to login
       await _apiService.clearAuthToken();
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/login',
-              (route) => false,
-        );
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoggingOut = false;
-        });
+        setState(() => _isLoggingOut = false);
       }
     }
   }
+
+
+
   Widget _buildProfileImage() {
     final imageUrl = _userPhotoUrl != null && _userPhotoUrl!.isNotEmpty
         ? _userPhotoUrl!.contains('http')
@@ -100,24 +114,16 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
     if (imageUrl != null) {
       return CircleAvatar(
         backgroundImage: NetworkImage(imageUrl),
-        onBackgroundImageError: (exception, stackTrace) {
-          // If network image fails, it will show the placeholder
-        },
+        onBackgroundImageError: (exception, stackTrace) {},
         child: _isLoading
-            ? const CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-        )
+            ? const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))
             : null,
       );
     } else {
       return CircleAvatar(
         backgroundImage: const AssetImage('assets/images/icon.png'),
         child: _isLoading
-            ? const CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-        )
+            ? const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))
             : null,
       );
     }
@@ -128,13 +134,7 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
     final drawerWidth = MediaQuery.of(context).size.width * 0.75;
 
     return Theme(
-      data: Theme.of(context).copyWith(
-        drawerTheme: const DrawerThemeData(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero,
-          ),
-        ),
-      ),
+      data: Theme.of(context).copyWith(drawerTheme: const DrawerThemeData(shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero))),
       child: SizedBox(
         width: drawerWidth,
         child: Drawer(
@@ -160,10 +160,7 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                             title: const Text("Profile"),
                             onTap: () {
                               Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-                              );
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
                             },
                           ),
                           ListTile(
@@ -171,7 +168,6 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                             title: const Text("Activate Vehicle"),
                             onTap: () {
                               Navigator.pop(context);
-                              // Navigate to vehicle activation screen
                             },
                           ),
                           ListTile(
@@ -179,7 +175,6 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                             title: const Text("Register Shop"),
                             onTap: () {
                               Navigator.pop(context);
-                              // Navigate to shop registration screen
                             },
                           ),
                         ],
@@ -191,19 +186,9 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                       const Divider(),
                       ListTile(
                         leading: _isLoggingOut
-                            ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
-                          ),
-                        )
+                            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.red)))
                             : const Icon(Icons.logout, color: Colors.red),
-                        title: Text(
-                          _isLoggingOut ? "Logging out..." : "Logout",
-                          style: const TextStyle(color: Colors.red),
-                        ),
+                        title: Text(_isLoggingOut ? "Logging out..." : "Logout", style: const TextStyle(color: Colors.red)),
                         onTap: _isLoggingOut ? null : _handleLogout,
                       ),
                     ],
@@ -223,4 +208,3 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
     super.dispose();
   }
 }
-
