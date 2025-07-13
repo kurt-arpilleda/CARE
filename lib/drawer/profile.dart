@@ -350,11 +350,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     _buildEditableField('First Name', _firstNameController),
                     _buildEditableField('Last Name', _surNameController),
-                    _buildEditableField('Email', _emailController, enabled: _signupType == 0, keyboardType: TextInputType.emailAddress, validator: _signupType == 0 ? (value) {
-                      if (value == null || value.isEmpty) return 'Email is required';
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) return 'Enter a valid email address';
-                      return null;
-                    } : null),
+                    if (_signupType == 0)
+                      _buildEditableField(
+                        'Email',
+                        _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Email is required';
+                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                            return 'Enter a valid email address';
+                          }
+                          return null;
+                        },
+                      ),
                     _buildEditableField('Phone', _phoneController, keyboardType: TextInputType.phone),
                     _buildGenderDropdown(),
                     const SizedBox(height: 24),
