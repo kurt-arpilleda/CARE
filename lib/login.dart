@@ -4,7 +4,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'api_service.dart';
 import 'dashboard.dart';
 import 'google_signin_service.dart';
-import 'dialog/account_type_dialog.dart';
+
 import 'dialog/forgot_password_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -99,14 +99,12 @@ class _LoginScreenState extends State<LoginScreen> {
       final googleUser = await GoogleSignInService.signIn();
       if (googleUser != null) {
         try {
-          // Try to login with Google first
           final loginResponse = await _apiService.loginWithGoogle(
             email: googleUser.email,
             googleId: googleUser.id,
           );
 
           if (loginResponse['success'] == true) {
-            // User exists, proceed with login
             await _apiService.saveAuthToken(loginResponse['token']);
             if (mounted) {
               Navigator.pushReplacement(
@@ -115,69 +113,63 @@ class _LoginScreenState extends State<LoginScreen> {
               );
             }
           } else if (loginResponse['message'] == 'Google account not found') {
-            // User doesn't exist, show account type dialog and create account
-            final userType = await showAccountTypeDialog(context);
-            if (userType != null) {
-              String firstName = '';
-              String surName = '';
+            String firstName = '';
+            String surName = '';
 
-              if (googleUser.displayName != null) {
-                final names = googleUser.displayName!.split(' ');
-                firstName = names.isNotEmpty ? names[0] : '';
-                surName = names.length > 1 ? names.sublist(1).join(' ') : '';
-              }
+            if (googleUser.displayName != null) {
+              final names = googleUser.displayName!.split(' ');
+              firstName = names.isNotEmpty ? names[0] : '';
+              surName = names.length > 1 ? names.sublist(1).join(' ') : '';
+            }
 
-              final signupResponse = await _apiService.signUpWithGoogle(
-                firstName: firstName,
-                surName: surName,
+            final signupResponse = await _apiService.signUpWithGoogle(
+              firstName: firstName,
+              surName: surName,
+              email: googleUser.email,
+              googleId: googleUser.id,
+              photoUrl: googleUser.photoUrl ?? '',
+            );
+
+            if (signupResponse['success'] == true) {
+              final newLoginResponse = await _apiService.loginWithGoogle(
                 email: googleUser.email,
                 googleId: googleUser.id,
-                userType: userType,
-                photoUrl: googleUser.photoUrl ?? '',
               );
 
-              if (signupResponse['success'] == true) {
-                // After successful signup, login
-                final newLoginResponse = await _apiService.loginWithGoogle(
-                  email: googleUser.email,
-                  googleId: googleUser.id,
-                );
-
-                if (newLoginResponse['success'] == true) {
-                  await _apiService.saveAuthToken(newLoginResponse['token']);
-                  if (mounted) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const DashboardScreen()),
-                    );
-                  }
-                } else {
-                  Fluttertoast.showToast(msg: 'Login failed after signup');
+              if (newLoginResponse['success'] == true) {
+                await _apiService.saveAuthToken(newLoginResponse['token']);
+                if (mounted) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                  );
                 }
               } else {
-                Fluttertoast.showToast(msg: signupResponse['message'] ?? 'Google signup failed');
+                Fluttertoast.showToast(msg: 'Login failed after signup');
               }
+            } else {
+              Fluttertoast.showToast(
+                msg: signupResponse['message'] ?? 'Google signup failed',
+              );
             }
           } else {
-            Fluttertoast.showToast(msg: loginResponse['message'] ?? 'Google sign-in failed');
+            Fluttertoast.showToast(
+              msg: loginResponse['message'] ?? 'Google sign-in failed',
+            );
           }
         } catch (e) {
-          Fluttertoast.showToast(msg: 'Google sign-in failed: ${e.toString()}');
-        } finally {
-          await GoogleSignInService.signOut();
+          Fluttertoast.showToast(msg: 'Error during Google authentication: ${e.toString()}');
         }
       }
     } catch (e) {
       Fluttertoast.showToast(msg: 'Google sign-in failed: ${e.toString()}');
-      await GoogleSignInService.signOut();
-      await _apiService.logout();
-      await _apiService.clearAuthToken();
     } finally {
       if (mounted) {
         setState(() => _isGoogleSignInLoading = false);
       }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
