@@ -169,7 +169,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 : imageUrl != null
                 ? NetworkImage(imageUrl)
                 : const AssetImage('assets/images/icon.png') as ImageProvider,
-            child: _isLoading ? const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)) : null,
+            child: _isLoading
+                ? const CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            )
+                : null,
           ),
           if (_isEditing)
             Positioned(
@@ -182,7 +187,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 2),
                 ),
-                child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
               ),
             ),
         ],
@@ -256,11 +261,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  String _getDayWithSuffix(int day) {
+    if (day >= 11 && day <= 13) {
+      return '${day}th';
+    }
+    switch (day % 10) {
+      case 1: return '${day}st';
+      case 2: return '${day}nd';
+      case 3: return '${day}rd';
+      default: return '${day}th';
+    }
+  }
+
   String _formatJoinedDate(String? dateString) {
     if (dateString == null || dateString.isEmpty) return 'Member since unknown';
     try {
       final date = DateTime.parse(dateString);
-      return 'Joined ${_getMonthName(date.month)} ${date.year}';
+      return 'Joined ${_getDayWithSuffix(date.day)} ${_getMonthName(date.month)} ${date.year}';
     } catch (e) {
       return 'Member since $dateString';
     }
@@ -270,7 +287,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months[month - 1];
   }
-
+  String _getSignInMethodText() {
+    switch (_signupType) {
+      case 0:
+        return 'Email';
+      case 1:
+        return 'Google';
+      default:
+        return 'Unknown';
+    }
+  }
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -315,6 +341,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildDisplayTile('Email', _userData['email'] ?? '', Icons.email),
               _buildDisplayTile('Phone', _userData['phoneNum'] ?? '', Icons.phone),
               _buildDisplayTile('Gender', _userData['gender'] == 0 ? 'Male' : 'Female', Icons.person),
+              _buildDisplayTile('Account Type', _getSignInMethodText(), Icons.login),
               _buildDisplayTile('Member Since', _formatJoinedDate(_userData['createdAt']), Icons.calendar_today),
             ] else
               Form(
