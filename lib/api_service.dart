@@ -42,7 +42,6 @@ class ApiService {
     required int gender,
     required String email,
     required String phoneNum,
-    required int userType,
     required String password,
     required int signupType,
   }) async {
@@ -56,7 +55,6 @@ class ApiService {
           'gender': gender.toString(),
           'email': email,
           'phoneNum': phoneNum,
-          'userType': userType.toString(),
           'password': password,
           'signupType': signupType.toString(),
         },
@@ -76,7 +74,6 @@ class ApiService {
     required String surName,
     required String email,
     required String googleId,
-    required int userType,
     required String photoUrl,
   }) async {
     final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_signup.php");
@@ -89,7 +86,6 @@ class ApiService {
           'gender': '0',
           'email': email,
           'phoneNum': '',
-          'userType': userType.toString(),
           'password': '',
           'signupType': '1',
           'googleId': googleId,

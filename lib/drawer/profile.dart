@@ -334,7 +334,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 10),
             _buildProfileImage(),
             const SizedBox(height: 16),
-            Text(_isEditing ? 'Edit Profile' : _userData['userType'] == 0 ? 'Vehicle Owner' : 'Shop Owner', style: TextStyle(fontSize: 16, color: const Color(0xFF1A3D63).withOpacity(0.7), fontWeight: FontWeight.w500)),
             const SizedBox(height: 24),
             if (!_isEditing) ...[
               _buildDisplayTile('Full Name', '${_userData['firstName']} ${_userData['surName']}', Icons.person),

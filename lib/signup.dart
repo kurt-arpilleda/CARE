@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'api_service.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'google_signin_service.dart';
-import 'dialog/account_type_dialog.dart';
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
 
@@ -121,12 +119,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (!isValid) {
       return;
     }
-
-    if (_accountType == null) {
-      Fluttertoast.showToast(msg: 'Please select account type');
-      return;
-    }
-
     if (_gender == null) {
       Fluttertoast.showToast(msg: 'Please select gender');
       return;
@@ -145,7 +137,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
         gender: _gender == 'Male' ? 0 : 1,
         email: _emailController.text,
         phoneNum: _phoneController.text,
-        userType: _accountType == 'Driver' ? 0 : 1,
         password: _passwordController.text,
         signupType: 0, // Manual signup
       );
@@ -305,40 +296,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    DropdownButtonFormField<String>(
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.white.withOpacity(0.9),
-                        hintText: 'Account Type',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                        errorText: _touchedFields.contains('accountType') && _accountType == null
-                            ? 'Account type is required'
-                            : null,
-                      ),
-                      value: _accountType,
-                      style: const TextStyle(
-                        fontFamily: 'Lato-Italic',
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                        fontSize: 16,
-                      ),
-                      items: ['Driver', 'Shop Owner'].map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _accountType = value;
-                          _touchedFields.add('accountType');
-                        });
-                      },
                     ),
                     const SizedBox(height: 20),
                     DropdownButtonFormField<String>(
@@ -547,31 +504,28 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           final googleUser = await GoogleSignInService.signIn();
                           if (googleUser != null) {
                             try {
-                              final userType = await showAccountTypeDialog(context);
-                              if (userType != null) {
-                                String firstName = '';
-                                String surName = '';
+                              String firstName = '';
+                              String surName = '';
 
-                                if (googleUser.displayName != null) {
-                                  final names = googleUser.displayName!.split(' ');
-                                  firstName = names.isNotEmpty ? names[0] : '';
-                                  surName = names.length > 1 ? names.sublist(1).join(' ') : '';
-                                }
-                                final response = await _apiService.signUpWithGoogle(
-                                  firstName: firstName,
-                                  surName: surName,
-                                  email: googleUser.email,
-                                  googleId: googleUser.id,
-                                  userType: userType,
-                                  photoUrl: googleUser.photoUrl ?? '',
-                                );
+                              if (googleUser.displayName != null) {
+                                final names = googleUser.displayName!.split(' ');
+                                firstName = names.isNotEmpty ? names[0] : '';
+                                surName = names.length > 1 ? names.sublist(1).join(' ') : '';
+                              }
 
-                                if (response['success'] == true) {
-                                  Fluttertoast.showToast(msg: 'Google signup successful');
-                                  Navigator.pop(context);
-                                } else {
-                                  Fluttertoast.showToast(msg: response['message'] ?? 'Google signup failed');
-                                }
+                              final response = await _apiService.signUpWithGoogle(
+                                firstName: firstName,
+                                surName: surName,
+                                email: googleUser.email,
+                                googleId: googleUser.id,
+                                photoUrl: googleUser.photoUrl ?? '',
+                              );
+
+                              if (response['success'] == true) {
+                                Fluttertoast.showToast(msg: 'Google signup successful');
+                                Navigator.pop(context);
+                              } else {
+                                Fluttertoast.showToast(msg: response['message'] ?? 'Google signup failed');
                               }
                             } catch (e) {
                               Fluttertoast.showToast(msg: 'Google sign-up failed: ${e.toString()}');
