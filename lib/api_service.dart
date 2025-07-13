@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 class ApiService {
   static const String apiUrl = "https://126.209.7.246/";
   static const Duration requestTimeout = Duration(seconds: 10);
+  static const Duration requestTimeoutUploadImage = Duration(seconds: 20);
 
   late http.Client httpClient;
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
@@ -267,7 +268,7 @@ class ApiService {
         imageFile.path,
       ));
 
-      final response = await request.send().timeout(requestTimeout);
+      final response = await request.send().timeout(requestTimeoutUploadImage);
       final responseBody = await response.stream.bytesToString();
 
       if (response.statusCode == 200) {
