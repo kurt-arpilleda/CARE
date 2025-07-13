@@ -52,6 +52,36 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
 
   Future<void> _handleLogout() async {
     if (_isLoggingOut) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: const Color(0xFFF6FAFD),
+          title: const Text('Confirm Logout', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A3D63))),
+          content: const Text('Are you sure you want to logout?', style: TextStyle(color: Colors.black87)),
+          actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Logout', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
     setState(() => _isLoggingOut = true);
 
     try {
@@ -71,6 +101,8 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
       }
     }
   }
+
+
 
   Widget _buildProfileImage() {
     final imageUrl = _userPhotoUrl != null && _userPhotoUrl!.isNotEmpty

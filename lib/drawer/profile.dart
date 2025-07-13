@@ -339,9 +339,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             if (!_isEditing) ...[
               _buildDisplayTile('Full Name', '${_userData['firstName']} ${_userData['surName']}', Icons.person),
               _buildDisplayTile('Email', _userData['email'] ?? '', Icons.email),
+              _buildDisplayTile(
+                'Gender',
+                _userData['gender'] == 0 ? 'Male' : 'Female',
+                _userData['gender'] == 0 ? Icons.male : Icons.female,
+              ),
               _buildDisplayTile('Phone', _userData['phoneNum'] ?? '', Icons.phone),
-              _buildDisplayTile('Gender', _userData['gender'] == 0 ? 'Male' : 'Female', Icons.person),
-              _buildDisplayTile('Account Type', _getSignInMethodText(), Icons.login),
+              _buildDisplayTile('Sign-in Method', _getSignInMethodText(), Icons.login),
               _buildDisplayTile('Member Since', _formatJoinedDate(_userData['createdAt']), Icons.calendar_today),
             ] else
               Form(
@@ -363,8 +367,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           return null;
                         },
                       ),
-                    _buildEditableField('Phone', _phoneController, keyboardType: TextInputType.phone),
                     _buildGenderDropdown(),
+                    _buildEditableField('Phone', _phoneController, keyboardType: TextInputType.phone),
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
