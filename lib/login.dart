@@ -4,6 +4,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'api_service.dart';
 import 'dashboard.dart';
 import 'google_signin_service.dart';
+
 import 'dialog/forgot_password_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -104,7 +105,6 @@ class _LoginScreenState extends State<LoginScreen> {
           );
 
           if (loginResponse['success'] == true) {
-            // User exists, proceed with login
             await _apiService.saveAuthToken(loginResponse['token']);
             if (mounted) {
               Navigator.pushReplacement(
@@ -131,7 +131,6 @@ class _LoginScreenState extends State<LoginScreen> {
             );
 
             if (signupResponse['success'] == true) {
-              // After successful signup, login
               final newLoginResponse = await _apiService.loginWithGoogle(
                 email: googleUser.email,
                 googleId: googleUser.id,
@@ -149,22 +148,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 Fluttertoast.showToast(msg: 'Login failed after signup');
               }
             } else {
-              Fluttertoast.showToast(msg: signupResponse['message'] ?? 'Google signup failed');
+              Fluttertoast.showToast(
+                msg: signupResponse['message'] ?? 'Google signup failed',
+              );
             }
           } else {
-            Fluttertoast.showToast(msg: loginResponse['message'] ?? 'Google sign-in failed');
+            Fluttertoast.showToast(
+              msg: loginResponse['message'] ?? 'Google sign-in failed',
+            );
           }
         } catch (e) {
-          Fluttertoast.showToast(msg: 'Google sign-in failed: ${e.toString()}');
-        } finally {
-          await GoogleSignInService.signOut();
+          Fluttertoast.showToast(msg: 'Error during Google authentication: ${e.toString()}');
         }
       }
     } catch (e) {
       Fluttertoast.showToast(msg: 'Google sign-in failed: ${e.toString()}');
-      await GoogleSignInService.signOut();
-      await _apiService.logout();
-      await _apiService.clearAuthToken();
     } finally {
       if (mounted) {
         setState(() => _isGoogleSignInLoading = false);
