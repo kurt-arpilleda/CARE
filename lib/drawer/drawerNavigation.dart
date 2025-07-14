@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../api_service.dart';
 import 'profile.dart';
+import '../google_signin_service.dart';
 
 class DashboardDrawer extends StatefulWidget {
   const DashboardDrawer({Key? key}) : super(key: key);
@@ -87,11 +88,13 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
     try {
       await _apiService.logout();
       await _apiService.clearAuthToken();
+      await GoogleSignInService.signOut(); // Add this line
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } catch (e) {
       await _apiService.clearAuthToken();
+      await GoogleSignInService.signOut(); // Add this line
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
@@ -101,8 +104,6 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
       }
     }
   }
-
-
 
   Widget _buildProfileImage() {
     final imageUrl = _userPhotoUrl != null && _userPhotoUrl!.isNotEmpty
