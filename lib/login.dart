@@ -145,23 +145,28 @@ class _LoginScreenState extends State<LoginScreen> {
                   );
                 }
               } else {
+                await GoogleSignInService.signOut();
                 Fluttertoast.showToast(msg: 'Login failed after signup');
               }
             } else {
+              await GoogleSignInService.signOut();
               Fluttertoast.showToast(
                 msg: signupResponse['message'] ?? 'Google signup failed',
               );
             }
           } else {
+            await GoogleSignInService.signOut();
             Fluttertoast.showToast(
               msg: loginResponse['message'] ?? 'Google sign-in failed',
             );
           }
         } catch (e) {
+          await GoogleSignInService.signOut();
           Fluttertoast.showToast(msg: 'Error during Google authentication: ${e.toString()}');
         }
       }
     } catch (e) {
+      await GoogleSignInService.signOut();
       Fluttertoast.showToast(msg: 'Google sign-in failed: ${e.toString()}');
     } finally {
       if (mounted) {
