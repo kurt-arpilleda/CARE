@@ -88,13 +88,13 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
     try {
       await _apiService.logout();
       await _apiService.clearAuthToken();
-      await GoogleSignInService.signOut(); // Add this line
+      await GoogleSignInService.signOut();
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } catch (e) {
       await _apiService.clearAuthToken();
-      await GoogleSignInService.signOut(); // Add this line
+      await GoogleSignInService.signOut();
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
