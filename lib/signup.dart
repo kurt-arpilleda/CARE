@@ -522,6 +522,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 Fluttertoast.showToast(msg: 'Google signup successful');
                                 Navigator.pop(context);
                               } else {
+                                await GoogleSignInService.signOut();
                                 Fluttertoast.showToast(msg: response['message'] ?? 'Google signup failed');
                               }
                             } catch (e) {
