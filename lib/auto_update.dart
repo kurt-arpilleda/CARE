@@ -15,14 +15,13 @@ class AutoUpdate {
   static const String versionPath = "V4/Others/Kurt/LatestVersionAPK/Care/version.json";
   static const String apkPathPrefix = "V4/Others/Kurt/LatestVersionAPK/Care/";
 
-  static const Duration requestTimeout = Duration(seconds: 2);
+  static const Duration requestTimeout = Duration(seconds: 5);
   static const int maxRetries = 6;
   static const Duration initialRetryDelay = Duration(seconds: 1);
 
   static bool isUpdating = false;
 
   static Future<void> checkForUpdate(BuildContext context) async {
-    // If already updating, don't start another update
     if (isUpdating) {
       return;
     }
