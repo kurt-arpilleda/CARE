@@ -76,8 +76,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (value.length < 8) {
       return 'Password must be at least 8 characters';
     }
-
-    // Check for at least one uppercase, one lowercase, one number, and one special character
     final passwordRegex = RegExp(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$');
     if (!passwordRegex.hasMatch(value)) {
       return 'Password must include uppercase, lowercase, number, and special character';
@@ -113,7 +111,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
       _touchedFields.add('confirmPassword');
     }
 
-    // Validate all fields
     bool isValid = _formKey.currentState!.validate();
 
     if (!isValid) {
@@ -184,7 +181,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ),
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5), // Added horizontal padding
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -236,7 +233,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               children: [
                                 TextFormField(
                                   controller: _firstNameController,
-                                  textCapitalization: TextCapitalization.sentences, // 👈 this is the key
+                                  textCapitalization: TextCapitalization.sentences,
                                   style: const TextStyle(
                                     fontFamily: 'Lato-Italic',
                                     fontWeight: FontWeight.w500,
@@ -268,7 +265,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               children: [
                                 TextFormField(
                                   controller: _surNameController,
-                                  textCapitalization: TextCapitalization.sentences, // 👈 default to uppercase
+                                  textCapitalization: TextCapitalization.sentences,
                                   style: const TextStyle(
                                     fontFamily: 'Lato-Italic',
                                     fontWeight: FontWeight.w500,

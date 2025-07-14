@@ -45,7 +45,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   }
 
   Future<void> _onGetStarted() async {
-    // Animate out (optional fade-out or scale down)
     await _controller.reverse();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isFirstOpen', false);
