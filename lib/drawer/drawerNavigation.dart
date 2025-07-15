@@ -1,7 +1,9 @@
+// drawerNavigation.dart (updated)
 import 'package:flutter/material.dart';
 import '../api_service.dart';
 import 'profile.dart';
 import '../google_signin_service.dart';
+import '../vehicle/vehicleOptions.dart'; // Add this import
 
 class DashboardDrawer extends StatefulWidget {
   const DashboardDrawer({Key? key}) : super(key: key);
@@ -176,6 +178,15 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                             title: const Text("Register Shop"),
                             onTap: () {
                               Navigator.pop(context);
+                            },
+                          ),
+                          // Add the new Register Vehicle option
+                          ListTile(
+                            leading: const Icon(Icons.directions_car_filled),
+                            title: const Text("Register Vehicle"),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => const VehicleOptionsScreen()));
                             },
                           ),
                         ],
