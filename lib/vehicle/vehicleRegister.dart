@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import '../api_service.dart';
 
 class VehicleRegisterScreen extends StatefulWidget {
   final String vehicleType;
@@ -10,184 +12,346 @@ class VehicleRegisterScreen extends StatefulWidget {
 }
 
 class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
-  List<Map<String, String>> vehicles = [
-    {'model': '', 'plateNumber': ''}
+  List<Map<String, dynamic>> vehicles = [
+    {'model': '', 'plateNumber': '', 'hasError': false, 'errorMessage': ''}
   ];
+  final _apiService = ApiService();
+  bool _isSaving = false;
+  List<TextEditingController> modelControllers = [TextEditingController()];
+  List<TextEditingController> plateControllers = [TextEditingController()];
+
+  @override
+  void dispose() {
+    for (var controller in modelControllers) {
+      controller.dispose();
+    }
+    for (var controller in plateControllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _saveVehicles() async {
+    for (int i = 0; i < vehicles.length; i++) {
+      vehicles[i]['model'] = modelControllers[i].text;
+      vehicles[i]['plateNumber'] = plateControllers[i].text;
+    }
+
+    bool hasEmptyFields = false;
+    List<Map<String, dynamic>> validVehicles = [];
+
+    for (int i = 0; i < vehicles.length; i++) {
+      final vehicle = vehicles[i];
+      if (vehicle['model'].toString().trim().isEmpty ||
+          vehicle['plateNumber'].toString().trim().isEmpty) {
+        setState(() {
+          vehicles[i]['hasError'] = true;
+          vehicles[i]['errorMessage'] = 'Please fill all fields';
+        });
+        hasEmptyFields = true;
+      } else {
+        validVehicles.add({
+          'vehicleType': widget.vehicleType,
+          'model': vehicle['model'],
+          'plateNumber': vehicle['plateNumber']
+        });
+      }
+    }
+
+    if (hasEmptyFields || validVehicles.isEmpty) {
+      Fluttertoast.showToast(msg: 'Please fill all required fields');
+      return;
+    }
+
+    final shouldSave = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Save'),
+        content: Text('Are you sure you want to save ${validVehicles.length} vehicle(s)?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldSave != true) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      final token = await _apiService.getAuthToken();
+      if (token == null) {
+        throw Exception("No auth token found");
+      }
+
+      final response = await _apiService.addVehicles(
+        token: token,
+        vehicles: validVehicles,
+      );
+
+      if (response['success'] == true) {
+        Fluttertoast.showToast(msg: response['message']);
+        setState(() {
+          vehicles = [
+            {'model': '', 'plateNumber': '', 'hasError': false, 'errorMessage': ''}
+          ];
+          for (var controller in modelControllers) {
+            controller.dispose();
+          }
+          for (var controller in plateControllers) {
+            controller.dispose();
+          }
+          modelControllers = [TextEditingController()];
+          plateControllers = [TextEditingController()];
+        });
+      } else if (response['duplicates'] != null) {
+        for (var error in response['duplicates']) {
+          final index = error['index'];
+          if (index < vehicles.length) {
+            setState(() {
+              vehicles[index]['hasError'] = true;
+              vehicles[index]['errorMessage'] = error['message'];
+            });
+          }
+        }
+        Fluttertoast.showToast(msg: 'Some vehicles already exist');
+      } else {
+        Fluttertoast.showToast(msg: response['message'] ?? 'Failed to save vehicles');
+      }
+    } catch (e) {
+      Fluttertoast.showToast(msg: 'Error: ${e.toString()}');
+    } finally {
+      setState(() => _isSaving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6FAFD),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              color: const Color(0xFF1A3D63),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0), // Add slight top padding
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                        const Spacer(),
-                        TextButton(
-                          style: TextButton.styleFrom(
-                            backgroundColor: const Color(0xFF4CAF50),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          ),
-                          onPressed: () {
-                            // Save logic goes here
-                          },
-                          child: const Text(
-                            'Save',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Center(
-                    child: Text(
-                      '${widget.vehicleType} Information',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28, // Increased font size
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
+      backgroundColor: const Color(0xFF1A3D63),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          setState(() {
+            vehicles.add({
+              'model': '',
+              'plateNumber': '',
+              'hasError': false,
+              'errorMessage': ''
+            });
+            modelControllers.add(TextEditingController());
+            plateControllers.add(TextEditingController());
+          });
+        },
+        backgroundColor: Colors.blue[600],
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            backgroundColor: Colors.white,
+            elevation: 2,
+            pinned: true,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black87),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            title: Text(
+              '${widget.vehicleType} Registration',
+              style: const TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.w600,
+                fontSize: 20,
               ),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: vehicles.length == 1
-                    ? Center(
-                  child: SingleChildScrollView(
-                    physics: const ClampingScrollPhysics(),
+            actions: [
+              _isSaving
+                  ? const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.blue,
+                    ),
+                  ),
+                ),
+              )
+                  : TextButton.icon(
+                icon: const Icon(Icons.save, color: Colors.blue),
+                label: const Text(
+                  'Save',
+                  style: TextStyle(color: Colors.blue),
+                ),
+                onPressed: _saveVehicles,
+              ),
+            ],
+          ),
+          if (vehicles.length == 1)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
                     child: _buildVehicleCard(0),
                   ),
-                )
-                    : ListView.builder(
-                  physics: const ClampingScrollPhysics(),
-                  itemCount: vehicles.length,
-                  itemBuilder: (context, index) {
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.all(16.0),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                      (context, index) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16.0),
                       child: _buildVehicleCard(index),
                     );
                   },
+                  childCount: vehicles.length,
                 ),
               ),
             ),
-          ],
-        ),
+          SliverToBoxAdapter(
+            child: SizedBox(height: 80),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          setState(() {
-            vehicles.add({'model': '', 'plateNumber': ''});
-          });
-        },
-        backgroundColor: const Color(0xFF4A7FA7),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
   Widget _buildVehicleCard(int index) {
+    final vehicle = vehicles[index];
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
       ),
+      shadowColor: Colors.black.withOpacity(0.1),
       child: Container(
         width: double.infinity,
-        constraints: vehicles.length == 1 ? const BoxConstraints(maxWidth: 500) : null,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: const Color(0xFF1A3D63),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(12),
+          color: vehicle['hasError'] ? Colors.red[50] : Colors.white,
+          border: vehicle['hasError']
+              ? Border.all(color: Colors.red, width: 1)
+              : null,
         ),
         child: Stack(
           children: [
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(20.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (vehicle['hasError'])
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Text(
+                        vehicle['errorMessage'],
+                        style: TextStyle(
+                          color: Colors.red[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  Text(
+                    '${widget.vehicleType} ${index + 1}',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: vehicle['hasError']
+                          ? Colors.red[700]
+                          : Colors.blue[800],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Model',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  Center(
-                    child: Text(
-                      '${widget.vehicleType} ${index + 1}',
-                      style: const TextStyle(
-                        fontSize: 20, // Increased font size
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(10),
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: vehicle['hasError']
+                            ? Colors.red
+                            : Colors.grey[300]!,
+                        width: 1,
+                      ),
                     ),
                     child: TextField(
+                      controller: modelControllers[index],
                       decoration: const InputDecoration(
-                        hintText: 'Vehicle Model',
-                        hintStyle: TextStyle(color: Color(0xFF0A1931)),
+                        hintText: 'Enter vehicle model',
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                       onChanged: (value) {
-                        vehicles[index]['model'] = value;
+                        setState(() {
+                          vehicles[index]['model'] = value;
+                          vehicles[index]['hasError'] = false;
+                          vehicles[index]['errorMessage'] = '';
+                        });
                       },
                       style: const TextStyle(
-                        color: Color(0xFF0A1931),
+                        color: Colors.black87,
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
+                  Text(
+                    'Plate Number',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(10),
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: vehicle['hasError']
+                            ? Colors.red
+                            : Colors.grey[300]!,
+                        width: 1,
+                      ),
                     ),
                     child: TextField(
+                      controller: plateControllers[index],
                       decoration: const InputDecoration(
-                        hintText: 'Plate Number',
-                        hintStyle: TextStyle(color: Color(0xFF0A1931)),
+                        hintText: 'Enter plate number',
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                       onChanged: (value) {
-                        vehicles[index]['plateNumber'] = value;
+                        setState(() {
+                          vehicles[index]['plateNumber'] = value;
+                          vehicles[index]['hasError'] = false;
+                          vehicles[index]['errorMessage'] = '';
+                        });
                       },
                       style: const TextStyle(
-                        color: Color(0xFF0A1931),
+                        color: Colors.black87,
                       ),
                     ),
                   ),
@@ -196,25 +360,29 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
             ),
             if (vehicles.length > 1)
               Positioned(
-                top: 8,
-                right: 8,
+                top: 12,
+                right: 12,
                 child: InkWell(
                   onTap: () {
                     setState(() {
                       vehicles.removeAt(index);
+                      modelControllers[index].dispose();
+                      plateControllers[index].dispose();
+                      modelControllers.removeAt(index);
+                      plateControllers.removeAt(index);
                     });
                   },
                   borderRadius: BorderRadius.circular(20),
                   child: Container(
-                    padding: const EdgeInsets.all(4),
+                    padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.grey[200],
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.close,
-                      color: Color(0xFF1A3D63),
-                      size: 20,
+                      color: Colors.grey[700],
+                      size: 18,
                     ),
                   ),
                 ),
