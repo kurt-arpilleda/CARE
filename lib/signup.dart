@@ -39,6 +39,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
     return null;
   }
+  String? _validateName(String? value, String fieldName) {
+    if (value == null || value.isEmpty) {
+      return '$fieldName is required';
+    }
+
+    final validCharacters = RegExp(r"^[a-zA-Z .,'-]+$");
+    if (!validCharacters.hasMatch(value)) {
+      return 'Only letters, spaces, and .,-\' are allowed';
+    }
+
+    return null;
+  }
 
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
@@ -247,7 +259,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                       borderSide: BorderSide.none,
                                     ),
                                     errorText: _touchedFields.contains('firstName')
-                                        ? _validateRequired(_firstNameController.text, 'First name')
+                                        ? _validateName(_firstNameController.text, 'First name')
                                         : null,
                                   ),
                                   onChanged: (value) {
@@ -279,7 +291,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                       borderSide: BorderSide.none,
                                     ),
                                     errorText: _touchedFields.contains('surName')
-                                        ? _validateRequired(_surNameController.text, 'Surname')
+                                        ? _validateName(_surNameController.text, 'Surname')
                                         : null,
                                   ),
                                   onChanged: (value) {

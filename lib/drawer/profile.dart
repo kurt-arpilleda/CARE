@@ -311,7 +311,20 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       ),
     );
   }
+  bool _isValidName(String name) {
+    final validCharacters = RegExp(r"^[a-zA-Z .,'-]+$");
+    return validCharacters.hasMatch(name);
+  }
 
+  String? _nameValidator(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Name is required';
+    }
+    if (!_isValidName(value)) {
+      return 'Only letters, spaces, and .,-\' are allowed';
+    }
+    return null;
+  }
   Widget _buildEditableField(String label, TextEditingController controller, {bool enabled = true, TextInputType? keyboardType, String? Function(String?)? validator}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -442,8 +455,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 key: _formKey,
                 child: Column(
                   children: [
-                    _buildEditableField('First Name', _firstNameController),
-                    _buildEditableField('Last Name', _surNameController),
+                    _buildEditableField('First Name', _firstNameController, validator: _nameValidator),
+                    _buildEditableField('Last Name', _surNameController, validator: _nameValidator),
                     if (_signupType == 0)
                       _buildEditableField(
                         'Email',

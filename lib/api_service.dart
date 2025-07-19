@@ -9,8 +9,10 @@ import 'package:uuid/uuid.dart';
 
 class ApiService {
   static const String apiUrl = "https://126.209.7.246/";
-  static const Duration requestTimeout = Duration(seconds: 10);
-  static const Duration requestTimeoutUploadImage = Duration(seconds: 20);
+  static const Duration requestTimeout = Duration(seconds: 15);
+  static const Duration requestTimeoutUploadImage = Duration(seconds: 45);
+  static const int maxRetries = 3;
+  static const Duration retryDelay = Duration(seconds: 1);
 
   late http.Client httpClient;
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
@@ -22,8 +24,10 @@ class ApiService {
   }
 
   http.Client _createHttpClient() {
-    final HttpClient client = HttpClient()
-      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+    final HttpClient client = HttpClient();
+    client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+    client.connectionTimeout = requestTimeout;
+    client.idleTimeout = const Duration(seconds: 30);
     return IOClient(client);
   }
 
@@ -36,6 +40,21 @@ class ApiService {
     return deviceId;
   }
 
+  Future<Map<String, dynamic>> _executeWithRetry(Future<Map<String, dynamic>> Function() fn) async {
+    int attempt = 0;
+    while (true) {
+      try {
+        return await fn();
+      } catch (e) {
+        attempt++;
+        if (attempt >= maxRetries) {
+          rethrow;
+        }
+        await Future.delayed(retryDelay * attempt);
+      }
+    }
+  }
+
   Future<Map<String, dynamic>> signUp({
     required String firstName,
     required String surName,
@@ -45,8 +64,8 @@ class ApiService {
     required String password,
     required int signupType,
   }) async {
-    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_signup.php");
-    try {
+    return _executeWithRetry(() async {
+      final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_signup.php");
       final response = await httpClient.post(
         uri,
         body: {
@@ -63,10 +82,8 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
-      throw Exception("HTTP ${response.statusCode}");
-    } catch (e) {
-      throw Exception("Network error: ${e.toString()}");
-    }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
   }
 
   Future<Map<String, dynamic>> signUpWithGoogle({
@@ -76,8 +93,8 @@ class ApiService {
     required String googleId,
     required String photoUrl,
   }) async {
-    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_signup.php");
-    try {
+    return _executeWithRetry(() async {
+      final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_signup.php");
       final response = await httpClient.post(
         uri,
         body: {
@@ -96,19 +113,17 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
-      throw Exception("HTTP ${response.statusCode}");
-    } catch (e) {
-      throw Exception("Network error: ${e.toString()}");
-    }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
   }
 
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
   }) async {
-    final deviceId = await _getOrCreateDeviceId();
-    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_login.php");
-    try {
+    return _executeWithRetry(() async {
+      final deviceId = await _getOrCreateDeviceId();
+      final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_login.php");
       final response = await httpClient.post(
         uri,
         body: {
@@ -121,19 +136,17 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
-      throw Exception("HTTP ${response.statusCode}");
-    } catch (e) {
-      throw Exception("Network error: ${e.toString()}");
-    }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
   }
 
   Future<Map<String, dynamic>> loginWithGoogle({
     required String email,
     required String googleId,
   }) async {
-    final deviceId = await _getOrCreateDeviceId();
-    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_login.php");
-    try {
+    return _executeWithRetry(() async {
+      final deviceId = await _getOrCreateDeviceId();
+      final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_login.php");
       final response = await httpClient.post(
         uri,
         body: {
@@ -147,17 +160,15 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
-      throw Exception("HTTP ${response.statusCode}");
-    } catch (e) {
-      throw Exception("Network error: ${e.toString()}");
-    }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
   }
 
   Future<Map<String, dynamic>> sendPasswordResetEmail({
     required String emailOrPhone,
   }) async {
-    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_reset_password.php");
-    try {
+    return _executeWithRetry(() async {
+      final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_reset_password.php");
       final response = await httpClient.post(
         uri,
         body: {'emailOrPhone': emailOrPhone},
@@ -166,20 +177,18 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
-      throw Exception("HTTP ${response.statusCode}");
-    } catch (e) {
-      throw Exception("Network error: ${e.toString()}");
-    }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
   }
 
   Future<Map<String, dynamic>> getUserData() async {
-    final token = await getAuthToken();
-    if (token == null) {
-      throw Exception("No auth token found");
-    }
+    return _executeWithRetry(() async {
+      final token = await getAuthToken();
+      if (token == null) {
+        throw Exception("No auth token found");
+      }
 
-    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_get_user.php");
-    try {
+      final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_get_user.php");
       final response = await httpClient.post(
         uri,
         body: {'token': token},
@@ -188,11 +197,10 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
-      throw Exception("HTTP ${response.statusCode}");
-    } catch (e) {
-      throw Exception("Network error: ${e.toString()}");
-    }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
   }
+
   Future<Map<String, dynamic>> updateProfile({
     required String firstName,
     required String surName,
@@ -200,13 +208,13 @@ class ApiService {
     required String phoneNum,
     required int gender,
   }) async {
-    final token = await getAuthToken();
-    if (token == null) {
-      throw Exception("No auth token found");
-    }
+    return _executeWithRetry(() async {
+      final token = await getAuthToken();
+      if (token == null) {
+        throw Exception("No auth token found");
+      }
 
-    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_updateProfile.php");
-    try {
+      final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_updateProfile.php");
       final response = await httpClient.post(
         uri,
         body: {
@@ -222,19 +230,18 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
-      throw Exception("HTTP ${response.statusCode}");
-    } catch (e) {
-      throw Exception("Network error: ${e.toString()}");
-    }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
   }
-  Future<Map<String, dynamic>> logout() async {
-    final token = await getAuthToken();
-    if (token == null) {
-      throw Exception("No auth token found");
-    }
 
-    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_logout.php");
-    try {
+  Future<Map<String, dynamic>> logout() async {
+    return _executeWithRetry(() async {
+      final token = await getAuthToken();
+      if (token == null) {
+        throw Exception("No auth token found");
+      }
+
+      final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_logout.php");
       final response = await httpClient.post(
         uri,
         body: {'token': token},
@@ -243,20 +250,18 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
-      throw Exception("HTTP ${response.statusCode}");
-    } catch (e) {
-      throw Exception("Network error: ${e.toString()}");
-    }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
   }
+
   Future<Map<String, dynamic>> uploadProfilePicture(File imageFile) async {
-    final token = await getAuthToken();
-    if (token == null) {
-      throw Exception("No auth token found");
-    }
+    return _executeWithRetry(() async {
+      final token = await getAuthToken();
+      if (token == null) {
+        throw Exception("No auth token found");
+      }
 
-    final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_uploadImageProfile.php");
-
-    try {
+      final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_uploadImageProfile.php");
       var request = http.MultipartRequest('POST', uri);
       request.fields['token'] = token;
       request.files.add(await http.MultipartFile.fromPath(
@@ -270,11 +275,10 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(responseBody);
       }
-      throw Exception("HTTP ${response.statusCode}");
-    } catch (e) {
-      throw Exception("Network error: ${e.toString()}");
-    }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
   }
+
   Future<void> saveAuthToken(String token) async {
     await _secureStorage.write(key: 'authToken', value: token);
   }
@@ -303,7 +307,10 @@ class ApiService {
 class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+    final HttpClient client = super.createHttpClient(context);
+    client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+    client.connectionTimeout = ApiService.requestTimeout;
+    client.idleTimeout = const Duration(seconds: 30);
+    return client;
   }
 }
