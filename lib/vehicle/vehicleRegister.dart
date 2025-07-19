@@ -87,9 +87,7 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
 
     try {
       final token = await _apiService.getAuthToken();
-      if (token == null) {
-        throw Exception("No auth token found");
-      }
+      if (token == null) throw Exception("No auth token found");
 
       final response = await _apiService.addVehicles(
         token: token,
@@ -135,7 +133,7 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A3D63),
+      backgroundColor: const Color(0xFFF6FAFD),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           setState(() {
@@ -152,78 +150,103 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
         backgroundColor: Colors.blue[600],
         child: const Icon(Icons.add, color: Colors.white),
       ),
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            backgroundColor: Colors.white,
-            elevation: 2,
-            pinned: true,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.black87),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            title: Text(
-              '${widget.vehicleType} Registration',
-              style: const TextStyle(
-                color: Colors.black87,
-                fontWeight: FontWeight.w600,
-                fontSize: 20,
-              ),
-            ),
-            actions: [
-              _isSaving
-                  ? const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.blue,
+      body: Column(
+        children: [
+          // Static header
+          Container(
+            color: Color(0xFF1A3D63),
+            padding: const EdgeInsets.only(top: 30),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Color(0xFFF6FAFD)),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                      _isSaving
+                          ? const Padding(
+                        padding: EdgeInsets.only(right: 12.0),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      )
+                          : TextButton.icon(
+                        icon: const Icon(Icons.save, color: Colors.blue, size: 22),
+                        label: const Text(
+                          'Save',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        onPressed: _saveVehicles,
+                      )
+                    ],
+                  ),
+                ),
+                // Row 2: Title
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Text(
+                      '${widget.vehicleType} Registration',
+                      style: const TextStyle(
+                        color: Color(0xFFF6FAFD),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 25,
+                      ),
                     ),
                   ),
                 ),
-              )
-                  : TextButton.icon(
-                icon: const Icon(Icons.save, color: Colors.blue),
-                label: const Text(
-                  'Save',
-                  style: TextStyle(color: Colors.blue),
-                ),
-                onPressed: _saveVehicles,
-              ),
-            ],
-          ),
-          if (vehicles.length == 1)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: _buildVehicleCard(0),
-                  ),
-                ),
-              ),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.all(16.0),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: _buildVehicleCard(index),
-                    );
-                  },
-                  childCount: vehicles.length,
-                ),
-              ),
+              ],
             ),
-          SliverToBoxAdapter(
-            child: SizedBox(height: 80),
+          ),
+          // Scrollable content
+          Expanded(
+            child: CustomScrollView(
+              slivers: [
+                if (vehicles.length == 1)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: _buildVehicleCard(0),
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.all(16.0),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16.0),
+                            child: _buildVehicleCard(index),
+                          );
+                        },
+                        childCount: vehicles.length,
+                      ),
+                    ),
+                  ),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 80),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -233,11 +256,11 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
   Widget _buildVehicleCard(int index) {
     final vehicle = vehicles[index];
     return Card(
-      elevation: 4,
+      elevation: 6,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      shadowColor: Colors.black.withOpacity(0.1),
+      shadowColor: Colors.black.withOpacity(0.5),
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
@@ -265,7 +288,7 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
                         ),
                       ),
                     ),
-                  const SizedBox(height: 8),  // Added some spacing instead of the title
+                  const SizedBox(height: 8),
                   Text(
                     'Model',
                     style: TextStyle(
@@ -383,3 +406,5 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
     );
   }
 }
+
+
