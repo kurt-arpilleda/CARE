@@ -15,6 +15,8 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
   List<dynamic> _vehicles = [];
   bool _isLoading = true;
   bool _hasInternet = true;
+  bool _isEditing = false;
+  bool _isSaving = false;
   final Map<String, String> _vehicleTypeMap = {
     '0': 'Car',
     '1': 'Motorcycle',
@@ -23,51 +25,51 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
     '4': 'Bus',
     '5': 'Jeep',
   };
-
-  // Animation controllers for the loading dots
   late AnimationController _loadingController;
   late Animation<double> _dot1Animation;
   late Animation<double> _dot2Animation;
   late Animation<double> _dot3Animation;
+  List<TextEditingController> _modelControllers = [];
+  List<TextEditingController> _plateControllers = [];
 
   @override
   void initState() {
     super.initState();
-
-    // Initialize loading animation
     _loadingController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat();
-
     _dot1Animation = Tween(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _loadingController,
         curve: const Interval(0.0, 0.3, curve: Curves.easeInOut),
       ),
     );
-
     _dot2Animation = Tween(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _loadingController,
         curve: const Interval(0.2, 0.5, curve: Curves.easeInOut),
       ),
     );
-
     _dot3Animation = Tween(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _loadingController,
-        curve: const Interval(0.4, 0.7, curve: Curves.easeInOut),
-      ),
+        CurvedAnimation(
+          parent: _loadingController,
+          curve: const Interval(0.4, 0.7, curve: Curves.easeInOut),
+        ),
     );
-
-    _checkInternetAndLoadVehicles();
+        _checkInternetAndLoadVehicles();
   }
 
   @override
   void dispose() {
     _loadingController.dispose();
     _apiService.dispose();
+    for (var controller in _modelControllers) {
+      controller.dispose();
+    }
+    for (var controller in _plateControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -76,7 +78,6 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
     setState(() {
       _hasInternet = connectivityResult != ConnectivityResult.none;
     });
-
     if (_hasInternet) {
       _loadVehicles();
     } else {
@@ -84,7 +85,6 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
     }
   }
 
-  // Loading widget with three animated dots
   Widget _buildLoadingAnimation() {
     return Center(
       child: Row(
@@ -137,6 +137,8 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
       if (response['success'] == true) {
         setState(() {
           _vehicles = response['vehicles'];
+          _modelControllers = _vehicles.map((v) => TextEditingController(text: v['vehicle_model'])).toList();
+          _plateControllers = _vehicles.map((v) => TextEditingController(text: v['plate_number'])).toList();
           _isLoading = false;
         });
       } else {
@@ -159,6 +161,53 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
     } catch (e) {
       Fluttertoast.showToast(msg: 'Error updating vehicle: ${e.toString()}');
       _loadVehicles();
+    }
+  }
+
+  Future<void> _deleteVehicle(int vehicleId) async {
+    try {
+      final token = await _apiService.getAuthToken();
+      if (token == null) throw Exception("No auth token found");
+
+      final response = await _apiService.deleteVehicle(token: token, vehicleId: vehicleId);
+      if (response['success'] == true) {
+        Fluttertoast.showToast(msg: response['message']);
+        _loadVehicles();
+      } else {
+        Fluttertoast.showToast(msg: response['message'] ?? 'Failed to delete vehicle');
+      }
+    } catch (e) {
+      Fluttertoast.showToast(msg: 'Error deleting vehicle: ${e.toString()}');
+    }
+  }
+
+  Future<void> _saveChanges() async {
+    setState(() => _isSaving = true);
+    try {
+      final token = await _apiService.getAuthToken();
+      if (token == null) throw Exception("No auth token found");
+
+      List<Map<String, dynamic>> updatedVehicles = [];
+      for (int i = 0; i < _vehicles.length; i++) {
+        updatedVehicles.add({
+          'id': _vehicles[i]['id'],
+          'vehicle_model': _modelControllers[i].text,
+          'plate_number': _plateControllers[i].text,
+        });
+      }
+
+      final response = await _apiService.updateVehicles(token: token, vehicles: updatedVehicles);
+      if (response['success'] == true) {
+        Fluttertoast.showToast(msg: response['message']);
+        setState(() => _isEditing = false);
+        _loadVehicles();
+      } else {
+        Fluttertoast.showToast(msg: response['message'] ?? 'Failed to update vehicles');
+      }
+    } catch (e) {
+      Fluttertoast.showToast(msg: 'Error saving changes: ${e.toString()}');
+    } finally {
+      setState(() => _isSaving = false);
     }
   }
 
@@ -220,6 +269,16 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6FAFD),
+      floatingActionButton: _isEditing
+          ? FloatingActionButton.extended(
+        onPressed: _isSaving ? null : _saveChanges,
+        backgroundColor: const Color(0xFF1A3D63),
+        label: _isSaving
+            ? _buildLoadingAnimation()
+            : const Text('Save', style: TextStyle(color: Colors.white)),
+        icon: const Icon(Icons.save, color: Colors.white),
+      )
+          : null,
       body: Column(
         children: [
           Container(
@@ -247,6 +306,19 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: IconButton(
+                          icon: Icon(
+                              _isEditing ? Icons.close : Icons.edit,
+                              color: const Color(0xFFF6FAFD)),
+                          onPressed: () {
+                            setState(() {
+                              _isEditing = !_isEditing;
+                            });
+                          },
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -268,7 +340,7 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
                         final vehicle = _vehicles[index];
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16.0),
-                          child: _buildVehicleCard(vehicle),
+                          child: _buildVehicleCard(vehicle, index),
                         );
                       },
                       childCount: _vehicles.length,
@@ -283,7 +355,7 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
     );
   }
 
-  Widget _buildVehicleCard(Map<String, dynamic> vehicle) {
+  Widget _buildVehicleCard(Map<String, dynamic> vehicle, int index) {
     return Card(
       elevation: 6,
       shape: RoundedRectangleBorder(
@@ -312,7 +384,45 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
                       color: Color(0xFF1A3D63),
                     ),
                   ),
-                  Switch(
+                  _isEditing
+                      ?
+                  IconButton(
+                    icon: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Colors.red,
+                        size: 24,
+                      ),
+                    ),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Delete Vehicle'),
+                          content: const Text('Are you sure you want to delete this vehicle?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _deleteVehicle(vehicle['id']);
+                              },
+                              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  )
+                      : Switch(
                     value: vehicle['isActivate'] == 1,
                     onChanged: (value) {
                       setState(() {
@@ -325,82 +435,131 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
                 ],
               ),
               const SizedBox(height: 16),
-              Row(
+              _isEditing
+                  ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(
-                    width: 100, // Fixed width for labels
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        'Model',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                  const Text(
+                    'Model',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _modelControllers[index],
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.grey[300]!,
-                          width: 1,
-                        ),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
                       ),
-                      child: Text(
-                        vehicle['vehicle_model'] ?? '',
-                        style: const TextStyle(
-                          color: Colors.black87,
-                        ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Plate Number',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _plateControllers[index],
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
                       ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              )
+                  : Column(
                 children: [
-                  SizedBox(
-                    width: 100, // Fixed width for labels (same as above)
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        'Plate Number',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w500,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 100,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'Model',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.grey[300]!,
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            vehicle['vehicle_model'] ?? '',
+                            style: const TextStyle(
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.grey[300]!,
-                          width: 1,
+                  const SizedBox(height: 16),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 100,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'Plate Number',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
                       ),
-                      child: Text(
-                        vehicle['plate_number'] ?? '',
-                        style: const TextStyle(
-                          color: Colors.black87,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.grey[300]!,
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            vehicle['plate_number'] ?? '',
+                            style: const TextStyle(
+                              color: Colors.black87,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),

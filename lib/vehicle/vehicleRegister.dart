@@ -75,7 +75,7 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Save'),
+            child: const Text('Yes'),
           ),
         ],
       ),
@@ -134,84 +134,73 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6FAFD),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          setState(() {
-            vehicles.add({
-              'model': '',
-              'plateNumber': '',
-              'hasError': false,
-              'errorMessage': ''
-            });
-            modelControllers.add(TextEditingController());
-            plateControllers.add(TextEditingController());
-          });
-        },
-        backgroundColor: Colors.blue[600],
-        child: const Icon(Icons.add, color: Colors.white),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _isSaving ? null : _saveVehicles,
+        backgroundColor: const Color(0xFF1A3D63),
+        label: _isSaving
+            ? const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Colors.white,
+          ),
+        )
+            : const Text('Save', style: TextStyle(color: Colors.white)),
+        icon: const Icon(Icons.save, color: Colors.white),
       ),
       body: Column(
         children: [
-          // Static header
           Container(
-            color: Color(0xFF1A3D63),
+            color: const Color(0xFF1A3D63),
             padding: const EdgeInsets.only(top: 30),
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16),
+                  child: Stack(
+                    alignment: Alignment.center,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Color(0xFFF6FAFD)),
-                        onPressed: () => Navigator.of(context).pop(),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Color(0xFFF6FAFD)),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
                       ),
-                      _isSaving
-                          ? const Padding(
-                        padding: EdgeInsets.only(right: 12.0),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.blue,
-                          ),
+                      Text(
+                        '${widget.vehicleType} Registration',
+                        style: const TextStyle(
+                          color: Color(0xFFF6FAFD),
+                          fontSize: 25,
+                          fontWeight: FontWeight.w600,
                         ),
-                      )
-                          : TextButton.icon(
-                        icon: const Icon(Icons.save, color: Colors.blue, size: 22),
-                        label: const Text(
-                          'Save',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: IconButton(
+                          icon: const Icon(Icons.add_circle_outline, color: Color(0xFFF6FAFD), size: 30),
+                          tooltip: 'Add Vehicle',
+                          onPressed: () {
+                            setState(() {
+                              vehicles.add({
+                                'model': '',
+                                'plateNumber': '',
+                                'hasError': false,
+                                'errorMessage': ''
+                              });
+                              modelControllers.add(TextEditingController());
+                              plateControllers.add(TextEditingController());
+                            });
+                          },
                         ),
-                        onPressed: _saveVehicles,
-                      )
+                      ),
                     ],
-                  ),
-                ),
-                // Row 2: Title
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: Text(
-                      '${widget.vehicleType} Registration',
-                      style: const TextStyle(
-                        color: Color(0xFFF6FAFD),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 25,
-                      ),
-                    ),
                   ),
                 ),
               ],
             ),
           ),
-          // Scrollable content
           Expanded(
             child: CustomScrollView(
               slivers: [
@@ -406,5 +395,3 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
     );
   }
 }
-
-

@@ -344,6 +344,47 @@ class ApiService {
       throw HttpException("HTTP ${response.statusCode}");
     });
   }
+  Future<Map<String, dynamic>> updateVehicles({
+    required String token,
+    required List<Map<String, dynamic>> vehicles,
+  }) async {
+    return _executeWithRetry(() async {
+      final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_updateVehicles.php");
+      final response = await httpClient.post(
+        uri,
+        body: {
+          'token': token,
+          'vehicles': jsonEncode(vehicles),
+        },
+      ).timeout(requestTimeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
+  }
+
+  Future<Map<String, dynamic>> deleteVehicle({
+    required String token,
+    required int vehicleId,
+  }) async {
+    return _executeWithRetry(() async {
+      final uri = Uri.parse("${apiUrl}V4/Others/Kurt/CareAPI/kurt_deleteVehicles.php");
+      final response = await httpClient.post(
+        uri,
+        body: {
+          'token': token,
+          'vehicleId': vehicleId.toString(),
+        },
+      ).timeout(requestTimeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
+  }
   Future<void> saveAuthToken(String token) async {
     await _secureStorage.write(key: 'authToken', value: token);
   }
