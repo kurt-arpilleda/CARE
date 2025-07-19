@@ -12,7 +12,7 @@ class ProfileScreen extends StatefulWidget {
   _ProfileScreenState createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
   final ApiService _apiService = ApiService();
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
@@ -30,6 +30,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _selectedGender = 'Male';
   int _signupType = 0;
 
+  // Animation controllers for the loading dots
+  late AnimationController _loadingController;
+  late Animation<double> _dot1Animation;
+  late Animation<double> _dot2Animation;
+  late Animation<double> _dot3Animation;
+
   @override
   void initState() {
     super.initState();
@@ -37,7 +43,93 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _surNameController = TextEditingController();
     _emailController = TextEditingController();
     _phoneController = TextEditingController();
+
+    // Initialize loading animation
+    _loadingController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+
+    _dot1Animation = Tween(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _loadingController,
+        curve: const Interval(0.0, 0.3, curve: Curves.easeInOut),
+      ),
+    );
+
+    _dot2Animation = Tween(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _loadingController,
+        curve: const Interval(0.2, 0.5, curve: Curves.easeInOut),
+      ),
+    );
+
+    _dot3Animation = Tween(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _loadingController,
+        curve: const Interval(0.4, 0.7, curve: Curves.easeInOut),
+      ),
+    );
+
     _loadUserData();
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _surNameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _apiService.dispose();
+    _loadingController.dispose();
+    super.dispose();
+  }
+
+  // Loading widget with three animated dots
+  Widget _buildLoadingAnimation() {
+    return Center(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ScaleTransition(
+            scale: _dot1Animation,
+            child: Container(
+              width: 12,
+              height: 12,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A3D63),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          ScaleTransition(
+            scale: _dot2Animation,
+            child: Container(
+              width: 12,
+              height: 12,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A3D63),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          ScaleTransition(
+            scale: _dot3Animation,
+            child: Container(
+              width: 12,
+              height: 12,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A3D63),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _loadUserData() async {
@@ -168,12 +260,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ? FileImage(_selectedImage!)
                 : imageUrl != null
                 ? NetworkImage(imageUrl)
-                : const AssetImage('assets/images/icon.png') as ImageProvider,
+                : const AssetImage('assets/images/profileHolder.png') as ImageProvider,
             child: _isLoading
-                ? const CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            )
+                ? const SizedBox()
                 : null,
           ),
           if (_isEditing)
@@ -287,6 +376,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months[month - 1];
   }
+
   String _getSignInMethodText() {
     switch (_signupType) {
       case 0:
@@ -297,6 +387,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return 'Unknown';
     }
   }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -309,7 +400,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           centerTitle: true,
           leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)),
         ),
-        body: const Center(child: CircularProgressIndicator()),
+        body: _buildLoadingAnimation(), // Using our custom loading animation
       );
     }
 
@@ -380,7 +471,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         onPressed: _isSaving ? null : _saveProfile,
                         child: _isSaving
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? _buildLoadingAnimation()
                             : const Text('SAVE CHANGES', style: TextStyle(fontSize: 16, color: Colors.white)),
                       ),
                     ),
@@ -391,15 +482,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _firstNameController.dispose();
-    _surNameController.dispose();
-    _emailController.dispose();
-    _phoneController.dispose();
-    _apiService.dispose();
-    super.dispose();
   }
 }

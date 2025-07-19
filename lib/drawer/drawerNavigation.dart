@@ -1,9 +1,9 @@
-// drawerNavigation.dart (updated)
 import 'package:flutter/material.dart';
 import '../api_service.dart';
 import 'profile.dart';
 import '../google_signin_service.dart';
-import '../vehicle/vehicleOptions.dart'; // Add this import
+import '../vehicle/vehicleOptions.dart';
+import '../anim/shimmer_profile.dart';
 
 class DashboardDrawer extends StatefulWidget {
   const DashboardDrawer({Key? key}) : super(key: key);
@@ -118,18 +118,25 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
       return CircleAvatar(
         backgroundImage: NetworkImage(imageUrl),
         onBackgroundImageError: (exception, stackTrace) {},
-        child: _isLoading
-            ? const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))
-            : null,
       );
     } else {
-      return CircleAvatar(
-        backgroundImage: const AssetImage('assets/images/icon.png'),
-        child: _isLoading
-            ? const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))
-            : null,
+      return const CircleAvatar(
+        backgroundImage: AssetImage('assets/images/profileHolder.png'),
       );
     }
+  }
+
+  Widget _buildUserHeader() {
+    if (_isLoading) {
+      return const ShimmerProfile();
+    }
+
+    return UserAccountsDrawerHeader(
+      decoration: const BoxDecoration(color: Color(0xFF1A3D63)),
+      accountName: Text(_userName),
+      accountEmail: Text(_userEmail),
+      currentAccountPicture: _buildProfileImage(),
+    );
   }
 
   @override
@@ -152,12 +159,7 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                     child: SingleChildScrollView(
                       child: Column(
                         children: [
-                          UserAccountsDrawerHeader(
-                            decoration: const BoxDecoration(color: Color(0xFF1A3D63)),
-                            accountName: Text(_userName),
-                            accountEmail: Text(_userEmail),
-                            currentAccountPicture: _buildProfileImage(),
-                          ),
+                          _buildUserHeader(),
                           ListTile(
                             leading: const Icon(Icons.person),
                             title: const Text("Profile"),
@@ -180,7 +182,6 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                               Navigator.pop(context);
                             },
                           ),
-                          // Add the new Register Vehicle option
                           ListTile(
                             leading: const Icon(Icons.directions_car_filled),
                             title: const Text("Register Vehicle"),
