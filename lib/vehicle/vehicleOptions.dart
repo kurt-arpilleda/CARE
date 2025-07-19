@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'vehicleRegister.dart';
 
 class VehicleOptionsScreen extends StatelessWidget {
   const VehicleOptionsScreen({Key? key}) : super(key: key);
@@ -56,11 +57,15 @@ class VehicleOptionsScreen extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () {
-        // Handle vehicle selection
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VehicleRegisterScreen(vehicleType: title),
+          ),
+        );
       },
       child: Stack(
         children: [
-          // Background image with low opacity
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
@@ -68,7 +73,7 @@ class VehicleOptionsScreen extends StatelessWidget {
                 image: AssetImage(imagePath),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
-                  Colors.black.withOpacity(0.35), // Adjust opacity
+                  Colors.black.withOpacity(0.35),
                   BlendMode.darken,
                 ),
               ),
@@ -96,7 +101,7 @@ class VehicleOptionsScreen extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white, // white text on darkened image
+                    color: Colors.white,
                     shadows: [
                       Shadow(
                         blurRadius: 6,
