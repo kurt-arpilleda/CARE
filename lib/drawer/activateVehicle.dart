@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../api_service.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ActivateVehicleScreen extends StatefulWidget {
   const ActivateVehicleScreen({Key? key}) : super(key: key);
@@ -13,6 +14,7 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
   final ApiService _apiService = ApiService();
   List<dynamic> _vehicles = [];
   bool _isLoading = true;
+  bool _hasInternet = true;
   final Map<String, String> _vehicleTypeMap = {
     '0': 'Car',
     '1': 'Motorcycle',
@@ -59,7 +61,7 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
       ),
     );
 
-    _loadVehicles();
+    _checkInternetAndLoadVehicles();
   }
 
   @override
@@ -67,6 +69,19 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
     _loadingController.dispose();
     _apiService.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkInternetAndLoadVehicles() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+    setState(() {
+      _hasInternet = connectivityResult != ConnectivityResult.none;
+    });
+
+    if (_hasInternet) {
+      _loadVehicles();
+    } else {
+      setState(() => _isLoading = false);
+    }
   }
 
   // Loading widget with three animated dots
@@ -147,6 +162,60 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
     }
   }
 
+  Widget _buildNoDataView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            _hasInternet ? Icons.directions_car_outlined : Icons.wifi_off,
+            size: 80,
+            color: Colors.grey.withOpacity(0.5),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            _hasInternet ? 'No vehicles found' : 'No Internet Connection',
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF1A3D63),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _hasInternet
+                ? 'You don\'t have any vehicles registered yet'
+                : 'Please check your internet connection and try again',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          if (!_hasInternet)
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1A3D63),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              onPressed: _checkInternetAndLoadVehicles,
+              child: const Text(
+                'Retry',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -188,7 +257,7 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
             child: _isLoading
                 ? _buildLoadingAnimation()
                 : _vehicles.isEmpty
-                ? const Center(child: Text('No vehicles found'))
+                ? _buildNoDataView()
                 : CustomScrollView(
               slivers: [
                 SliverPadding(

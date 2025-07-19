@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../api_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -21,6 +22,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   bool _isEditing = false;
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _hasInternet = true;
   File? _selectedImage;
 
   late TextEditingController _firstNameController;
@@ -71,7 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       ),
     );
 
-    _loadUserData();
+    _checkInternetAndLoadData();
   }
 
   @override
@@ -83,6 +85,19 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     _apiService.dispose();
     _loadingController.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkInternetAndLoadData() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+    setState(() {
+      _hasInternet = connectivityResult != ConnectivityResult.none;
+    });
+
+    if (_hasInternet) {
+      _loadUserData();
+    } else {
+      setState(() => _isLoading = false);
+    }
   }
 
   // Loading widget with three animated dots
@@ -132,6 +147,60 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
+  Widget _buildNoDataView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            _hasInternet ? Icons.person_outline : Icons.wifi_off,
+            size: 80,
+            color: Colors.grey.withOpacity(0.5),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            _hasInternet ? 'No profile data found' : 'No Internet Connection',
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF1A3D63),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _hasInternet
+                ? 'Unable to load your profile information'
+                : 'Please check your internet connection and try again',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          if (!_hasInternet)
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1A3D63),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              onPressed: _checkInternetAndLoadData,
+              child: const Text(
+                'Retry',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _loadUserData() async {
     try {
       final response = await _apiService.getUserData();
@@ -148,11 +217,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         });
       } else {
         Fluttertoast.showToast(msg: response['message'] ?? 'Failed to load user data');
-        if (mounted) Navigator.pop(context);
+        setState(() => _isLoading = false);
       }
     } catch (e) {
       Fluttertoast.showToast(msg: 'Error loading profile: ${e.toString()}');
-      if (mounted) Navigator.pop(context);
+      setState(() => _isLoading = false);
     }
   }
 
@@ -311,6 +380,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       ),
     );
   }
+
   bool _isValidName(String name) {
     final validCharacters = RegExp(r"^[a-zA-Z .,'-]+$");
     return validCharacters.hasMatch(name);
@@ -325,6 +395,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     }
     return null;
   }
+
   Widget _buildEditableField(String label, TextEditingController controller, {bool enabled = true, TextInputType? keyboardType, String? Function(String?)? validator}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -413,7 +484,21 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           centerTitle: true,
           leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)),
         ),
-        body: _buildLoadingAnimation(), // Using our custom loading animation
+        body: _buildLoadingAnimation(),
+      );
+    }
+
+    if (!_hasInternet || _userData.isEmpty) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF6FAFD),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF1A3D63),
+          elevation: 0,
+          title: const Text('My Profile', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+          centerTitle: true,
+          leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)),
+        ),
+        body: _buildNoDataView(),
       );
     }
 
