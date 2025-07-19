@@ -260,7 +260,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 ? FileImage(_selectedImage!)
                 : imageUrl != null
                 ? NetworkImage(imageUrl)
-                : const AssetImage('assets/images/profileHolder.png') as ImageProvider,
+                : const AssetImage('assets/images/profilePlaceHolder.png') as ImageProvider,
             child: _isLoading
                 ? const SizedBox()
                 : null,

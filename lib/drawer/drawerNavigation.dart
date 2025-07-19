@@ -121,7 +121,7 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
       );
     } else {
       return const CircleAvatar(
-        backgroundImage: AssetImage('assets/images/profileHolder.png'),
+        backgroundImage: AssetImage('assets/images/profilePlaceHolder.png'),
       );
     }
   }
