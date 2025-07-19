@@ -4,6 +4,7 @@ import 'profile.dart';
 import '../google_signin_service.dart';
 import '../vehicle/vehicleOptions.dart';
 import '../anim/shimmer_profile.dart';
+import 'activateVehicle.dart';
 
 class DashboardDrawer extends StatefulWidget {
   const DashboardDrawer({Key? key}) : super(key: key);
@@ -173,6 +174,12 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                             title: const Text("Activate Vehicle"),
                             onTap: () {
                               Navigator.pop(context);
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => const ActivateVehicleScreen()
+                                  )
+                              );
                             },
                           ),
                           ListTile(
