@@ -17,37 +17,85 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          '${widget.vehicleType} Information',
-          style: const TextStyle(color: Colors.white),
-        ),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF1A3D63),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: Container(
-        color: const Color(0xFFF6FAFD),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: vehicles.length == 1
-              ? Center(
-            child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: _buildVehicleCard(0),
+      backgroundColor: const Color(0xFFF6FAFD),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              color: const Color(0xFF1A3D63),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0), // Add slight top padding
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                        const Spacer(),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            backgroundColor: const Color(0xFF4CAF50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          ),
+                          onPressed: () {
+                            // Save logic goes here
+                          },
+                          child: const Text(
+                            'Save',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Center(
+                    child: Text(
+                      '${widget.vehicleType} Information',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 28, // Increased font size
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
             ),
-          )
-              : ListView.builder(
-            physics: const ClampingScrollPhysics(),
-            itemCount: vehicles.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: _buildVehicleCard(index),
-              );
-            },
-          ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: vehicles.length == 1
+                    ? Center(
+                  child: SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    child: _buildVehicleCard(0),
+                  ),
+                )
+                    : ListView.builder(
+                  physics: const ClampingScrollPhysics(),
+                  itemCount: vehicles.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: _buildVehicleCard(index),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -71,9 +119,7 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
       ),
       child: Container(
         width: double.infinity,
-        constraints: vehicles.length == 1
-            ? const BoxConstraints(maxWidth: 500)
-            : null,
+        constraints: vehicles.length == 1 ? const BoxConstraints(maxWidth: 500) : null,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           color: const Color(0xFF1A3D63),
@@ -95,9 +141,9 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
                   const SizedBox(height: 8),
                   Center(
                     child: Text(
-                      'Vehicle ${index + 1}',
+                      '${widget.vehicleType} ${index + 1}',
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 20, // Increased font size
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
@@ -114,8 +160,7 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
                         hintText: 'Vehicle Model',
                         hintStyle: TextStyle(color: Color(0xFF0A1931)),
                         border: InputBorder.none,
-                        contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                       onChanged: (value) {
                         vehicles[index]['model'] = value;
@@ -136,8 +181,7 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
                         hintText: 'Plate Number',
                         hintStyle: TextStyle(color: Color(0xFF0A1931)),
                         border: InputBorder.none,
-                        contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                       onChanged: (value) {
                         vehicles[index]['plateNumber'] = value;
