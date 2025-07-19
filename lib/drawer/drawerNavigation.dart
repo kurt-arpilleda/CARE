@@ -169,7 +169,7 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                             },
                           ),
                           ListTile(
-                            leading: const Icon(Icons.directions_car),
+                            leading: const Icon(Icons.check_circle),
                             title: const Text("Activate Vehicle"),
                             onTap: () {
                               Navigator.pop(context);
