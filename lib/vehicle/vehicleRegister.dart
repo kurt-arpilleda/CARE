@@ -265,17 +265,7 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
                         ),
                       ),
                     ),
-                  Text(
-                    '${widget.vehicleType} ${index + 1}',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: vehicle['hasError']
-                          ? Colors.red[700]
-                          : Colors.blue[800],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 8),  // Added some spacing instead of the title
                   Text(
                     'Model',
                     style: TextStyle(
