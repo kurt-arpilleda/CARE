@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 class ApiService {
-  static const String apiUrl = "https://126.209.7.246/V4/Others/Kurt/CareAPI/";
+  static const String apiUrl = "https://126.209.7.246/V4/Others/Kurt/CaresAPI/";
   static const Duration requestTimeout = Duration(seconds: 15);
   static const Duration requestTimeoutUploadImage = Duration(seconds: 45);
   static const int maxRetries = 3;
