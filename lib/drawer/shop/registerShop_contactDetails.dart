@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'registerShop_businessDocu.dart';
 
 class RegisterShopContactDetails extends StatefulWidget {
   const RegisterShopContactDetails({Key? key}) : super(key: key);
@@ -10,51 +11,63 @@ class RegisterShopContactDetails extends StatefulWidget {
 
 class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _facebookController = TextEditingController();
 
   List<String> serviceOptions = [
     'Oil Change',
-    'Tire Rotation',
+    'Tire Repair & Vulcanizing',
     'Brake Service',
-    'Engine Repair',
-    'Transmission Service',
-    'Battery Replacement',
-    'AC Repair',
-    'Wheel Alignment',
-    'Suspension Repair',
-    'Exhaust Repair',
-    'Diagnostic Test',
-    'Electrical Repair',
+    'Engine Tune-Up & Repair',
+    'Transmission Repair',
+    'Battery Check & Replacement',
+    'Aircon Cleaning & Repair',
+    'Wheel Alignment & Balancing',
+    'Suspension Check & Repair',
+    'Exhaust System Repair',
+    'Computerized Diagnostic Test',
+    'Electrical Wiring & Repair',
     'Car Wash',
-    'Detailing',
-    'Paint Job',
-    'Body Repair',
-    'Glass Replacement',
-    'Rust Proofing',
+    'Interior & Exterior Detailing',
+    'Auto Paint & Repainting',
+    'Body Repair & Fender Bender',
+    'Glass & Windshield Replacement',
+    'Rustproofing & Undercoating',
     'Towing Service',
-    '24/7 Emergency'
+    '24/7 Roadside Assistance',
+    'Underwash',
+    'Headlight & Taillight Replacement',
+    'Radiator Flush & Repair',
+    'Change Oil & Filter',
+    'Fuel System Cleaning',
+    'Brake Pad Replacement',
+    'Muffler Repair',
+    'Clutch Repair',
+    'Car Tint Installation',
+    'Dash Cam Installation'
   ];
+
   List<String> selectedServices = [];
 
-  Map<String, TimeOfDay?> openingTimes = {
-    'Monday': null,
-    'Tuesday': null,
-    'Wednesday': null,
-    'Thursday': null,
-    'Friday': null,
-    'Saturday': null,
-    'Sunday': null,
-  };
-  Map<String, TimeOfDay?> closingTimes = {
-    'Monday': null,
-    'Tuesday': null,
-    'Wednesday': null,
-    'Thursday': null,
-    'Friday': null,
-    'Saturday': null,
-    'Sunday': null,
+  TimeOfDay? openingTime;
+  TimeOfDay? closingTime;
+
+  List<String> daysOfWeek = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday'
+  ];
+  Map<String, bool> selectedDays = {
+    'Monday': false,
+    'Tuesday': false,
+    'Wednesday': false,
+    'Thursday': false,
+    'Friday': false,
+    'Saturday': false,
+    'Sunday': false,
   };
 
   void _toggleService(String service) {
@@ -67,7 +80,13 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
     });
   }
 
-  Future<void> _selectTime(BuildContext context, String day, bool isOpening) async {
+  void _toggleDay(String day) {
+    setState(() {
+      selectedDays[day] = !selectedDays[day]!;
+    });
+  }
+
+  Future<void> _selectTime(BuildContext context, bool isOpening) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
@@ -75,13 +94,13 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
     if (picked != null) {
       setState(() {
         if (isOpening) {
-          openingTimes[day] = picked;
-          if (closingTimes[day] != null && picked.hour > closingTimes[day]!.hour) {
-            closingTimes[day] = TimeOfDay(hour: picked.hour + 1, minute: 0);
+          openingTime = picked;
+          if (closingTime != null && picked.hour > closingTime!.hour) {
+            closingTime = TimeOfDay(hour: picked.hour + 1, minute: 0);
           }
         } else {
-          if (openingTimes[day] == null || picked.hour > openingTimes[day]!.hour) {
-            closingTimes[day] = picked;
+          if (openingTime == null || picked.hour > openingTime!.hour) {
+            closingTime = picked;
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Closing time must be after opening time')),
@@ -94,7 +113,28 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
 
   void _submitForm() {
     if (_formKey.currentState!.validate() && selectedServices.isNotEmpty) {
-      Navigator.pushNamed(context, '/registerShop/complete');
+      // Check if at least one day is selected if times are set
+      if ((openingTime != null || closingTime != null) &&
+          !selectedDays.containsValue(true)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select at least one day for the service times')),
+        );
+        return;
+      }
+
+      // Check if both times are set if one is set
+      if ((openingTime == null && closingTime != null) ||
+          (openingTime != null && closingTime == null)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please set both opening and closing times')),
+        );
+        return;
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const RegisterShopBusinessDocu()),
+      );
     } else if (selectedServices.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select at least one service')),
@@ -180,59 +220,7 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
                       ),
                       const SizedBox(height: 24),
                       const Text(
-                        'Phone Number',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A3D63),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: _fieldShadowBox(),
-                        child: TextFormField(
-                          controller: _phoneController,
-                          keyboardType: TextInputType.phone,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          decoration: _inputDecoration('Enter phone number'),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter phone number';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        'Email Address',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A3D63),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: _fieldShadowBox(),
-                        child: TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: _inputDecoration('Enter email address'),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter email address';
-                            }
-                            if (!value.contains('@')) {
-                              return 'Please enter a valid email';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        'Facebook Page (Optional)',
+                        'Home Page (Optional)',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -244,7 +232,7 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
                         decoration: _fieldShadowBox(),
                         child: TextFormField(
                           controller: _facebookController,
-                          decoration: _inputDecoration('Enter Facebook page link'),
+                          decoration: _inputDecoration('Enter home page link'),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -312,79 +300,105 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Column(
-                        children: openingTimes.keys.map((day) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  day,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF1A3D63),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: () => _selectTime(context, day, true),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius: BorderRadius.circular(12),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withOpacity(0.05),
-                                                blurRadius: 6,
-                                                offset: const Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Text(
-                                            openingTimes[day]?.format(context) ?? 'Select Opening Time',
-                                            style: TextStyle(
-                                              color: openingTimes[day] == null ? Colors.grey[500] : Colors.black,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: () => _selectTime(context, day, false),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius: BorderRadius.circular(12),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withOpacity(0.05),
-                                                blurRadius: 6,
-                                                offset: const Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Text(
-                                            closingTimes[day]?.format(context) ?? 'Select Closing Time',
-                                            style: TextStyle(
-                                              color: closingTimes[day] == null ? Colors.grey[500] : Colors.black,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => _selectTime(context, true),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
                                     ),
                                   ],
                                 ),
-                              ],
+                                child: Text(
+                                  openingTime?.format(context) ?? 'Opening Time',
+                                  style: TextStyle(
+                                    color: openingTime == null ? Colors.grey[500] : Colors.black,
+                                  ),
+                                ),
+                              ),
                             ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => _selectTime(context, false),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  closingTime?.format(context) ?? 'Closing Time',
+                                  style: TextStyle(
+                                    color: closingTime == null ? Colors.grey[500] : Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Select Days',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF1A3D63),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Select the days these hours apply to',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: daysOfWeek.map((day) {
+                          bool isSelected = selectedDays[day]!;
+                          return ChoiceChip(
+                            label: Text(day),
+                            selected: isSelected,
+                            onSelected: (_) => _toggleDay(day),
+                            selectedColor: const Color(0xFF1A3D63),
+                            backgroundColor: Colors.white,
+                            labelStyle: TextStyle(
+                              color: isSelected ? Colors.white : const Color(0xFF1A3D63),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: BorderSide(
+                                color: isSelected
+                                    ? const Color(0xFF1A3D63)
+                                    : Colors.grey[300]!,
+                              ),
+                            ),
+                            showCheckmark: false,
+                            visualDensity: const VisualDensity(horizontal: 0, vertical: 0),
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           );
                         }).toList(),
                       ),
