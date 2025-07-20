@@ -31,7 +31,24 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
   late Animation<double> _dot3Animation;
   List<TextEditingController> _modelControllers = [];
   List<TextEditingController> _plateControllers = [];
-
+  IconData _getVehicleIcon(String vehicleType) {
+    switch (vehicleType) {
+      case '0': // Car
+        return Icons.directions_car;
+      case '1': // Motorcycle
+        return Icons.motorcycle;
+      case '2': // Van
+        return Icons.airport_shuttle;
+      case '3': // Truck
+        return Icons.local_shipping;
+      case '4': // Bus
+        return Icons.directions_bus;
+      case '5': // Jeep
+        return Icons.directions_bus_outlined;
+      default:
+        return Icons.directions_car;
+    }
+  }
   @override
   void initState() {
     super.initState();
@@ -171,13 +188,13 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
 
       final response = await _apiService.deleteVehicle(token: token, vehicleId: vehicleId);
       if (response['success'] == true) {
-        Fluttertoast.showToast(msg: response['message']);
+        Fluttertoast.showToast(msg: response['message'] ?? 'Vehicle archived successfully');
         _loadVehicles();
       } else {
-        Fluttertoast.showToast(msg: response['message'] ?? 'Failed to delete vehicle');
+        Fluttertoast.showToast(msg: response['message'] ?? 'Failed to archive vehicle');
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: 'Error deleting vehicle: ${e.toString()}');
+      Fluttertoast.showToast(msg: 'Error archiving vehicle: ${e.toString()}');
     }
   }
 
@@ -376,17 +393,26 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    _vehicleTypeMap[vehicle['vehicle_type'].toString()] ?? 'Unknown',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A3D63),
-                    ),
+                  Row(
+                    children: [
+                      Icon(
+                        _getVehicleIcon(vehicle['vehicle_type'].toString()),
+                        color: const Color(0xFF1A3D63),
+                        size: 24,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _vehicleTypeMap[vehicle['vehicle_type'].toString()] ?? 'Unknown',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A3D63),
+                        ),
+                      ),
+                    ],
                   ),
                   _isEditing
-                      ?
-                  IconButton(
+                      ? IconButton(
                     icon: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
