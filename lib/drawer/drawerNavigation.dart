@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../api_service.dart';
+import 'package:care/api_service.dart';
 import 'profile.dart';
-import '../google_signin_service.dart';
-import '../vehicle/vehicleOptions.dart';
-import '../anim/shimmer_profile.dart';
+import 'package:care/google_signin_service.dart';
+import 'vehicle/vehicleOptions.dart';
+import 'package:care/anim/shimmer_profile.dart';
 import 'activateVehicle.dart';
 
 class DashboardDrawer extends StatefulWidget {

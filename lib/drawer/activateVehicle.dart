@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import '../api_service.dart';
+import 'package:care/api_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ActivateVehicleScreen extends StatefulWidget {
