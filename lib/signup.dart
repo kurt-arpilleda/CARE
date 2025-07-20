@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'api_service.dart';
 import 'google_signin_service.dart';
+
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
 
@@ -13,7 +14,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final ApiService _apiService = ApiService();
 
-  // Form controllers
   final _firstNameController = TextEditingController();
   final _surNameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -21,24 +21,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  // Dropdown values
-  String? _accountType;
   String? _gender;
-
-  // Password visibility
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  // Track which fields have been interacted with
   final Set<String> _touchedFields = {};
 
-  // Validation methods
-  String? _validateRequired(String? value, String fieldName) {
-    if (value == null || value.isEmpty) {
-      return '$fieldName is required';
-    }
-    return null;
-  }
   String? _validateName(String? value, String fieldName) {
     if (value == null || value.isEmpty) {
       return '$fieldName is required';
@@ -133,7 +121,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
-    // Check if passwords match (additional safety check)
+    // Check if passwords match
     if (_passwordController.text != _confirmPasswordController.text) {
       Fluttertoast.showToast(msg: 'Passwords do not match');
       return;

@@ -154,8 +154,6 @@ class AutoUpdate {
         );
       },
     );
-
-    // Disable wakelock when dialog is dismissed
     await WakelockPlus.disable();
   }
 
