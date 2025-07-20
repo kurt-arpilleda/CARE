@@ -4,7 +4,8 @@ import 'profile.dart';
 import 'package:care/google_signin_service.dart';
 import 'vehicle/vehicleOptions.dart';
 import 'package:care/anim/shimmer_profile.dart';
-import 'activateVehicle.dart';
+import 'vehicle/activateVehicle.dart';
+import 'shop/registerShop_basicInfo.dart';
 
 class DashboardDrawer extends StatefulWidget {
   const DashboardDrawer({Key? key}) : super(key: key);
@@ -187,6 +188,12 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                             title: const Text("Register Shop"),
                             onTap: () {
                               Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const RegisterShopBasicInfo(),
+                                ),
+                              );
                             },
                           ),
                           ListTile(
