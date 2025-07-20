@@ -217,6 +217,15 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
                         color: Color(0xFF1A3D63),
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Please ensure the image is clear and not blurry',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     GestureDetector(
                       onTap: () => _showUploadOptions('business'),
@@ -239,6 +248,15 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: Color(0xFF1A3D63),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Please ensure the image is clear and not blurry',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                        fontStyle: FontStyle.italic,
                       ),
                     ),
                     const SizedBox(height: 8),
