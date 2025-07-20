@@ -4,6 +4,7 @@ import 'splashScreen.dart';
 import 'login.dart';
 import 'dashboard.dart';
 import 'api_service.dart';
+import 'auto_update.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +25,6 @@ void main() async {
         : '/login',
   ));
 }
-
 class MyApp extends StatelessWidget {
   final String initialRoute;
 
@@ -32,6 +32,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AutoUpdate.checkForUpdate(context);
+    });
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'CARE',
