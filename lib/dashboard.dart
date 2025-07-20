@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'drawer/drawerNavigation.dart';
-
+import 'auto_update.dart';
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
 
@@ -13,6 +13,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AutoUpdate.checkForUpdate(context);
+    });
     return Scaffold(
       key: _scaffoldKey,
       drawer: const DashboardDrawer(),
