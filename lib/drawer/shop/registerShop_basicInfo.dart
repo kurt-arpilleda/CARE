@@ -11,7 +11,6 @@ class RegisterShopBasicInfo extends StatefulWidget {
 class _RegisterShopBasicInfoState extends State<RegisterShopBasicInfo> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _shopNameController = TextEditingController();
-  final TextEditingController _ownerNameController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
 
   List<String> expertiseOptions = ['Car', 'Motorcycle', 'Van', 'Truck', 'Bus', 'Jeep'];
@@ -20,7 +19,6 @@ class _RegisterShopBasicInfoState extends State<RegisterShopBasicInfo> {
   @override
   void dispose() {
     _shopNameController.dispose();
-    _ownerNameController.dispose();
     _locationController.dispose();
     super.dispose();
   }
@@ -142,29 +140,6 @@ class _RegisterShopBasicInfoState extends State<RegisterShopBasicInfo> {
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter your shop name';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        "Owner's Full Name",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A3D63),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: _fieldShadowBox(),
-                        child: TextFormField(
-                          controller: _ownerNameController,
-                          decoration: _inputDecoration('Enter owner full name'),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter owner name';
                             }
                             return null;
                           },

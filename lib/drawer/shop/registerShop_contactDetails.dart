@@ -90,13 +90,19 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
+      builder: (BuildContext context, Widget? child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() {
         if (isOpening) {
           openingTime = picked;
           if (closingTime != null && picked.hour > closingTime!.hour) {
-            closingTime = TimeOfDay(hour: picked.hour + 1, minute: 0);
+            closingTime = TimeOfDay(hour: (picked.hour + 1) % 24, minute: 0);
           }
         } else {
           if (openingTime == null || picked.hour > openingTime!.hour) {
@@ -109,6 +115,14 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
         }
       });
     }
+  }
+
+  String _formatTimeOfDay(TimeOfDay? tod) {
+    if (tod == null) return '';
+    final now = DateTime.now();
+    final dt = DateTime(now.year, now.month, now.day, tod.hour, tod.minute);
+    final format = MaterialLocalizations.of(context).formatTimeOfDay(tod);
+    return format;
   }
 
   void _submitForm() {
@@ -319,7 +333,9 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
                                   ],
                                 ),
                                 child: Text(
-                                  openingTime?.format(context) ?? 'Opening Time',
+                                  openingTime != null
+                                      ? _formatTimeOfDay(openingTime)
+                                      : 'Opening Time',
                                   style: TextStyle(
                                     color: openingTime == null ? Colors.grey[500] : Colors.black,
                                   ),
@@ -345,7 +361,9 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
                                   ],
                                 ),
                                 child: Text(
-                                  closingTime?.format(context) ?? 'Closing Time',
+                                  closingTime != null
+                                      ? _formatTimeOfDay(closingTime)
+                                      : 'Closing Time',
                                   style: TextStyle(
                                     color: closingTime == null ? Colors.grey[500] : Colors.black,
                                   ),
