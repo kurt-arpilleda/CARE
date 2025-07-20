@@ -21,7 +21,7 @@ class AutoUpdate {
 
   static bool isUpdating = false;
 
-  static Future<void> checkForUpdate(BuildContext context) async {
+  static Future<void> checkForUpdate(BuildContext context, {bool manualCheck = false}) async {
     if (isUpdating) {
       return;
     }
@@ -43,7 +43,7 @@ class AutoUpdate {
           int currentVersionCode = int.parse(packageInfo.buildNumber);
 
           if (latestVersionCode > currentVersionCode) {
-            await _showAutomaticUpdateDialog(
+            await _showUpdateConfirmationDialog(
                 context,
                 latestVersionName,
                 releaseNotes,
@@ -52,6 +52,9 @@ class AutoUpdate {
             isUpdating = false;
             return;
           } else {
+            if (manualCheck) {
+              Fluttertoast.showToast(msg: "You're using the latest version");
+            }
             isUpdating = false;
             return;
           }
@@ -71,13 +74,57 @@ class AutoUpdate {
     isUpdating = false;
   }
 
-  static Future<void> _showAutomaticUpdateDialog(
+  static Future<void> _showUpdateConfirmationDialog(
       BuildContext context,
       String versionName,
       String releaseNotes,
       String apkFileName
       ) async {
-    // Enable wakelock when update dialog is shown
+    bool updateAccepted = await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Update Available"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("New Version: $versionName"),
+              SizedBox(height: 10),
+              Text("Release Notes:"),
+              Text(releaseNotes),
+              SizedBox(height: 20),
+              Text("Would you like to update now?"),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: Text("Later"),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            TextButton(
+              child: Text("Update Now"),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    if (updateAccepted == true) {
+      await _startUpdateProcess(context, apkFileName);
+    } else {
+      isUpdating = false;
+    }
+  }
+
+  static Future<void> _startUpdateProcess(BuildContext context, String apkFileName) async {
+    // Enable wakelock when update starts
     await WakelockPlus.enable();
 
     await showDialog(
@@ -88,72 +135,66 @@ class AutoUpdate {
           onWillPop: () async => false,
           child: AlertDialog(
             title: Text("Updating Application"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("New Version: $versionName"),
-                SizedBox(height: 10),
-                Text("Release Notes:"),
-                Text(releaseNotes),
-                SizedBox(height: 20),
-                StreamBuilder<int>(
-                  stream: _downloadAndInstallApk(context, apkFileName),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      if (snapshot.data! == 100) {
-                        return Column(
-                          children: [
-                            LinearProgressIndicator(
-                              value: 1.0,
-                              backgroundColor: Colors.grey[300],
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-                            ),
-                            SizedBox(height: 10),
-                            Text("Installation in progress..."),
-                          ],
-                        );
-                      } else if (snapshot.data! == -1) {
-                        return Column(
-                          children: [
-                            Icon(Icons.error, color: Colors.red, size: 40),
-                            SizedBox(height: 10),
-                            Text("Update failed. Retrying..."),
-                          ],
-                        );
-                      } else {
-                        return Column(
-                          children: [
-                            LinearProgressIndicator(
-                              value: snapshot.data! / 100,
-                              backgroundColor: Colors.grey[300],
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                            ),
-                            SizedBox(height: 10),
-                            Text("${snapshot.data}% Downloaded"),
-                          ],
-                        );
-                      }
-                    } else {
-                      return Column(
-                        children: [
-                          LinearProgressIndicator(
-                            backgroundColor: Colors.grey[300],
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                          ),
-                          SizedBox(height: 10),
-                          Text("Preparing download..."),
-                        ],
-                      );
-                    }
-                  },
-                ),
-              ],
+            content: StreamBuilder<int>(
+              stream: _downloadAndInstallApk(context, apkFileName),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  if (snapshot.data! == 100) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        LinearProgressIndicator(
+                          value: 1.0,
+                          backgroundColor: Colors.grey[300],
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                        ),
+                        SizedBox(height: 10),
+                        Text("Installation in progress..."),
+                      ],
+                    );
+                  } else if (snapshot.data! == -1) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.error, color: Colors.red, size: 40),
+                        SizedBox(height: 10),
+                        Text("Update failed. Retrying..."),
+                      ],
+                    );
+                  } else {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        LinearProgressIndicator(
+                          value: snapshot.data! / 100,
+                          backgroundColor: Colors.grey[300],
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                        ),
+                        SizedBox(height: 10),
+                        Text("${snapshot.data}% Downloaded"),
+                      ],
+                    );
+                  }
+                } else {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      LinearProgressIndicator(
+                        backgroundColor: Colors.grey[300],
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                      ),
+                      SizedBox(height: 10),
+                      Text("Preparing download..."),
+                    ],
+                  );
+                }
+              },
             ),
           ),
         );
       },
     );
+
     await WakelockPlus.disable();
   }
 
