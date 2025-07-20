@@ -12,6 +12,7 @@ class RegisterShopContactDetails extends StatefulWidget {
 class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _facebookController = TextEditingController();
+  final FocusNode _facebookFocusNode = FocusNode();
 
   List<String> serviceOptions = [
     'Oil Change',
@@ -87,6 +88,9 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
   }
 
   Future<void> _selectTime(BuildContext context, bool isOpening) async {
+    // Unfocus any currently focused text field
+    FocusScope.of(context).unfocus();
+
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
@@ -97,6 +101,7 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
         );
       },
     );
+
     if (picked != null) {
       setState(() {
         if (isOpening) {
@@ -184,6 +189,13 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
   }
 
   @override
+  void dispose() {
+    _facebookController.dispose();
+    _facebookFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6FAFD),
@@ -246,6 +258,7 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
                         decoration: _fieldShadowBox(),
                         child: TextFormField(
                           controller: _facebookController,
+                          focusNode: _facebookFocusNode,
                           decoration: _inputDecoration('Enter home page link'),
                         ),
                       ),
