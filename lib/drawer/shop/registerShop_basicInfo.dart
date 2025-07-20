@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'registerShop_contactDetails.dart';
 
 class RegisterShopBasicInfo extends StatefulWidget {
   const RegisterShopBasicInfo({Key? key}) : super(key: key);
@@ -36,7 +37,10 @@ class _RegisterShopBasicInfoState extends State<RegisterShopBasicInfo> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate() && selectedExpertise.isNotEmpty) {
-      Navigator.pushNamed(context, '/registerShop/contactInfo');
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const RegisterShopContactDetails()),
+      );
     } else if (selectedExpertise.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select at least one expertise')),
