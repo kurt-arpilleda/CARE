@@ -11,9 +11,9 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 class AutoUpdate {
-  static const String apiUrl = "http://126.209.7.246/";
-  static const String versionPath = "V4/Others/Kurt/LatestVersionAPK/Care/version.json";
-  static const String apkPathPrefix = "V4/Others/Kurt/LatestVersionAPK/Care/";
+  static const String apiUrl = "http://126.209.7.246/V4/Others/Kurt/";
+  static const String versionPath = "LatestVersionAPK/Care/version.json";
+  static const String apkPathPrefix = "LatestVersionAPK/Care/";
 
   static const Duration requestTimeout = Duration(seconds: 5);
   static const int maxRetries = 6;
