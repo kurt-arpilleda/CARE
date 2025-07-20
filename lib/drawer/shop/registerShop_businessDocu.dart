@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class RegisterShopBusinessDocu extends StatefulWidget {
   const RegisterShopBusinessDocu({Key? key}) : super(key: key);
@@ -8,8 +10,9 @@ class RegisterShopBusinessDocu extends StatefulWidget {
 }
 
 class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
-  String? _businessPermitPath;
-  String? _governmentIdPath;
+  File? _businessPermitFile;
+  File? _governmentIdFile;
+  final ImagePicker _picker = ImagePicker();
 
   Future<void> _showUploadOptions(String type) async {
     return showDialog(
@@ -25,7 +28,7 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
                   title: const Text('Take Photo'),
                   onTap: () {
                     Navigator.pop(context);
-                    _handleUpload(type, 'camera');
+                    _pickImage(type, ImageSource.camera);
                   },
                 ),
                 ListTile(
@@ -33,7 +36,7 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
                   title: const Text('Choose from Gallery'),
                   onTap: () {
                     Navigator.pop(context);
-                    _handleUpload(type, 'gallery');
+                    _pickImage(type, ImageSource.gallery);
                   },
                 ),
               ],
@@ -44,17 +47,90 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
     );
   }
 
-  void _handleUpload(String type, String source) {
-    setState(() {
-      if (type == 'business') {
-        _businessPermitPath = 'Uploaded from $source';
-      } else {
-        _governmentIdPath = 'Uploaded from $source';
+  Future<void> _pickImage(String type, ImageSource source) async {
+    try {
+      final pickedFile = await _picker.pickImage(source: source);
+      if (pickedFile != null) {
+        setState(() {
+          if (type == 'business') {
+            _businessPermitFile = File(pickedFile.path);
+          } else {
+            _governmentIdFile = File(pickedFile.path);
+          }
+        });
       }
-    });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to pick image: ${e.toString()}')),
+      );
+    }
   }
 
-  InputDecoration _inputDecoration(String hint) {
+  void _showFullScreenImage(File imageFile) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white),
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              panEnabled: true,
+              minScale: 0.5,
+              maxScale: 3.0,
+              child: Image.file(
+                imageFile,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilePreview(File? file, String label) {
+    if (file == null) {
+      return const SizedBox.shrink();
+    }
+    return GestureDetector(
+      onTap: () => _showFullScreenImage(file),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Uploaded $label:',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF1A3D63),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 200,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: Colors.grey[200],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.file(
+                file,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint, bool hasFile) {
     return InputDecoration(
       filled: true,
       fillColor: Colors.white,
@@ -65,6 +141,10 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
       ),
+      prefixIcon: const Icon(Icons.cloud_upload, color: Color(0xFF1A3D63)),
+      suffixIcon: hasFile
+          ? const Icon(Icons.check_circle, color: Colors.green)
+          : null,
     );
   }
 
@@ -144,11 +224,14 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
                         decoration: _fieldShadowBox(),
                         child: TextFormField(
                           enabled: false,
-                          decoration: _inputDecoration('Tap to upload file'),
-                          controller: TextEditingController(text: _businessPermitPath),
+                          decoration: _inputDecoration(
+                            'Tap to upload file',
+                            _businessPermitFile != null,
+                          ),
                         ),
                       ),
                     ),
+                    _buildFilePreview(_businessPermitFile, 'Business Permit'),
                     const SizedBox(height: 20),
                     const Text(
                       'Upload Valid Government ID',
@@ -165,11 +248,14 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
                         decoration: _fieldShadowBox(),
                         child: TextFormField(
                           enabled: false,
-                          decoration: _inputDecoration('Tap to upload file'),
-                          controller: TextEditingController(text: _governmentIdPath),
+                          decoration: _inputDecoration(
+                            'Tap to upload file',
+                            _governmentIdFile != null,
+                          ),
                         ),
                       ),
                     ),
+                    _buildFilePreview(_governmentIdFile, 'Government ID'),
                     const SizedBox(height: 40),
                     Row(
                       children: [
@@ -203,7 +289,7 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
                             height: 50,
                             child: ElevatedButton(
                               onPressed: () {
-                                if (_businessPermitPath == null || _governmentIdPath == null) {
+                                if (_businessPermitFile == null || _governmentIdFile == null) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(content: Text('Please upload all required documents')),
                                   );
