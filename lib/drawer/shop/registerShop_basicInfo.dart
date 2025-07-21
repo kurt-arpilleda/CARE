@@ -13,6 +13,14 @@ class _RegisterShopBasicInfoState extends State<RegisterShopBasicInfo> {
   final TextEditingController _shopNameController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
 
+  final Map<String, int> expertiseMap = {
+    'Car': 0,
+    'Motorcycle': 1,
+    'Van': 2,
+    'Truck': 3,
+    'Bus': 4,
+    'Jeep': 5
+  };
   List<String> expertiseOptions = ['Car', 'Motorcycle', 'Van', 'Truck', 'Bus', 'Jeep'];
   List<String> selectedExpertise = [];
 
@@ -33,11 +41,21 @@ class _RegisterShopBasicInfoState extends State<RegisterShopBasicInfo> {
     });
   }
 
+  String _getExpertiseIds() {
+    return selectedExpertise.map((e) => expertiseMap[e].toString()).join(',');
+  }
+
   void _submitForm() {
     if (_formKey.currentState!.validate() && selectedExpertise.isNotEmpty) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const RegisterShopContactDetails()),
+        MaterialPageRoute(
+          builder: (context) => RegisterShopContactDetails(
+            shopName: _shopNameController.text,
+            location: _locationController.text,
+            expertise: _getExpertiseIds(),
+          ),
+        ),
       );
     } else if (selectedExpertise.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(

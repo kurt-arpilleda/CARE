@@ -1,9 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:care/api_service.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'registerShop_basicInfo.dart';
 
 class RegisterShopBusinessDocu extends StatefulWidget {
-  const RegisterShopBusinessDocu({Key? key}) : super(key: key);
+  final String shopName;
+  final String location;
+  final String expertise;
+  final String? homePage;
+  final String services;
+  final String? startTime;
+  final String? closeTime;
+  final String? dayIndex;
+
+  const RegisterShopBusinessDocu({
+    Key? key,
+    required this.shopName,
+    required this.location,
+    required this.expertise,
+    this.homePage,
+    required this.services,
+    this.startTime,
+    this.closeTime,
+    this.dayIndex,
+  }) : super(key: key);
 
   @override
   _RegisterShopBusinessDocuState createState() => _RegisterShopBusinessDocuState();
@@ -13,6 +35,8 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
   File? _businessPermitFile;
   File? _governmentIdFile;
   final ImagePicker _picker = ImagePicker();
+  final ApiService _apiService = ApiService();
+  bool _isLoading = false;
 
   Future<void> _showUploadOptions(String type) async {
     return showDialog(
@@ -161,6 +185,49 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
     );
   }
 
+  Future<void> _submitForm() async {
+    if (_businessPermitFile == null || _governmentIdFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please upload all required documents')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await _apiService.registerShop(
+        shopName: widget.shopName,
+        location: widget.location,
+        expertise: widget.expertise,
+        homePage: widget.homePage,
+        services: widget.services,
+        startTime: widget.startTime,
+        closeTime: widget.closeTime,
+        dayIndex: widget.dayIndex,
+        businessDocu: _businessPermitFile!,
+        validId: _governmentIdFile!,
+      );
+
+      if (response['success'] == true) {
+        Fluttertoast.showToast(msg: 'Shop registration successful!');
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const RegisterShopBasicInfo()),
+              (route) => false,
+        );
+      } else {
+        Fluttertoast.showToast(msg: response['message'] ?? 'Registration failed');
+      }
+    } catch (e) {
+      Fluttertoast.showToast(msg: 'Error: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -281,7 +348,7 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
                           child: SizedBox(
                             height: 50,
                             child: ElevatedButton(
-                              onPressed: () => Navigator.pop(context),
+                              onPressed: _isLoading ? null : () => Navigator.pop(context),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
@@ -306,15 +373,7 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
                           child: SizedBox(
                             height: 50,
                             child: ElevatedButton(
-                              onPressed: () {
-                                if (_businessPermitFile == null || _governmentIdFile == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Please upload all required documents')),
-                                  );
-                                } else {
-                                  Navigator.pushNamed(context, '/registerShop/complete');
-                                }
-                              },
+                              onPressed: _isLoading ? null : _submitForm,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF1A3D63),
                                 shape: RoundedRectangleBorder(
@@ -322,7 +381,16 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
                                 ),
                                 elevation: 3,
                               ),
-                              child: const Text(
+                              child: _isLoading
+                                  ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                                  : const Text(
                                 'Finish',
                                 style: TextStyle(
                                   fontSize: 16,

@@ -385,6 +385,56 @@ class ApiService {
       throw HttpException("HTTP ${response.statusCode}");
     });
   }
+
+  Future<Map<String, dynamic>> registerShop({
+    required String shopName,
+    required String location,
+    required String expertise,
+    String? homePage,
+    required String services,
+    String? startTime,
+    String? closeTime,
+    String? dayIndex,
+    required File businessDocu,
+    required File validId,
+  }) async {
+    return _executeWithRetry(() async {
+      final token = await getAuthToken();
+      if (token == null) {
+        throw Exception("No auth token found");
+      }
+
+      final uri = Uri.parse("${apiUrl}kurt_registerShop.php");
+      var request = http.MultipartRequest('POST', uri);
+
+      request.fields['token'] = token;
+      request.fields['shopName'] = shopName;
+      request.fields['location'] = location;
+      request.fields['expertise'] = expertise;
+      if (homePage != null) request.fields['homePage'] = homePage;
+      request.fields['services'] = services;
+      if (startTime != null) request.fields['startTime'] = startTime;
+      if (closeTime != null) request.fields['closeTime'] = closeTime;
+      if (dayIndex != null) request.fields['dayIndex'] = dayIndex;
+
+      request.files.add(await http.MultipartFile.fromPath(
+        'businessDocu',
+        businessDocu.path,
+      ));
+      request.files.add(await http.MultipartFile.fromPath(
+        'validId',
+        validId.path,
+      ));
+
+      final response = await request.send().timeout(requestTimeoutUploadImage);
+      final responseBody = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        return jsonDecode(responseBody);
+      }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
+  }
   Future<void> saveAuthToken(String token) async {
     await _secureStorage.write(key: 'authToken', value: token);
   }

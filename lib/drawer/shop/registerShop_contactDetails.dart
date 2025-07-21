@@ -3,7 +3,16 @@ import 'package:flutter/services.dart';
 import 'registerShop_businessDocu.dart';
 
 class RegisterShopContactDetails extends StatefulWidget {
-  const RegisterShopContactDetails({Key? key}) : super(key: key);
+  final String shopName;
+  final String location;
+  final String expertise;
+
+  const RegisterShopContactDetails({
+    Key? key,
+    required this.shopName,
+    required this.location,
+    required this.expertise,
+  }) : super(key: key);
 
   @override
   _RegisterShopContactDetailsState createState() => _RegisterShopContactDetailsState();
@@ -87,8 +96,17 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
     });
   }
 
+  String _getDayIndexes() {
+    List<int> indexes = [];
+    for (int i = 0; i < daysOfWeek.length; i++) {
+      if (selectedDays[daysOfWeek[i]]!) {
+        indexes.add(i);
+      }
+    }
+    return indexes.join(',');
+  }
+
   Future<void> _selectTime(BuildContext context, bool isOpening) async {
-    // Unfocus any currently focused text field
     FocusScope.of(context).unfocus();
 
     final TimeOfDay? picked = await showTimePicker(
@@ -130,9 +148,13 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
     return format;
   }
 
+  String _formatTimeForAPI(TimeOfDay? tod) {
+    if (tod == null) return '';
+    return '${tod.hour.toString().padLeft(2, '0')}:${tod.minute.toString().padLeft(2, '0')}:00';
+  }
+
   void _submitForm() {
     if (_formKey.currentState!.validate() && selectedServices.isNotEmpty) {
-      // Check if at least one day is selected if times are set
       if ((openingTime != null || closingTime != null) &&
           !selectedDays.containsValue(true)) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -141,7 +163,6 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
         return;
       }
 
-      // Check if both times are set if one is set
       if ((openingTime == null && closingTime != null) ||
           (openingTime != null && closingTime == null)) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -152,7 +173,18 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
 
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const RegisterShopBusinessDocu()),
+        MaterialPageRoute(
+          builder: (context) => RegisterShopBusinessDocu(
+            shopName: widget.shopName,
+            location: widget.location,
+            expertise: widget.expertise,
+            homePage: _facebookController.text.isNotEmpty ? _facebookController.text : null,
+            services: selectedServices.join(','),
+            startTime: openingTime != null ? _formatTimeForAPI(openingTime) : null,
+            closeTime: closingTime != null ? _formatTimeForAPI(closingTime) : null,
+            dayIndex: _getDayIndexes(),
+          ),
+        ),
       );
     } else if (selectedServices.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
