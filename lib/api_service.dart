@@ -65,7 +65,7 @@ class ApiService {
     required int signupType,
   }) async {
     return _executeWithRetry(() async {
-      final uri = Uri.parse("${apiUrl}kurt_signup.php");
+      final uri = Uri.parse("${apiUrl}cares_signup.php");
       final response = await httpClient.post(
         uri,
         body: {
@@ -94,7 +94,7 @@ class ApiService {
     required String photoUrl,
   }) async {
     return _executeWithRetry(() async {
-      final uri = Uri.parse("${apiUrl}kurt_signup.php");
+      final uri = Uri.parse("${apiUrl}cares_signup.php");
       final response = await httpClient.post(
         uri,
         body: {
@@ -123,7 +123,7 @@ class ApiService {
   }) async {
     return _executeWithRetry(() async {
       final deviceId = await _getOrCreateDeviceId();
-      final uri = Uri.parse("${apiUrl}kurt_login.php");
+      final uri = Uri.parse("${apiUrl}cares_login.php");
       final response = await httpClient.post(
         uri,
         body: {
@@ -146,7 +146,7 @@ class ApiService {
   }) async {
     return _executeWithRetry(() async {
       final deviceId = await _getOrCreateDeviceId();
-      final uri = Uri.parse("${apiUrl}kurt_login.php");
+      final uri = Uri.parse("${apiUrl}cares_login.php");
       final response = await httpClient.post(
         uri,
         body: {
@@ -168,7 +168,7 @@ class ApiService {
     required String emailOrPhone,
   }) async {
     return _executeWithRetry(() async {
-      final uri = Uri.parse("${apiUrl}kurt_reset_password.php");
+      final uri = Uri.parse("${apiUrl}cares_reset_password.php");
       final response = await httpClient.post(
         uri,
         body: {'emailOrPhone': emailOrPhone},
@@ -188,7 +188,7 @@ class ApiService {
         throw Exception("No auth token found");
       }
 
-      final uri = Uri.parse("${apiUrl}kurt_get_user.php");
+      final uri = Uri.parse("${apiUrl}cares_get_user.php");
       final response = await httpClient.post(
         uri,
         body: {'token': token},
@@ -214,7 +214,7 @@ class ApiService {
         throw Exception("No auth token found");
       }
 
-      final uri = Uri.parse("${apiUrl}kurt_updateProfile.php");
+      final uri = Uri.parse("${apiUrl}cares_updateProfile.php");
       final response = await httpClient.post(
         uri,
         body: {
@@ -241,7 +241,7 @@ class ApiService {
         throw Exception("No auth token found");
       }
 
-      final uri = Uri.parse("${apiUrl}kurt_logout.php");
+      final uri = Uri.parse("${apiUrl}cares_logout.php");
       final response = await httpClient.post(
         uri,
         body: {'token': token},
@@ -261,7 +261,7 @@ class ApiService {
         throw Exception("No auth token found");
       }
 
-      final uri = Uri.parse("${apiUrl}kurt_uploadImageProfile.php");
+      final uri = Uri.parse("${apiUrl}cares_uploadImageProfile.php");
       var request = http.MultipartRequest('POST', uri);
       request.fields['token'] = token;
       request.files.add(await http.MultipartFile.fromPath(
@@ -283,7 +283,7 @@ class ApiService {
     required List<Map<String, dynamic>> vehicles,
   }) async {
     return _executeWithRetry(() async {
-      final uri = Uri.parse("${apiUrl}kurt_addVehicle.php");
+      final uri = Uri.parse("${apiUrl}cares_addVehicle.php");
       final response = await httpClient.post(
         uri,
         body: {
@@ -305,7 +305,7 @@ class ApiService {
         throw Exception("No auth token found");
       }
 
-      final uri = Uri.parse("${apiUrl}kurt_getVehicles.php");
+      final uri = Uri.parse("${apiUrl}cares_getVehicles.php");
       final response = await httpClient.post(
         uri,
         body: {'token': token},
@@ -328,7 +328,7 @@ class ApiService {
         throw Exception("No auth token found");
       }
 
-      final uri = Uri.parse("${apiUrl}kurt_toggleVehicle.php");
+      final uri = Uri.parse("${apiUrl}cares_toggleVehicle.php");
       final response = await httpClient.post(
         uri,
         body: {
@@ -349,7 +349,7 @@ class ApiService {
     required List<Map<String, dynamic>> vehicles,
   }) async {
     return _executeWithRetry(() async {
-      final uri = Uri.parse("${apiUrl}kurt_updateVehicles.php");
+      final uri = Uri.parse("${apiUrl}cares_updateVehicles.php");
       final response = await httpClient.post(
         uri,
         body: {
@@ -370,7 +370,7 @@ class ApiService {
     required int vehicleId,
   }) async {
     return _executeWithRetry(() async {
-      final uri = Uri.parse("${apiUrl}kurt_deleteVehicles.php");
+      final uri = Uri.parse("${apiUrl}cares_deleteVehicles.php");
       final response = await httpClient.post(
         uri,
         body: {
@@ -404,7 +404,7 @@ class ApiService {
         throw Exception("No auth token found");
       }
 
-      final uri = Uri.parse("${apiUrl}kurt_registerShop.php");
+      final uri = Uri.parse("${apiUrl}cares_registerShop.php");
       var request = http.MultipartRequest('POST', uri);
 
       request.fields['token'] = token;
