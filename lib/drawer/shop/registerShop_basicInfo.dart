@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'registerShop_contactDetails.dart';
-
+import 'package:care/dashboard.dart';
 class RegisterShopBasicInfo extends StatefulWidget {
   const RegisterShopBasicInfo({Key? key}) : super(key: key);
 
@@ -108,7 +108,12 @@ class _RegisterShopBasicInfoState extends State<RegisterShopBasicInfo> {
                     alignment: Alignment.centerLeft,
                     child: IconButton(
                       icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                        );
+                      },
                     ),
                   ),
                   const Center(
