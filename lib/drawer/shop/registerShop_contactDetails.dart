@@ -155,18 +155,16 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
 
   void _submitForm() {
     if (_formKey.currentState!.validate() && selectedServices.isNotEmpty) {
-      if ((openingTime != null || closingTime != null) &&
-          !selectedDays.containsValue(true)) {
+      if (openingTime == null || closingTime == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select at least one day for the service times')),
+          const SnackBar(content: Text('Please set both opening and closing times')),
         );
         return;
       }
 
-      if ((openingTime == null && closingTime != null) ||
-          (openingTime != null && closingTime == null)) {
+      if (!selectedDays.containsValue(true)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please set both opening and closing times')),
+          const SnackBar(content: Text('Please select at least one day for the service times')),
         );
         return;
       }
@@ -180,8 +178,8 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
             expertise: widget.expertise,
             homePage: _facebookController.text.isNotEmpty ? _facebookController.text : null,
             services: selectedServices.join(','),
-            startTime: openingTime != null ? _formatTimeForAPI(openingTime) : null,
-            closeTime: closingTime != null ? _formatTimeForAPI(closingTime) : null,
+            startTime: _formatTimeForAPI(openingTime),
+            closeTime: _formatTimeForAPI(closingTime),
             dayIndex: _getDayIndexes(),
           ),
         ),
