@@ -113,7 +113,7 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
     final imageUrl = _userPhotoUrl != null && _userPhotoUrl!.isNotEmpty
         ? _userPhotoUrl!.contains('http')
         ? _userPhotoUrl
-        : '${ApiService.apiUrl}V4/Others/Kurt/CaresAPI/profilePicture/$_userPhotoUrl'
+        : '${ApiService.apiUrl}profilePicture/$_userPhotoUrl'
         : null;
 
     if (imageUrl != null) {

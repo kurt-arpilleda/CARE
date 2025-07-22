@@ -315,7 +315,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     final imageUrl = _userData['photoUrl'] != null && _userData['photoUrl'].isNotEmpty
         ? _userData['photoUrl']!.contains('http')
         ? _userData['photoUrl']
-        : '${ApiService.apiUrl}V4/Others/Kurt/CaresAPI/profilePicture/${_userData['photoUrl']}'
+        : '${ApiService.apiUrl}profilePicture/${_userData['photoUrl']}'
         : null;
 
     return GestureDetector(
