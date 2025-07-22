@@ -170,9 +170,9 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
                       ),
                       Text(
                         '${widget.vehicleType} Registration',
-                        style: const TextStyle(
-                          color: Color(0xFFF6FAFD),
-                          fontSize: 25,
+                        style: TextStyle(
+                          color: const Color(0xFFF6FAFD),
+                          fontSize: widget.vehicleType.length > 9 ? 22 : 23, // Reduce size if long word
                           fontWeight: FontWeight.w600,
                         ),
                       ),
