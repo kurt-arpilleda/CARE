@@ -260,7 +260,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   Future<void> _pickImage(ImageSource source) async {
     try {
-      final pickedFile = await _picker.pickImage(source: source);
+      final pickedFile = await _picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
       if (pickedFile != null) {
         setState(() {
           _selectedImage = File(pickedFile.path);
@@ -279,7 +284,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     try {
       if (_selectedImage != null) {
         final uploadResponse = await _apiService.uploadProfilePicture(_selectedImage!);
-        if (!uploadResponse['success']) {
+        if (uploadResponse['success'] != true) {
           throw Exception(uploadResponse['message'] ?? 'Failed to upload image');
         }
       }
