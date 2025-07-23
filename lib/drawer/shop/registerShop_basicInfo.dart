@@ -159,6 +159,7 @@ class _RegisterShopBasicInfoState extends State<RegisterShopBasicInfo> {
                         decoration: _fieldShadowBox(),
                         child: TextFormField(
                           controller: _shopNameController,
+                          textCapitalization: TextCapitalization.sentences,
                           decoration: _inputDecoration('Enter your shop name'),
                           validator: (value) {
                             if (value == null || value.isEmpty) {

@@ -3,7 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:care/api_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'registerShop_basicInfo.dart';
+import '../shopProfile/shopList.dart';
 
 class RegisterShopBusinessDocu extends StatefulWidget {
   final String shopName;
@@ -222,7 +222,7 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const RegisterShopBasicInfo(),
+                          builder: (context) => const ShopListScreen(),
                         ),
                             (route) => false,
                       );

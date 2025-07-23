@@ -300,6 +300,7 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
                     ),
                     child: TextField(
                       controller: modelControllers[index],
+                      textCapitalization: TextCapitalization.sentences,
                       decoration: const InputDecoration(
                         hintText: 'Enter vehicle model',
                         border: InputBorder.none,
