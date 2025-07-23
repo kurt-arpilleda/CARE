@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:care/dashboard.dart';
+import 'shopDetails.dart';
 
 class ShopListScreen extends StatelessWidget {
   const ShopListScreen({Key? key}) : super(key: key);
@@ -14,8 +15,8 @@ class ShopListScreen extends StatelessWidget {
         'icon': 'garage',
       },
       {
-        'name': 'Premium Auto Servicesssssssssssssssssssssssssssssssssssssssssssssssssss',
-        'location': '456 Oak Avenue, Downtownssssssssssssssssszsssssssssssssssssssssssss',
+        'name': 'Premium Auto Services',
+        'location': '456 Oak Avenue, Downtown',
         'icon': 'car_repair',
       },
       {
@@ -98,7 +99,7 @@ class ShopListScreen extends StatelessWidget {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 16),
                         width: MediaQuery.of(context).size.width * 0.85,
-                        child: _buildShopCard(shop),
+                        child: _buildShopCard(context, shop),
                       );
                     }).toList(),
                   ),
@@ -110,7 +111,7 @@ class ShopListScreen extends StatelessWidget {
                     final shop = visibleShops[index];
                     return Container(
                       margin: const EdgeInsets.only(bottom: 16),
-                      child: _buildShopCard(shop),
+                      child: _buildShopCard(context, shop),
                     );
                   },
                 ),
@@ -122,7 +123,8 @@ class ShopListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildShopCard(Map<String, String> shop) {
+  // ✅ Updated to accept BuildContext
+  Widget _buildShopCard(BuildContext context, Map<String, String> shop) {
     return Card(
       elevation: 3,
       color: Colors.white,
@@ -133,7 +135,15 @@ class ShopListScreen extends StatelessWidget {
       shadowColor: Colors.black.withOpacity(0.05),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {},
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ShopDetailsScreen(
+              ),
+            ),
+          );
+        },
         child: SizedBox(
           height: 110,
           child: Padding(
