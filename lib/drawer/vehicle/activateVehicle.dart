@@ -494,6 +494,20 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
                 ? const DotLoading()
                 : _vehicles.isEmpty
                 ? _buildNoDataView()
+                : _vehicles.length <= 2
+                ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: _vehicles.map((vehicle) {
+                  int index = _vehicles.indexOf(vehicle);
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    width: MediaQuery.of(context).size.width * 0.85,
+                    child: _buildVehicleCard(vehicle, index),
+                  );
+                }).toList(),
+              ),
+            )
                 : CustomScrollView(
               slivers: [
                 SliverPadding(
