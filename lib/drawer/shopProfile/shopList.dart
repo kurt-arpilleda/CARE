@@ -1,48 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:care/dashboard.dart';
+import 'package:care/api_service.dart';
 import 'shopDetails.dart';
+import 'package:care/anim/dotLoading.dart';
 
-class ShopListScreen extends StatelessWidget {
+class ShopListScreen extends StatefulWidget {
   const ShopListScreen({Key? key}) : super(key: key);
 
   @override
+  _ShopListScreenState createState() => _ShopListScreenState();
+}
+
+class _ShopListScreenState extends State<ShopListScreen> {
+  final ApiService _apiService = ApiService();
+  late Future<Map<String, dynamic>> _shopsFuture;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _shopsFuture = _fetchShops();
+  }
+
+  @override
+  void dispose() {
+    _apiService.dispose();
+    super.dispose();
+  }
+
+  Future<Map<String, dynamic>> _fetchShops() async {
+    try {
+      final response = await _apiService.getShops();
+      setState(() {
+        _isLoading = false;
+      });
+      return response;
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final int visibleCardCount = 2;
-    final List<Map<String, String>> shops = [
-      {
-        'name': 'AutoCare Masters',
-        'location': '123 Main Street, City Center',
-        'icon': 'garage',
-      },
-      {
-        'name': 'Premium Auto Services',
-        'location': '456 Oak Avenue, Downtown',
-        'icon': 'car_repair',
-      },
-      {
-        'name': 'Speedy Fix Garage',
-        'location': '789 Pine Road, Business District',
-        'icon': 'directions_car',
-      },
-      {
-        'name': 'Elite Vehicle Solutions',
-        'location': '321 Elm Boulevard, Westside',
-        'icon': 'local_shipping',
-      },
-      {
-        'name': 'Pro Auto Workshop',
-        'location': '654 Maple Lane, Uptown',
-        'icon': 'two_wheeler',
-      },
-      {
-        'name': 'Total Car Care',
-        'location': '987 Cedar Street, Riverside',
-        'icon': 'airport_shuttle',
-      },
-    ];
-
-    final visibleShops = shops.take(visibleCardCount).toList();
-
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -91,27 +93,89 @@ class ShopListScreen extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: visibleShops.length < 5
-                    ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: visibleShops.map((shop) {
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        width: MediaQuery.of(context).size.width * 0.85,
-                        child: _buildShopCard(context, shop),
+                child: FutureBuilder<Map<String, dynamic>>(
+                  future: _shopsFuture,
+                  builder: (context, snapshot) {
+                    if (_isLoading) {
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const DotLoading(),
+                          const SizedBox(height: 20),
+                          const Text(
+                            'Loading shops...',
+                            style: TextStyle(
+                              color: Color(0xFF1A3D63),
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
                       );
-                    }).toList(),
-                  ),
-                )
-                    : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: visibleShops.length,
-                  itemBuilder: (context, index) {
-                    final shop = visibleShops[index];
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: _buildShopCard(context, shop),
+                    }
+
+                    if (snapshot.hasError || !snapshot.data!['success']) {
+                      return Center(
+                        child: Text(
+                          'Failed to load shops: ${snapshot.hasError ? snapshot.error.toString() : snapshot.data!['message']}',
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      );
+                    }
+
+                    final shops = List<Map<String, dynamic>>.from(
+                        snapshot.data!['shops'] ?? []);
+
+                    if (shops.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          'No shops registered yet',
+                          style: TextStyle(
+                            color: Color(0xFF1A3D63),
+                            fontSize: 16,
+                          ),
+                        ),
+                      );
+                    }
+
+                    final bool useCenteredLayout = shops.length <= 4;
+
+                    return useCenteredLayout
+                        ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: shops.map((shop) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            width: MediaQuery.of(context).size.width * 0.85,
+                            child: _buildShopCard(
+                              context,
+                              {
+                                'name': shop['shop_name'] ?? 'No Name',
+                                'location': shop['location'] ?? 'No Location',
+                                'icon': 'directions_car',
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    )
+                        : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: shops.length,
+                      itemBuilder: (context, index) {
+                        final shop = shops[index];
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          child: _buildShopCard(
+                            context,
+                            {
+                              'name': shop['shop_name'] ?? 'No Name',
+                              'location': shop['location'] ?? 'No Location',
+                              'icon': 'directions_car',
+                            },
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
@@ -123,7 +187,6 @@ class ShopListScreen extends StatelessWidget {
     );
   }
 
-  // ✅ Updated to accept BuildContext
   Widget _buildShopCard(BuildContext context, Map<String, String> shop) {
     return Card(
       elevation: 3,
@@ -139,8 +202,7 @@ class ShopListScreen extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ShopDetailsScreen(
-              ),
+              builder: (context) => ShopDetailsScreen(),
             ),
           );
         },
@@ -158,9 +220,9 @@ class ShopListScreen extends StatelessWidget {
                     color: const Color(0xFF1A3D63).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(
-                    _getIconData(shop['icon']!),
-                    color: const Color(0xFF1A3D63),
+                  child: const Icon(
+                    Icons.directions_car,
+                    color: Color(0xFF1A3D63),
                     size: 28,
                   ),
                 ),
@@ -204,24 +266,5 @@ class ShopListScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  IconData _getIconData(String iconName) {
-    switch (iconName) {
-      case 'garage':
-        return Icons.garage;
-      case 'car_repair':
-        return Icons.car_repair;
-      case 'directions_car':
-        return Icons.directions_car;
-      case 'local_shipping':
-        return Icons.local_shipping;
-      case 'two_wheeler':
-        return Icons.two_wheeler;
-      case 'airport_shuttle':
-        return Icons.airport_shuttle;
-      default:
-        return Icons.business;
-    }
   }
 }

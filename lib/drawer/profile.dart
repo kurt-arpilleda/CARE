@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:care/api_service.dart';
+import 'package:care/anim/dotLoading.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -13,7 +14,7 @@ class ProfileScreen extends StatefulWidget {
   _ProfileScreenState createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
+class _ProfileScreenState extends State<ProfileScreen> {
   final ApiService _apiService = ApiService();
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
@@ -32,12 +33,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   String _selectedGender = 'Male';
   int _signupType = 0;
 
-  // Animation controllers for the loading dots
-  late AnimationController _loadingController;
-  late Animation<double> _dot1Animation;
-  late Animation<double> _dot2Animation;
-  late Animation<double> _dot3Animation;
-
   @override
   void initState() {
     super.initState();
@@ -45,34 +40,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     _surNameController = TextEditingController();
     _emailController = TextEditingController();
     _phoneController = TextEditingController();
-
-    // Initialize loading animation
-    _loadingController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat();
-
-    _dot1Animation = Tween(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _loadingController,
-        curve: const Interval(0.0, 0.3, curve: Curves.easeInOut),
-      ),
-    );
-
-    _dot2Animation = Tween(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _loadingController,
-        curve: const Interval(0.2, 0.5, curve: Curves.easeInOut),
-      ),
-    );
-
-    _dot3Animation = Tween(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _loadingController,
-        curve: const Interval(0.4, 0.7, curve: Curves.easeInOut),
-      ),
-    );
-
     _checkInternetAndLoadData();
   }
 
@@ -83,7 +50,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     _emailController.dispose();
     _phoneController.dispose();
     _apiService.dispose();
-    _loadingController.dispose();
     super.dispose();
   }
 
@@ -98,53 +64,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     } else {
       setState(() => _isLoading = false);
     }
-  }
-
-  // Loading widget with three animated dots
-  Widget _buildLoadingAnimation() {
-    return Center(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ScaleTransition(
-            scale: _dot1Animation,
-            child: Container(
-              width: 12,
-              height: 12,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A3D63),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          ScaleTransition(
-            scale: _dot2Animation,
-            child: Container(
-              width: 12,
-              height: 12,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A3D63),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          ScaleTransition(
-            scale: _dot3Animation,
-            child: Container(
-              width: 12,
-              height: 12,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A3D63),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildNoDataView() {
@@ -489,7 +408,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           centerTitle: true,
           leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)),
         ),
-        body: _buildLoadingAnimation(),
+        body: const DotLoading(),
       );
     }
 
@@ -574,7 +493,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         ),
                         onPressed: _isSaving ? null : _saveProfile,
                         child: _isSaving
-                            ? _buildLoadingAnimation()
+                            ? const DotLoading(dotColor: Colors.white, dotSize: 10)
                             : const Text('SAVE CHANGES', style: TextStyle(fontSize: 16, color: Colors.white)),
                       ),
                     ),

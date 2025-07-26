@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:care/api_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:care/anim/dotLoading.dart';
 
 class ActivateVehicleScreen extends StatefulWidget {
   const ActivateVehicleScreen({Key? key}) : super(key: key);
@@ -10,7 +11,7 @@ class ActivateVehicleScreen extends StatefulWidget {
   _ActivateVehicleScreenState createState() => _ActivateVehicleScreenState();
 }
 
-class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with SingleTickerProviderStateMixin {
+class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
   final ApiService _apiService = ApiService();
   List<dynamic> _vehicles = [];
   bool _isLoading = true;
@@ -25,61 +26,29 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
     '4': 'Bus',
     '5': 'Jeep',
   };
-  late AnimationController _loadingController;
-  late Animation<double> _dot1Animation;
-  late Animation<double> _dot2Animation;
-  late Animation<double> _dot3Animation;
   List<TextEditingController> _modelControllers = [];
   List<TextEditingController> _plateControllers = [];
+
   IconData _getVehicleIcon(String vehicleType) {
     switch (vehicleType) {
-      case '0': // Car
-        return Icons.directions_car;
-      case '1': // Motorcycle
-        return Icons.motorcycle;
-      case '2': // Van
-        return Icons.airport_shuttle;
-      case '3': // Truck
-        return Icons.local_shipping;
-      case '4': // Bus
-        return Icons.directions_bus;
-      case '5': // Jeep
-        return Icons.directions_bus_outlined;
-      default:
-        return Icons.directions_car;
+      case '0': return Icons.directions_car;
+      case '1': return Icons.motorcycle;
+      case '2': return Icons.airport_shuttle;
+      case '3': return Icons.local_shipping;
+      case '4': return Icons.directions_bus;
+      case '5': return Icons.directions_bus_outlined;
+      default: return Icons.directions_car;
     }
   }
+
   @override
   void initState() {
     super.initState();
-    _loadingController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat();
-    _dot1Animation = Tween(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _loadingController,
-        curve: const Interval(0.0, 0.3, curve: Curves.easeInOut),
-      ),
-    );
-    _dot2Animation = Tween(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _loadingController,
-        curve: const Interval(0.2, 0.5, curve: Curves.easeInOut),
-      ),
-    );
-    _dot3Animation = Tween(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-          parent: _loadingController,
-          curve: const Interval(0.4, 0.7, curve: Curves.easeInOut),
-        ),
-    );
-        _checkInternetAndLoadVehicles();
+    _checkInternetAndLoadVehicles();
   }
 
   @override
   void dispose() {
-    _loadingController.dispose();
     _apiService.dispose();
     for (var controller in _modelControllers) {
       controller.dispose();
@@ -100,52 +69,6 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
     } else {
       setState(() => _isLoading = false);
     }
-  }
-
-  Widget _buildLoadingAnimation() {
-    return Center(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ScaleTransition(
-            scale: _dot1Animation,
-            child: Container(
-              width: 12,
-              height: 12,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A3D63),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          ScaleTransition(
-            scale: _dot2Animation,
-            child: Container(
-              width: 12,
-              height: 12,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A3D63),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          ScaleTransition(
-            scale: _dot3Animation,
-            child: Container(
-              width: 12,
-              height: 12,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A3D63),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _loadVehicles() async {
@@ -277,96 +200,6 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
                 ),
               ),
             ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6FAFD),
-      floatingActionButton: _isEditing
-          ? FloatingActionButton.extended(
-        onPressed: _isSaving ? null : _saveChanges,
-        backgroundColor: const Color(0xFF1A3D63),
-        label: _isSaving
-            ? _buildLoadingAnimation()
-            : const Text('Save', style: TextStyle(color: Colors.white)),
-        icon: const Icon(Icons.save, color: Colors.white),
-      )
-          : null,
-      body: Column(
-        children: [
-          Container(
-            color: const Color(0xFF1A3D63),
-            padding: const EdgeInsets.only(top: 30),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Color(0xFFF6FAFD)),
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                      ),
-                      const Text(
-                        'Activate Vehicle',
-                        style: TextStyle(
-                          color: Color(0xFFF6FAFD),
-                          fontSize: 25,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: IconButton(
-                          icon: Icon(
-                              _isEditing ? Icons.close : Icons.edit,
-                              color: const Color(0xFFF6FAFD)),
-                          onPressed: () {
-                            setState(() {
-                              _isEditing = !_isEditing;
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: _isLoading
-                ? _buildLoadingAnimation()
-                : _vehicles.isEmpty
-                ? _buildNoDataView()
-                : CustomScrollView(
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.all(16.0),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                        final vehicle = _vehicles[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
-                          child: _buildVehicleCard(vehicle, index),
-                        );
-                      },
-                      childCount: _vehicles.length,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -592,6 +425,96 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> with Sing
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF6FAFD),
+      floatingActionButton: _isEditing
+          ? FloatingActionButton.extended(
+        onPressed: _isSaving ? null : _saveChanges,
+        backgroundColor: const Color(0xFF1A3D63),
+        label: _isSaving
+            ? const DotLoading()
+            : const Text('Save', style: TextStyle(color: Colors.white)),
+        icon: const Icon(Icons.save, color: Colors.white),
+      )
+          : null,
+      body: Column(
+        children: [
+          Container(
+            color: const Color(0xFF1A3D63),
+            padding: const EdgeInsets.only(top: 30),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Color(0xFFF6FAFD)),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ),
+                      const Text(
+                        'Activate Vehicle',
+                        style: TextStyle(
+                          color: Color(0xFFF6FAFD),
+                          fontSize: 25,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: IconButton(
+                          icon: Icon(
+                              _isEditing ? Icons.close : Icons.edit,
+                              color: const Color(0xFFF6FAFD)),
+                          onPressed: () {
+                            setState(() {
+                              _isEditing = !_isEditing;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const DotLoading()
+                : _vehicles.isEmpty
+                ? _buildNoDataView()
+                : CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.all(16.0),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                        final vehicle = _vehicles[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: _buildVehicleCard(vehicle, index),
+                        );
+                      },
+                      childCount: _vehicles.length,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
