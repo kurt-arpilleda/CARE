@@ -1,3 +1,4 @@
+// shop_details.dart
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -240,7 +241,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
 
     if (file != null) {
       return GestureDetector(
-        onTap: () => _showFullScreenImage(file),
+        onTap: _isEditing ? null : () => _showFullScreenImage(FileImage(file)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -285,34 +286,37 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: Colors.grey[200],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Image.asset(
-                    'assets/images/placeholder.png',
-                    fit: BoxFit.cover,
-                  );
-                },
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                          : null,
-                    ),
-                  );
-                },
+          GestureDetector(
+            onTap: _isEditing ? null : () => _showFullScreenImage(NetworkImage(imageUrl)),
+            child: Container(
+              height: 200,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.grey[200],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.asset(
+                      'assets/images/placeholder.png',
+                      fit: BoxFit.cover,
+                    );
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                            : null,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -323,7 +327,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
     return const SizedBox.shrink();
   }
 
-  void _showFullScreenImage(File imageFile) {
+  void _showFullScreenImage(ImageProvider imageProvider) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -338,7 +342,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
               panEnabled: true,
               minScale: 0.5,
               maxScale: 3.0,
-              child: Image.file(imageFile, fit: BoxFit.contain),
+              child: Image(image: imageProvider, fit: BoxFit.contain),
             ),
           ),
         ),
@@ -568,7 +572,11 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                         children: [
                           Center(
                             child: GestureDetector(
-                              onTap: _isEditing ? () => _showImageSourceDialog('shopLogo') : null,
+                              onTap: _isEditing
+                                  ? () => _showImageSourceDialog('shopLogo')
+                                  : (_currentShopData['shopLogo'] != null && _currentShopData['shopLogo'].isNotEmpty)
+                                  ? () => _showFullScreenImage(NetworkImage('${ApiService.apiUrl}shopLogo/${_currentShopData['shopLogo']}'))
+                                  : null,
                               child: Stack(
                                 children: [
                                   CircleAvatar(
