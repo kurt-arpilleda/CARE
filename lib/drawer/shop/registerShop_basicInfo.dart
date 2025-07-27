@@ -108,12 +108,7 @@ class _RegisterShopBasicInfoState extends State<RegisterShopBasicInfo> {
                     alignment: Alignment.centerLeft,
                     child: IconButton(
                       icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const DashboardScreen()),
-                        );
-                      },
+                      onPressed: () => Navigator.pop(context),
                     ),
                   ),
                   const Center(

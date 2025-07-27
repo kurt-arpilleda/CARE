@@ -3,6 +3,7 @@ import 'package:care/dashboard.dart';
 import 'package:care/api_service.dart';
 import 'shopDetails.dart';
 import 'package:care/anim/dotLoading.dart';
+import '../shop/registerShop_basicInfo.dart';
 
 class ShopListScreen extends StatefulWidget {
   const ShopListScreen({Key? key}) : super(key: key);
@@ -103,9 +104,54 @@ class _ShopListScreenState extends State<ShopListScreen> {
     );
   }
 
+  Color _getValidationBorderColor(int isValidated) {
+    switch (isValidated) {
+      case 1:
+        return Colors.green;
+      case 2:
+        return Colors.red;
+      default:
+        return Colors.orange;
+    }
+  }
+
+  Icon _getValidationIcon(int isValidated) {
+    switch (isValidated) {
+      case 1:
+        return Icon(Icons.check_circle, color: Colors.green);
+      case 2:
+        return Icon(Icons.cancel, color: Colors.red);
+      default:
+        return Icon(Icons.access_time, color: Colors.orange);
+    }
+  }
+
+  String _getValidationText(int isValidated) {
+    switch (isValidated) {
+      case 1:
+        return 'Validated';
+      case 2:
+        return 'Rejected';
+      default:
+        return 'Pending';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        backgroundColor:Color(0xFF4A7FA7),
+        child: Icon(Icons.add, color: Colors.white),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const RegisterShopBasicInfo(),
+            ),
+          );
+        },
+      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -251,12 +297,15 @@ class _ShopListScreenState extends State<ShopListScreen> {
   }
 
   Widget _buildShopCard(BuildContext context, Map<String, dynamic> shop) {
+    final int isValidated = shop['isValidated'] ?? 0;
+    final borderColor = _getValidationBorderColor(isValidated);
+
     return Card(
       elevation: 3,
       color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(color: borderColor, width: 2),
       ),
       shadowColor: Colors.black.withOpacity(0.05),
       child: InkWell(
@@ -289,20 +338,28 @@ class _ShopListScreenState extends State<ShopListScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    _getValidationIcon(isValidated),
+                    SizedBox(width: 8),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            shop['shop_name'] ?? 'No Name',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  shop['shop_name'] ?? 'No Name',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -312,6 +369,15 @@ class _ShopListScreenState extends State<ShopListScreen> {
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.white70,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _getValidationText(isValidated),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: borderColor,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
