@@ -15,7 +15,7 @@ class ShopDetailsScreen extends StatefulWidget {
 class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
   final ImagePicker _picker = ImagePicker();
   final ApiService _apiService = ApiService();
-  File? _profileImage;
+  File? _shopLogoFile;
   File? _businessPermitFile;
   File? _governmentIdFile;
   bool _isEditing = false;
@@ -115,8 +115,8 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
       final pickedFile = await _picker.pickImage(source: source);
       if (pickedFile != null) {
         setState(() {
-          if (type == 'profile') {
-            _profileImage = File(pickedFile.path);
+          if (type == 'shopLogo') {
+            _shopLogoFile = File(pickedFile.path);
           } else if (type == 'business') {
             _businessPermitFile = File(pickedFile.path);
           } else {
@@ -393,14 +393,6 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
     });
 
     try {
-      String? shopLogoUrl;
-      if (_profileImage != null) {
-        final response = await _apiService.uploadProfilePicture(_profileImage!);
-        if (response['success'] == true) {
-          shopLogoUrl = response['imageUrl'];
-        }
-      }
-
       final response = await _apiService.updateShop(
         shopId: int.parse(widget.shopData['id'].toString()),
         shopName: _shopNameController.text,
@@ -411,9 +403,9 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
         startTime: _formatTimeForAPI(openingTime),
         closeTime: _formatTimeForAPI(closingTime),
         dayIndex: _getDayIndexes(),
-        businessDocu: _businessPermitFile,
-        validId: _governmentIdFile,
-        shopLogo: shopLogoUrl,
+        shopLogoFile: _shopLogoFile,
+        businessDocuFile: _businessPermitFile,
+        validIdFile: _governmentIdFile,
       );
 
       if (response['success'] == true) {
@@ -422,6 +414,9 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
         );
         setState(() {
           _isEditing = false;
+          _shopLogoFile = null;
+          _businessPermitFile = null;
+          _governmentIdFile = null;
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -505,14 +500,14 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                   children: [
                     Center(
                       child: GestureDetector(
-                        onTap: _isEditing ? () => _showImageSourceDialog('profile') : null,
+                        onTap: _isEditing ? () => _showImageSourceDialog('shopLogo') : null,
                         child: Stack(
                           children: [
                             CircleAvatar(
                               radius: 60,
                               backgroundColor: Colors.grey.shade300,
-                              backgroundImage: _profileImage != null
-                                  ? FileImage(_profileImage!)
+                              backgroundImage: _shopLogoFile != null
+                                  ? FileImage(_shopLogoFile!)
                                   : (widget.shopData['shopLogo'] != null && widget.shopData['shopLogo'].isNotEmpty)
                                   ? NetworkImage('${ApiService.apiUrl}shopLogo/${widget.shopData['shopLogo']}')
                                   : const AssetImage('assets/images/placeholder.png') as ImageProvider,

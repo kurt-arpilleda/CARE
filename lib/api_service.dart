@@ -464,9 +464,9 @@ class ApiService {
     required String startTime,
     required String closeTime,
     required String dayIndex,
-    File? businessDocu,
-    File? validId,
-    String? shopLogo,
+    File? shopLogoFile,
+    File? businessDocuFile,
+    File? validIdFile,
   }) async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
@@ -487,19 +487,25 @@ class ApiService {
       request.fields['startTime'] = startTime;
       request.fields['closeTime'] = closeTime;
       request.fields['dayIndex'] = dayIndex;
-      if (shopLogo != null) request.fields['shopLogo'] = shopLogo;
 
-      if (businessDocu != null) {
+      if (shopLogoFile != null) {
         request.files.add(await http.MultipartFile.fromPath(
-          'businessDocu',
-          businessDocu.path,
+          'shopLogo',
+          shopLogoFile.path,
         ));
       }
 
-      if (validId != null) {
+      if (businessDocuFile != null) {
+        request.files.add(await http.MultipartFile.fromPath(
+          'businessDocu',
+          businessDocuFile.path,
+        ));
+      }
+
+      if (validIdFile != null) {
         request.files.add(await http.MultipartFile.fromPath(
           'validId',
-          validId.path,
+          validIdFile.path,
         ));
       }
 
