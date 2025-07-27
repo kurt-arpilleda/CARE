@@ -15,6 +15,7 @@ class _ShopListScreenState extends State<ShopListScreen> {
   final ApiService _apiService = ApiService();
   late Future<Map<String, dynamic>> _shopsFuture;
   bool _isLoading = true;
+  bool _isRefreshing = false;
 
   @override
   void initState() {
@@ -41,6 +42,25 @@ class _ShopListScreenState extends State<ShopListScreen> {
       });
       return {'success': false, 'message': e.toString()};
     }
+  }
+
+  Future<void> _refreshShops() async {
+    setState(() {
+      _isRefreshing = true;
+    });
+
+    await Future.delayed(Duration(milliseconds: 300));
+
+    setState(() {
+      _isLoading = true;
+      _shopsFuture = _fetchShops();
+    });
+
+    await _shopsFuture;
+
+    setState(() {
+      _isRefreshing = false;
+    });
   }
 
   Widget _buildBackgroundImage(String? shopLogo) {
@@ -132,11 +152,28 @@ class _ShopListScreenState extends State<ShopListScreen> {
                   ],
                 ),
               ),
+              if (_isRefreshing)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      const DotLoading(),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Refreshing...',
+                        style: TextStyle(
+                          color: Color(0xFF1A3D63),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               Expanded(
                 child: FutureBuilder<Map<String, dynamic>>(
                   future: _shopsFuture,
                   builder: (context, snapshot) {
-                    if (_isLoading) {
+                    if (_isLoading && !_isRefreshing) {
                       return Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -224,19 +261,22 @@ class _ShopListScreenState extends State<ShopListScreen> {
       shadowColor: Colors.black.withOpacity(0.05),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => ShopDetailsScreen(shopData: shop),
             ),
           );
+
+          if (result == true) {
+            _refreshShops();
+          }
         },
         child: SizedBox(
           height: 110,
           child: Stack(
             children: [
-              // Background image with dim overlay
               _buildBackgroundImage(shop['shopLogo']),
               Container(
                 decoration: BoxDecoration(
@@ -244,8 +284,6 @@ class _ShopListScreenState extends State<ShopListScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-
-              // Content
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
