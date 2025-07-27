@@ -17,6 +17,8 @@ class _ShopListScreenState extends State<ShopListScreen> {
   late Future<Map<String, dynamic>> _shopsFuture;
   bool _isLoading = true;
   bool _isRefreshing = false;
+  bool _isEditMode = false;
+  Set<int> _selectedShopIds = {};
 
   @override
   void initState() {
@@ -55,6 +57,7 @@ class _ShopListScreenState extends State<ShopListScreen> {
     setState(() {
       _isLoading = true;
       _shopsFuture = _fetchShops();
+      _selectedShopIds.clear();
     });
 
     await _shopsFuture;
@@ -62,6 +65,68 @@ class _ShopListScreenState extends State<ShopListScreen> {
     setState(() {
       _isRefreshing = false;
     });
+  }
+
+  void _toggleEditMode() {
+    setState(() {
+      _isEditMode = !_isEditMode;
+      _selectedShopIds.clear();
+    });
+  }
+
+  void _toggleShopSelection(int shopId) {
+    setState(() {
+      if (_selectedShopIds.contains(shopId)) {
+        _selectedShopIds.remove(shopId);
+      } else {
+        _selectedShopIds.add(shopId);
+      }
+    });
+  }
+
+  Future<void> _deleteSelectedShops() async {
+    if (_selectedShopIds.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirm Delete'),
+          content: Text('Are you sure you want to delete ${_selectedShopIds.length} shop(s)?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('No'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text('Yes'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      try {
+        final response = await _apiService.deleteShops(shopIds: _selectedShopIds.toList());
+        if (response['success']) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Shops deleted successfully')),
+          );
+          _toggleEditMode();
+          _refreshShops();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete shops: ${response['message']}')),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
   }
 
   Widget _buildBackgroundImage(String? shopLogo) {
@@ -141,15 +206,22 @@ class _ShopListScreenState extends State<ShopListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        backgroundColor:Color(0xFF4A7FA7),
-        child: Icon(Icons.add, color: Colors.white),
+        backgroundColor: _isEditMode ? Colors.red : Color(0xFF4A7FA7),
+        child: Icon(
+          _isEditMode ? Icons.delete : Icons.add,
+          color: Colors.white,
+        ),
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const RegisterShopBasicInfo(),
-            ),
-          );
+          if (_isEditMode) {
+            _deleteSelectedShops();
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const RegisterShopBasicInfo(),
+              ),
+            );
+          }
         },
       ),
       body: Container(
@@ -193,6 +265,16 @@ class _ShopListScreenState extends State<ShopListScreen> {
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                         ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton(
+                        icon: Icon(
+                          _isEditMode ? Icons.close : Icons.edit,
+                          color: Colors.white,
+                        ),
+                        onPressed: _toggleEditMode,
                       ),
                     ),
                   ],
@@ -299,6 +381,8 @@ class _ShopListScreenState extends State<ShopListScreen> {
   Widget _buildShopCard(BuildContext context, Map<String, dynamic> shop) {
     final int isValidated = shop['isValidated'] ?? 0;
     final borderColor = _getValidationBorderColor(isValidated);
+    final int shopId = shop['id'] ?? 0;
+    final bool isSelected = _selectedShopIds.contains(shopId);
 
     return Card(
       elevation: 3,
@@ -311,15 +395,19 @@ class _ShopListScreenState extends State<ShopListScreen> {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ShopDetailsScreen(shopData: shop),
-            ),
-          );
+          if (_isEditMode) {
+            _toggleShopSelection(shopId);
+          } else {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ShopDetailsScreen(shopData: shop),
+              ),
+            );
 
-          if (result == true) {
-            _refreshShops();
+            if (result == true) {
+              _refreshShops();
+            }
           }
         },
         child: SizedBox(
@@ -384,10 +472,21 @@ class _ShopListScreenState extends State<ShopListScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(
-                      Icons.chevron_right,
-                      color: Colors.white,
-                    ),
+                    if (_isEditMode)
+                      Checkbox(
+                        value: isSelected,
+                        onChanged: (bool? value) {
+                          _toggleShopSelection(shopId);
+                        },
+                        activeColor: Colors.white,
+                        checkColor: Colors.blue,
+                        side: BorderSide(color: Colors.white, width: 2),
+                      )
+                    else
+                      const Icon(
+                        Icons.chevron_right,
+                        color: Colors.white,
+                      ),
                   ],
                 ),
               ),
