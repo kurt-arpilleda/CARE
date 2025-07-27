@@ -230,7 +230,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.asset(
-                'assets/images/placeholder.png',
+                'assets/images/placeholder.jpg',
                 fit: BoxFit.cover,
               ),
             ),
@@ -302,7 +302,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Image.asset(
-                      'assets/images/placeholder.png',
+                      'assets/images/placeholder.jpg',
                       fit: BoxFit.cover,
                     );
                   },
@@ -580,13 +580,13 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                               child: Stack(
                                 children: [
                                   CircleAvatar(
-                                    radius: 60,
+                                    radius: 80,
                                     backgroundColor: Colors.grey.shade300,
                                     backgroundImage: _shopLogoFile != null
                                         ? FileImage(_shopLogoFile!)
                                         : (_currentShopData['shopLogo'] != null && _currentShopData['shopLogo'].isNotEmpty)
                                         ? NetworkImage('${ApiService.apiUrl}shopLogo/${_currentShopData['shopLogo']}')
-                                        : const AssetImage('assets/images/placeholder.png') as ImageProvider,
+                                        : const AssetImage('assets/images/placeholderCar.png') as ImageProvider,
                                   ),
                                   if (_isEditing)
                                     Positioned(
@@ -606,7 +606,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 32),
                           const Text(
                             'Basic Information',
                             style: TextStyle(
