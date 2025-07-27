@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:care/api_service.dart';
 
 class ShopDetailsScreen extends StatefulWidget {
-  const ShopDetailsScreen({Key? key}) : super(key: key);
+  final Map<String, dynamic> shopData;
+
+  const ShopDetailsScreen({Key? key, required this.shopData}) : super(key: key);
 
   @override
   _ShopDetailsScreenState createState() => _ShopDetailsScreenState();
@@ -11,17 +14,19 @@ class ShopDetailsScreen extends StatefulWidget {
 
 class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
   final ImagePicker _picker = ImagePicker();
+  final ApiService _apiService = ApiService();
   File? _profileImage;
   File? _businessPermitFile;
   File? _governmentIdFile;
   bool _isEditing = false;
+  bool _isLoading = false;
 
-  final TextEditingController _shopNameController = TextEditingController(text: 'AutoCare Masters');
-  final TextEditingController _locationController = TextEditingController(text: '123 Main Street, City Center');
-  final TextEditingController _facebookController = TextEditingController(text: 'https://facebook.com/autocare');
+  late TextEditingController _shopNameController;
+  late TextEditingController _locationController;
+  late TextEditingController _facebookController;
 
   List<String> expertiseOptions = ['Car', 'Motorcycle', 'Van', 'Truck', 'Bus', 'Jeep'];
-  List<String> selectedExpertise = ['Car', 'Motorcycle'];
+  late List<String> selectedExpertise;
 
   List<String> serviceOptions = [
     'Oil Change', 'Tire Repair & Vulcanizing', 'Brake Service', 'Engine Tune-Up & Repair',
@@ -35,16 +40,75 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
     'Brake Pad Replacement', 'Muffler Repair', 'Clutch Repair', 'Car Tint Installation',
     'Dash Cam Installation'
   ];
-  List<String> selectedServices = ['Oil Change', 'Brake Service', 'Car Wash'];
+  late List<String> selectedServices;
 
-  TimeOfDay openingTime = TimeOfDay(hour: 8, minute: 0);
-  TimeOfDay closingTime = TimeOfDay(hour: 17, minute: 0);
+  late TimeOfDay openingTime;
+  late TimeOfDay closingTime;
 
   List<String> daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  Map<String, bool> selectedDays = {
-    'Monday': true, 'Tuesday': true, 'Wednesday': true,
-    'Thursday': true, 'Friday': true, 'Saturday': false, 'Sunday': false
-  };
+  late Map<String, bool> selectedDays;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeData();
+  }
+
+  void _initializeData() {
+    _shopNameController = TextEditingController(text: widget.shopData['shop_name'] ?? '');
+    _locationController = TextEditingController(text: widget.shopData['location'] ?? '');
+    _facebookController = TextEditingController(text: widget.shopData['home_page'] ?? '');
+
+    selectedExpertise = [];
+    if (widget.shopData['expertise'] != null) {
+      final expertiseIds = (widget.shopData['expertise'] as String).split(',');
+      for (var id in expertiseIds) {
+        switch (id) {
+          case '0': selectedExpertise.add('Car'); break;
+          case '1': selectedExpertise.add('Motorcycle'); break;
+          case '2': selectedExpertise.add('Van'); break;
+          case '3': selectedExpertise.add('Truck'); break;
+          case '4': selectedExpertise.add('Bus'); break;
+          case '5': selectedExpertise.add('Jeep'); break;
+        }
+      }
+    }
+
+    selectedServices = [];
+    if (widget.shopData['services'] != null) {
+      selectedServices = (widget.shopData['services'] as String).split(',');
+    }
+
+    final startTime = widget.shopData['start_time']?.toString() ?? '08:00:00';
+    final closeTime = widget.shopData['close_time']?.toString() ?? '17:00:00';
+    openingTime = TimeOfDay(
+      hour: int.parse(startTime.split(':')[0]),
+      minute: int.parse(startTime.split(':')[1]),
+    );
+    closingTime = TimeOfDay(
+      hour: int.parse(closeTime.split(':')[0]),
+      minute: int.parse(closeTime.split(':')[1]),
+    );
+
+    selectedDays = {
+      'Monday': false,
+      'Tuesday': false,
+      'Wednesday': false,
+      'Thursday': false,
+      'Friday': false,
+      'Saturday': false,
+      'Sunday': false,
+    };
+    if (widget.shopData['day_index'] != null) {
+      final dayIndexes = (widget.shopData['day_index'] as String).split(',');
+      for (var index in dayIndexes) {
+        final dayIndex = int.tryParse(index);
+        if (dayIndex != null && dayIndex >= 0 && dayIndex < daysOfWeek.length) {
+          selectedDays[daysOfWeek[dayIndex]] = true;
+        }
+      }
+    }
+  }
 
   Future<void> _pickImage(String type, ImageSource source) async {
     try {
@@ -98,66 +162,17 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
     );
   }
 
-  void _showFullScreenImage(File imageFile) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          backgroundColor: Colors.black,
-          appBar: AppBar(
-            backgroundColor: Colors.black,
-            iconTheme: const IconThemeData(color: Colors.white),
-          ),
-          body: Center(
-            child: InteractiveViewer(
-              panEnabled: true,
-              minScale: 0.5,
-              maxScale: 3.0,
-              child: Image.file(imageFile, fit: BoxFit.contain),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget _buildDocumentPreview(String? imageName, File? file, String label, String type) {
+    final String imageUrl;
+    if (type == 'business') {
+      imageUrl = '${ApiService.apiUrl}businessDocu/$imageName';
+    } else if (type == 'government') {
+      imageUrl = '${ApiService.apiUrl}validID/$imageName';
+    } else {
+      imageUrl = '${ApiService.apiUrl}shopLogo/$imageName';
+    }
 
-  Widget _buildFilePreview(File? file, String label) {
-    if (file == null) return const SizedBox.shrink();
-    return GestureDetector(
-      onTap: () => _showFullScreenImage(file),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 8),
-          Text(
-            'Uploaded $label:',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF1A3D63),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: Colors.grey[200],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.file(file, fit: BoxFit.cover),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDocumentPreview(File? file, String label, String type) {
-    // Show placeholder image when not editing and no file uploaded
-    if (!_isEditing && file == null) {
+    if (!_isEditing && file == null && (imageName == null || imageName.isEmpty)) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -190,7 +205,6 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
       );
     }
 
-    // Show uploaded file if exists
     if (file != null) {
       return GestureDetector(
         onTap: () => _showFullScreenImage(file),
@@ -224,7 +238,79 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
       );
     }
 
+    if (imageName != null && imageName.isNotEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          Text(
+            '$label:',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF1A3D63),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 200,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: Colors.grey[200],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Image.asset(
+                    'assets/images/placeholder.png',
+                    fit: BoxFit.cover,
+                  );
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return const SizedBox.shrink();
+  }
+
+  void _showFullScreenImage(File imageFile) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white),
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              panEnabled: true,
+              minScale: 0.5,
+              maxScale: 3.0,
+              child: Image.file(imageFile, fit: BoxFit.contain),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   InputDecoration _inputDecoration(String hint) {
@@ -272,9 +358,85 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
   }
 
   String _formatTimeOfDay(TimeOfDay tod) {
-    final now = DateTime.now();
-    final dt = DateTime(now.year, now.month, now.day, tod.hour, tod.minute);
     return MaterialLocalizations.of(context).formatTimeOfDay(tod);
+  }
+
+  String _formatTimeForAPI(TimeOfDay tod) {
+    return '${tod.hour.toString().padLeft(2, '0')}:${tod.minute.toString().padLeft(2, '0')}:00';
+  }
+
+  String _getExpertiseIds() {
+    final expertiseMap = {
+      'Car': '0',
+      'Motorcycle': '1',
+      'Van': '2',
+      'Truck': '3',
+      'Bus': '4',
+      'Jeep': '5'
+    };
+    return selectedExpertise.map((e) => expertiseMap[e]).join(',');
+  }
+
+  String _getDayIndexes() {
+    List<int> indexes = [];
+    for (int i = 0; i < daysOfWeek.length; i++) {
+      if (selectedDays[daysOfWeek[i]]!) {
+        indexes.add(i);
+      }
+    }
+    return indexes.join(',');
+  }
+
+  Future<void> _saveChanges() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      String? shopLogoUrl;
+      if (_profileImage != null) {
+        final response = await _apiService.uploadProfilePicture(_profileImage!);
+        if (response['success'] == true) {
+          shopLogoUrl = response['imageUrl'];
+        }
+      }
+
+      final response = await _apiService.updateShop(
+        shopId: int.parse(widget.shopData['id'].toString()),
+        shopName: _shopNameController.text,
+        location: _locationController.text,
+        expertise: _getExpertiseIds(),
+        homePage: _facebookController.text.isNotEmpty ? _facebookController.text : null,
+        services: selectedServices.join(','),
+        startTime: _formatTimeForAPI(openingTime),
+        closeTime: _formatTimeForAPI(closingTime),
+        dayIndex: _getDayIndexes(),
+        businessDocu: _businessPermitFile,
+        validId: _governmentIdFile,
+        shopLogo: shopLogoUrl,
+      );
+
+      if (response['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Shop details updated successfully')),
+        );
+        setState(() {
+          _isEditing = false;
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['message'] ?? 'Failed to update shop details')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -309,9 +471,27 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                   ),
                   Align(
                     alignment: Alignment.centerRight,
-                    child: IconButton(
+                    child: _isLoading
+                        ? const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                    )
+                        : IconButton(
                       icon: Icon(_isEditing ? Icons.save : Icons.edit, color: Colors.white),
-                      onPressed: () => setState(() => _isEditing = !_isEditing),
+                      onPressed: () {
+                        if (_isEditing) {
+                          _saveChanges();
+                        } else {
+                          setState(() => _isEditing = !_isEditing);
+                        }
+                      },
                     ),
                   ),
                 ],
@@ -333,6 +513,8 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                               backgroundColor: Colors.grey.shade300,
                               backgroundImage: _profileImage != null
                                   ? FileImage(_profileImage!)
+                                  : (widget.shopData['shopLogo'] != null && widget.shopData['shopLogo'].isNotEmpty)
+                                  ? NetworkImage('${ApiService.apiUrl}shopLogo/${widget.shopData['shopLogo']}')
                                   : const AssetImage('assets/images/placeholder.png') as ImageProvider,
                             ),
                             if (_isEditing)
@@ -666,8 +848,6 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-
-                    // Business Permit Section
                     const Text(
                       'Business Permit/Barangay Clearance',
                       style: TextStyle(
@@ -676,8 +856,6 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                         color: Color(0xFF1A3D63),
                       ),
                     ),
-
-                    // Show upload field only when editing
                     if (_isEditing) ...[
                       const SizedBox(height: 8),
                       GestureDetector(
@@ -705,13 +883,13 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                         ),
                       ),
                     ],
-
-                    // Show document preview (either uploaded file or placeholder)
-                    _buildDocumentPreview(_businessPermitFile, 'Business Permit', 'business'),
-
+                    _buildDocumentPreview(
+                        widget.shopData['business_docu'],
+                        _businessPermitFile,
+                        'Business Permit',
+                        'business'
+                    ),
                     const SizedBox(height: 16),
-
-                    // Valid Government ID Section
                     const Text(
                       'Valid Government ID',
                       style: TextStyle(
@@ -720,8 +898,6 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                         color: Color(0xFF1A3D63),
                       ),
                     ),
-
-                    // Show upload field only when editing
                     if (_isEditing) ...[
                       const SizedBox(height: 8),
                       GestureDetector(
@@ -749,17 +925,19 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                         ),
                       ),
                     ],
-
-                    // Show document preview (either uploaded file or placeholder)
-                    _buildDocumentPreview(_governmentIdFile, 'Government ID', 'government'),
-
+                    _buildDocumentPreview(
+                        widget.shopData['valid_id'],
+                        _governmentIdFile,
+                        'Government ID',
+                        'government'
+                    ),
                     const SizedBox(height: 40),
                     if (_isEditing)
                       SizedBox(
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: () => setState(() => _isEditing = false),
+                          onPressed: _saveChanges,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1A3D63),
                             shape: RoundedRectangleBorder(
@@ -767,7 +945,16 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                             ),
                             elevation: 3,
                           ),
-                          child: const Text(
+                          child: _isLoading
+                              ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                              : const Text(
                             'Save Changes',
                             style: TextStyle(
                               fontSize: 16,

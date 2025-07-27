@@ -228,7 +228,7 @@ class _ShopListScreenState extends State<ShopListScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ShopDetailsScreen(),
+              builder: (context) => ShopDetailsScreen(shopData: shop),
             ),
           );
         },

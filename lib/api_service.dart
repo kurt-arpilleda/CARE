@@ -454,6 +454,64 @@ class ApiService {
       throw HttpException("HTTP ${response.statusCode}");
     });
   }
+  Future<Map<String, dynamic>> updateShop({
+    required int shopId,
+    required String shopName,
+    required String location,
+    required String expertise,
+    String? homePage,
+    required String services,
+    required String startTime,
+    required String closeTime,
+    required String dayIndex,
+    File? businessDocu,
+    File? validId,
+    String? shopLogo,
+  }) async {
+    return _executeWithRetry(() async {
+      final token = await getAuthToken();
+      if (token == null) {
+        throw Exception("No auth token found");
+      }
+
+      final uri = Uri.parse("${apiUrl}cares_updateShop.php");
+      var request = http.MultipartRequest('POST', uri);
+
+      request.fields['token'] = token;
+      request.fields['shopId'] = shopId.toString();
+      request.fields['shopName'] = shopName;
+      request.fields['location'] = location;
+      request.fields['expertise'] = expertise;
+      if (homePage != null) request.fields['homePage'] = homePage;
+      request.fields['services'] = services;
+      request.fields['startTime'] = startTime;
+      request.fields['closeTime'] = closeTime;
+      request.fields['dayIndex'] = dayIndex;
+      if (shopLogo != null) request.fields['shopLogo'] = shopLogo;
+
+      if (businessDocu != null) {
+        request.files.add(await http.MultipartFile.fromPath(
+          'businessDocu',
+          businessDocu.path,
+        ));
+      }
+
+      if (validId != null) {
+        request.files.add(await http.MultipartFile.fromPath(
+          'validId',
+          validId.path,
+        ));
+      }
+
+      final response = await request.send().timeout(requestTimeoutUploadImage);
+      final responseBody = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        return jsonDecode(responseBody);
+      }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
+  }
   Future<void> saveAuthToken(String token) async {
     await _secureStorage.write(key: 'authToken', value: token);
   }
