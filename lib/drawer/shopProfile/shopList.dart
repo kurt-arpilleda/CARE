@@ -43,6 +43,46 @@ class _ShopListScreenState extends State<ShopListScreen> {
     }
   }
 
+  Widget _buildBackgroundImage(String? shopLogo) {
+    if (shopLogo != null && shopLogo.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          '${ApiService.apiUrl}shopLogo/$shopLogo',
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildDefaultBackground();
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            );
+          },
+        ),
+      );
+    } else {
+      return _buildDefaultBackground();
+    }
+  }
+
+  Widget _buildDefaultBackground() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Image.asset(
+        'assets/images/carService.png',
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -147,14 +187,7 @@ class _ShopListScreenState extends State<ShopListScreen> {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 16),
                             width: MediaQuery.of(context).size.width * 0.85,
-                            child: _buildShopCard(
-                              context,
-                              {
-                                'name': shop['shop_name'] ?? 'No Name',
-                                'location': shop['location'] ?? 'No Location',
-                                'icon': 'directions_car',
-                              },
-                            ),
+                            child: _buildShopCard(context, shop),
                           );
                         }).toList(),
                       ),
@@ -166,14 +199,7 @@ class _ShopListScreenState extends State<ShopListScreen> {
                         final shop = shops[index];
                         return Container(
                           margin: const EdgeInsets.only(bottom: 16),
-                          child: _buildShopCard(
-                            context,
-                            {
-                              'name': shop['shop_name'] ?? 'No Name',
-                              'location': shop['location'] ?? 'No Location',
-                              'icon': 'directions_car',
-                            },
-                          ),
+                          child: _buildShopCard(context, shop),
                         );
                       },
                     );
@@ -187,7 +213,7 @@ class _ShopListScreenState extends State<ShopListScreen> {
     );
   }
 
-  Widget _buildShopCard(BuildContext context, Map<String, String> shop) {
+  Widget _buildShopCard(BuildContext context, Map<String, dynamic> shop) {
     return Card(
       elevation: 3,
       color: Colors.white,
@@ -208,60 +234,60 @@ class _ShopListScreenState extends State<ShopListScreen> {
         },
         child: SizedBox(
           height: 110,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A3D63).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.directions_car,
-                    color: Color(0xFF1A3D63),
-                    size: 28,
-                  ),
+          child: Stack(
+            children: [
+              // Background image with dim overlay
+              _buildBackgroundImage(shop['shopLogo']),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        shop['name']!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A3D63),
-                        ),
+              ),
+
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            shop['shop_name'] ?? 'No Name',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            shop['location'] ?? 'No Location',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        shop['location']!,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.chevron_right,
+                      color: Colors.white,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                const Icon(
-                  Icons.chevron_right,
-                  color: Color(0xFF1A3D63),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
