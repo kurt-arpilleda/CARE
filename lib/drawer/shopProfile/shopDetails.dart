@@ -519,12 +519,21 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                         ),
                       )
                           : IconButton(
-                        icon: Icon(_isEditing ? Icons.save : Icons.edit, color: Colors.white),
+                        icon: Icon(
+                          _isEditing ? Icons.close : Icons.edit,
+                          color: Colors.white,
+                        ),
                         onPressed: () {
                           if (_isEditing) {
-                            _saveChanges();
+                            setState(() {
+                              _isEditing = false;
+                              _shopLogoFile = null;
+                              _businessPermitFile = null;
+                              _governmentIdFile = null;
+                              _initializeData();
+                            });
                           } else {
-                            setState(() => _isEditing = !_isEditing);
+                            setState(() => _isEditing = true);
                           }
                         },
                       ),
@@ -550,443 +559,502 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                   ),
                 ),
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: GestureDetector(
-                          onTap: _isEditing ? () => _showImageSourceDialog('shopLogo') : null,
-                          child: Stack(
-                            children: [
-                              CircleAvatar(
-                                radius: 60,
-                                backgroundColor: Colors.grey.shade300,
-                                backgroundImage: _shopLogoFile != null
-                                    ? FileImage(_shopLogoFile!)
-                                    : (_currentShopData['shopLogo'] != null && _currentShopData['shopLogo'].isNotEmpty)
-                                    ? NetworkImage('${ApiService.apiUrl}shopLogo/${_currentShopData['shopLogo']}')
-                                    : const AssetImage('assets/images/placeholder.png') as ImageProvider,
-                              ),
-                              if (_isEditing)
-                                Positioned(
-                                  bottom: 0,
-                                  right: 0,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF1A3D63),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(color: Colors.white, width: 2),
+                child: Stack(
+                  children: [
+                    SingleChildScrollView(
+                      padding: const EdgeInsets.all(24).copyWith(bottom: 80),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: GestureDetector(
+                              onTap: _isEditing ? () => _showImageSourceDialog('shopLogo') : null,
+                              child: Stack(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 60,
+                                    backgroundColor: Colors.grey.shade300,
+                                    backgroundImage: _shopLogoFile != null
+                                        ? FileImage(_shopLogoFile!)
+                                        : (_currentShopData['shopLogo'] != null && _currentShopData['shopLogo'].isNotEmpty)
+                                        ? NetworkImage('${ApiService.apiUrl}shopLogo/${_currentShopData['shopLogo']}')
+                                        : const AssetImage('assets/images/placeholder.png') as ImageProvider,
+                                  ),
+                                  if (_isEditing)
+                                    Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF1A3D63),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(color: Colors.white, width: 2),
+                                        ),
+                                        child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                                      ),
                                     ),
-                                    child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Basic Information',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A3D63),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Shop Name',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF1A3D63),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            decoration: _fieldShadowBox(),
+                            child: TextFormField(
+                              controller: _shopNameController,
+                              enabled: _isEditing,
+                              style: const TextStyle(color: Colors.black),
+                              decoration: _inputDecoration('Enter your shop name'),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Location',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF1A3D63),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            decoration: _fieldShadowBox(),
+                            child: TextFormField(
+                              controller: _locationController,
+                              enabled: _isEditing,
+                              style: const TextStyle(color: Colors.black),
+                              decoration: _inputDecoration('Enter shop location'),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Expertise',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF1A3D63),
+                            ),
+                          ),
+                          if (_isEditing) ...[
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Types of vehicles your shop services',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _isEditing
+                                ? expertiseOptions.map((expertise) {
+                              bool isSelected = selectedExpertise.contains(expertise);
+                              return ChoiceChip(
+                                label: Text(expertise),
+                                selected: isSelected,
+                                onSelected: (_) {
+                                  setState(() {
+                                    if (isSelected) {
+                                      selectedExpertise.remove(expertise);
+                                    } else {
+                                      selectedExpertise.add(expertise);
+                                    }
+                                  });
+                                },
+                                selectedColor: const Color(0xFF1A3D63),
+                                backgroundColor: Colors.white,
+                                labelStyle: TextStyle(
+                                  color: isSelected ? Colors.white : const Color(0xFF1A3D63),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? const Color(0xFF1A3D63)
+                                        : Colors.grey[300]!,
                                   ),
                                 ),
+                                showCheckmark: false,
+                              );
+                            }).toList()
+                                : selectedExpertise.map((expertise) {
+                              return Chip(
+                                label: Text(expertise),
+                                backgroundColor: const Color(0xFF1A3D63),
+                                labelStyle: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: const BorderSide(color: Color(0xFF1A3D63)),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Contact Details',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A3D63),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Home Page',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF1A3D63),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            decoration: _fieldShadowBox(),
+                            child: TextFormField(
+                              controller: _facebookController,
+                              enabled: _isEditing,
+                              style: const TextStyle(color: Colors.black),
+                              decoration: _inputDecoration('Enter home page link'),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Service Offered',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF1A3D63),
+                            ),
+                          ),
+                          if (_isEditing) ...[
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Services your shop offers',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _isEditing
+                                ? serviceOptions.map((service) {
+                              bool isSelected = selectedServices.contains(service);
+                              return ChoiceChip(
+                                label: Text(service),
+                                selected: isSelected,
+                                onSelected: (_) {
+                                  setState(() {
+                                    if (isSelected) {
+                                      selectedServices.remove(service);
+                                    } else {
+                                      selectedServices.add(service);
+                                    }
+                                  });
+                                },
+                                selectedColor: const Color(0xFF1A3D63),
+                                backgroundColor: Colors.white,
+                                labelStyle: TextStyle(
+                                  color: isSelected ? Colors.white : const Color(0xFF1A3D63),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? const Color(0xFF1A3D63)
+                                        : Colors.grey[300]!,
+                                  ),
+                                ),
+                                showCheckmark: false,
+                              );
+                            }).toList()
+                                : selectedServices.map((service) {
+                              return Chip(
+                                label: Text(service),
+                                backgroundColor: const Color(0xFF1A3D63),
+                                labelStyle: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: const BorderSide(color: Color(0xFF1A3D63)),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Service Time',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF1A3D63),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Shop opening and closing hours',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: _isEditing ? () => _selectTime(context, true) : null,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Text(
+                                      _formatTimeOfDay(openingTime),
+                                      style: const TextStyle(
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: _isEditing ? () => _selectTime(context, false) : null,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Text(
+                                      _formatTimeOfDay(closingTime),
+                                      style: const TextStyle(
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'Basic Information',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A3D63),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Shop Name',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A3D63),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: _fieldShadowBox(),
-                        child: TextFormField(
-                          controller: _shopNameController,
-                          enabled: _isEditing,
-                          style: const TextStyle(color: Colors.black),
-                          decoration: _inputDecoration('Enter your shop name'),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Location',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A3D63),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: _fieldShadowBox(),
-                        child: TextFormField(
-                          controller: _locationController,
-                          enabled: _isEditing,
-                          style: const TextStyle(color: Colors.black),
-                          decoration: _inputDecoration('Enter shop location'),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Expertise',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A3D63),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Types of vehicles your shop services',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: expertiseOptions.map((expertise) {
-                          bool isSelected = selectedExpertise.contains(expertise);
-                          return ChoiceChip(
-                            label: Text(expertise),
-                            selected: isSelected,
-                            onSelected: _isEditing ? (_) {
-                              setState(() {
-                                if (isSelected) {
-                                  selectedExpertise.remove(expertise);
-                                } else {
-                                  selectedExpertise.add(expertise);
-                                }
-                              });
-                            } : null,
-                            selectedColor: const Color(0xFF1A3D63),
-                            backgroundColor: Colors.white,
-                            labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : const Color(0xFF1A3D63),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Open Days',
+                            style: TextStyle(
+                              fontSize: 14,
                               fontWeight: FontWeight.w500,
+                              color: Color(0xFF1A3D63),
                             ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              side: BorderSide(
-                                color: isSelected
-                                    ? const Color(0xFF1A3D63)
-                                    : Colors.grey[300]!,
+                          ),
+                          if (_isEditing) ...[
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Days these hours apply to',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
                               ),
                             ),
-                            showCheckmark: false,
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'Contact Details',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A3D63),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Home Page',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A3D63),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: _fieldShadowBox(),
-                        child: TextFormField(
-                          controller: _facebookController,
-                          enabled: _isEditing,
-                          style: const TextStyle(color: Colors.black),
-                          decoration: _inputDecoration('Enter home page link'),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Service Offered',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A3D63),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Services your shop offers',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: serviceOptions.map((service) {
-                          bool isSelected = selectedServices.contains(service);
-                          return ChoiceChip(
-                            label: Text(service),
-                            selected: isSelected,
-                            onSelected: _isEditing ? (_) {
-                              setState(() {
-                                if (isSelected) {
-                                  selectedServices.remove(service);
-                                } else {
-                                  selectedServices.add(service);
-                                }
-                              });
-                            } : null,
-                            selectedColor: const Color(0xFF1A3D63),
-                            backgroundColor: Colors.white,
-                            labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : const Color(0xFF1A3D63),
-                              fontWeight: FontWeight.w500,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              side: BorderSide(
-                                color: isSelected
-                                    ? const Color(0xFF1A3D63)
-                                    : Colors.grey[300]!,
-                              ),
-                            ),
-                            showCheckmark: false,
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Service Time',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A3D63),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Shop opening and closing hours',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: _isEditing ? () => _selectTime(context, true) : null,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
+                          ],
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _isEditing
+                                ? daysOfWeek.map((day) {
+                              bool isSelected = selectedDays[day]!;
+                              return ChoiceChip(
+                                label: Text(day),
+                                selected: isSelected,
+                                onSelected: (_) {
+                                  setState(() {
+                                    selectedDays[day] = !isSelected;
+                                  });
+                                },
+                                selectedColor: const Color(0xFF1A3D63),
+                                backgroundColor: Colors.white,
+                                labelStyle: TextStyle(
+                                  color: isSelected ? Colors.white : const Color(0xFF1A3D63),
+                                  fontWeight: FontWeight.w500,
                                 ),
-                                child: Text(
-                                  _formatTimeOfDay(openingTime),
-                                  style: const TextStyle(
-                                    color: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? const Color(0xFF1A3D63)
+                                        : Colors.grey[300]!,
+                                  ),
+                                ),
+                                showCheckmark: false,
+                              );
+                            }).toList()
+                                : daysOfWeek.where((day) => selectedDays[day]!).map((day) {
+                              return Chip(
+                                label: Text(day),
+                                backgroundColor: const Color(0xFF1A3D63),
+                                labelStyle: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: const BorderSide(color: Color(0xFF1A3D63)),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Business Documents',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A3D63),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Business Permit/Barangay Clearance',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF1A3D63),
+                            ),
+                          ),
+                          if (_isEditing) ...[
+                            const SizedBox(height: 8),
+                            GestureDetector(
+                              onTap: () => _showImageSourceDialog('business'),
+                              child: Container(
+                                decoration: _fieldShadowBox(),
+                                child: TextFormField(
+                                  enabled: false,
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    hintText: 'Business Permit',
+                                    hintStyle: TextStyle(color: Colors.grey[500]),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    prefixIcon: const Icon(Icons.cloud_upload, color: Color(0xFF1A3D63)),
+                                    suffixIcon: _businessPermitFile != null
+                                        ? const Icon(Icons.check_circle, color: Colors.green)
+                                        : null,
                                   ),
                                 ),
                               ),
                             ),
+                          ],
+                          _buildDocumentPreview(
+                              _currentShopData['business_docu'],
+                              _businessPermitFile,
+                              'Business Permit',
+                              'business'
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: _isEditing ? () => _selectTime(context, false) : null,
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Valid Government ID',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF1A3D63),
+                            ),
+                          ),
+                          if (_isEditing) ...[
+                            const SizedBox(height: 8),
+                            GestureDetector(
+                              onTap: () => _showImageSourceDialog('government'),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
+                                decoration: _fieldShadowBox(),
+                                child: TextFormField(
+                                  enabled: false,
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    hintText: 'Government ID',
+                                    hintStyle: TextStyle(color: Colors.grey[500]),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
                                     ),
-                                  ],
-                                ),
-                                child: Text(
-                                  _formatTimeOfDay(closingTime),
-                                  style: const TextStyle(
-                                    color: Colors.black,
+                                    prefixIcon: const Icon(Icons.cloud_upload, color: Color(0xFF1A3D63)),
+                                    suffixIcon: _governmentIdFile != null
+                                        ? const Icon(Icons.check_circle, color: Colors.green)
+                                        : null,
                                   ),
                                 ),
                               ),
                             ),
+                          ],
+                          _buildDocumentPreview(
+                              _currentShopData['valid_id'],
+                              _governmentIdFile,
+                              'Government ID',
+                              'government'
                           ),
+                          const SizedBox(height: 40),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Open Days',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A3D63),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Days these hours apply to',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: daysOfWeek.map((day) {
-                          bool isSelected = selectedDays[day]!;
-                          return ChoiceChip(
-                            label: Text(day),
-                            selected: isSelected,
-                            onSelected: _isEditing ? (_) {
-                              setState(() {
-                                selectedDays[day] = !isSelected;
-                              });
-                            } : null,
-                            selectedColor: const Color(0xFF1A3D63),
-                            backgroundColor: Colors.white,
-                            labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : const Color(0xFF1A3D63),
-                              fontWeight: FontWeight.w500,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              side: BorderSide(
-                                color: isSelected
-                                    ? const Color(0xFF1A3D63)
-                                    : Colors.grey[300]!,
-                              ),
-                            ),
-                            showCheckmark: false,
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'Business Documents',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A3D63),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Business Permit/Barangay Clearance',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A3D63),
-                        ),
-                      ),
-                      if (_isEditing) ...[
-                        const SizedBox(height: 8),
-                        GestureDetector(
-                          onTap: () => _showImageSourceDialog('business'),
-                          child: Container(
-                            decoration: _fieldShadowBox(),
-                            child: TextFormField(
-                              enabled: false,
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.white,
-                                hintText: 'Business Permit',
-                                hintStyle: TextStyle(color: Colors.grey[500]),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                                prefixIcon: const Icon(Icons.cloud_upload, color: Color(0xFF1A3D63)),
-                                suffixIcon: _businessPermitFile != null
-                                    ? const Icon(Icons.check_circle, color: Colors.green)
-                                    : null,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                      _buildDocumentPreview(
-                          _currentShopData['business_docu'],
-                          _businessPermitFile,
-                          'Business Permit',
-                          'business'
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Valid Government ID',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A3D63),
-                        ),
-                      ),
-                      if (_isEditing) ...[
-                        const SizedBox(height: 8),
-                        GestureDetector(
-                          onTap: () => _showImageSourceDialog('government'),
-                          child: Container(
-                            decoration: _fieldShadowBox(),
-                            child: TextFormField(
-                              enabled: false,
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.white,
-                                hintText: 'Government ID',
-                                hintStyle: TextStyle(color: Colors.grey[500]),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                                prefixIcon: const Icon(Icons.cloud_upload, color: Color(0xFF1A3D63)),
-                                suffixIcon: _governmentIdFile != null
-                                    ? const Icon(Icons.check_circle, color: Colors.green)
-                                    : null,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                      _buildDocumentPreview(
-                          _currentShopData['valid_id'],
-                          _governmentIdFile,
-                          'Government ID',
-                          'government'
-                      ),
-                      const SizedBox(height: 40),
-                      if (_isEditing)
-                        SizedBox(
-                          width: double.infinity,
+                    ),
+                    if (_isEditing)
+                      Positioned(
+                        bottom: 24,
+                        left: 24,
+                        right: 24,
+                        child: SizedBox(
                           height: 50,
                           child: ElevatedButton(
                             onPressed: _saveChanges,
@@ -1016,8 +1084,8 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                             ),
                           ),
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
               ),
             ],
