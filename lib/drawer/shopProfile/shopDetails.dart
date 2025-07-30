@@ -1,9 +1,9 @@
-// shop_details.dart
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:care/api_service.dart';
 import 'package:care/anim/dotLoading.dart';
+import 'package:care/options.dart';
 
 class ShopDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> shopData;
@@ -29,28 +29,10 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
   late TextEditingController _facebookController;
 
   late Map<String, dynamic> _currentShopData;
-
-  List<String> expertiseOptions = ['Car', 'Motorcycle', 'Van', 'Truck', 'Bus', 'Jeep'];
   late List<String> selectedExpertise;
-
-  List<String> serviceOptions = [
-    'Oil Change', 'Tire Repair & Vulcanizing', 'Brake Service', 'Engine Tune-Up & Repair',
-    'Transmission Repair', 'Battery Check & Replacement', 'Aircon Cleaning & Repair',
-    'Wheel Alignment & Balancing', 'Suspension Check & Repair', 'Exhaust System Repair',
-    'Computerized Diagnostic Test', 'Electrical Wiring & Repair', 'Car Wash',
-    'Interior & Exterior Detailing', 'Auto Paint & Repainting', 'Body Repair & Fender Bender',
-    'Glass & Windshield Replacement', 'Rustproofing & Undercoating', 'Towing Service',
-    '24/7 Roadside Assistance', 'Underwash', 'Headlight & Taillight Replacement',
-    'Radiator Flush & Repair', 'Change Oil & Filter', 'Fuel System Cleaning',
-    'Brake Pad Replacement', 'Muffler Repair', 'Clutch Repair', 'Car Tint Installation',
-    'Dash Cam Installation'
-  ];
   late List<String> selectedServices;
-
   late TimeOfDay openingTime;
   late TimeOfDay closingTime;
-
-  List<String> daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   late Map<String, bool> selectedDays;
 
   @override
@@ -115,7 +97,27 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
       }
     }
   }
-
+  void _toggleService(String service) {
+    setState(() {
+      if (service == 'Select All') {
+        if (selectedServices.contains('Select All')) {
+          selectedServices.clear();
+        } else {
+          selectedServices = List.from(serviceOptions);
+        }
+      } else {
+        if (selectedServices.contains(service)) {
+          selectedServices.remove(service);
+          selectedServices.remove('Select All');
+        } else {
+          selectedServices.add(service);
+          if (selectedServices.length == serviceOptions.length - 1) {
+            selectedServices.add('Select All');
+          }
+        }
+      }
+    });
+  }
   Future<void> _refreshShopData() async {
     setState(() {
       _isLoading = true;
@@ -241,7 +243,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
 
     if (file != null) {
       return GestureDetector(
-        onTap: _isEditing ? null : () => _showFullScreenImage(FileImage(file)),
+        onTap: () => _showFullScreenImage(FileImage(file)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -287,7 +289,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
           ),
           const SizedBox(height: 8),
           GestureDetector(
-            onTap: _isEditing ? null : () => _showFullScreenImage(NetworkImage(imageUrl)),
+            onTap: () => _showFullScreenImage(NetworkImage(imageUrl)),
             child: Container(
               height: 200,
               width: double.infinity,
@@ -780,15 +782,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                               return ChoiceChip(
                                 label: Text(service),
                                 selected: isSelected,
-                                onSelected: (_) {
-                                  setState(() {
-                                    if (isSelected) {
-                                      selectedServices.remove(service);
-                                    } else {
-                                      selectedServices.add(service);
-                                    }
-                                  });
-                                },
+                                onSelected: (_) => _toggleService(service),
                                 selectedColor: const Color(0xFF1A3D63),
                                 backgroundColor: Colors.white,
                                 labelStyle: TextStyle(
@@ -806,7 +800,9 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                                 showCheckmark: false,
                               );
                             }).toList()
-                                : selectedServices.map((service) {
+                                : selectedServices
+                                .where((s) => s != 'Select All')
+                                .map((service) {
                               return Chip(
                                 label: Text(service),
                                 backgroundColor: const Color(0xFF1A3D63),

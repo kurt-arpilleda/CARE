@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'registerShop_contactDetails.dart';
 import 'package:care/dashboard.dart';
+import 'package:care/options.dart';
+
 class RegisterShopBasicInfo extends StatefulWidget {
   const RegisterShopBasicInfo({Key? key}) : super(key: key);
 
@@ -21,7 +23,6 @@ class _RegisterShopBasicInfoState extends State<RegisterShopBasicInfo> {
     'Bus': 4,
     'Jeep': 5
   };
-  List<String> expertiseOptions = ['Car', 'Motorcycle', 'Van', 'Truck', 'Bus', 'Jeep'];
   List<String> selectedExpertise = [];
 
   @override

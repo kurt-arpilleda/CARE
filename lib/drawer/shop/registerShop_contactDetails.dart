@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'registerShop_businessDocu.dart';
+import 'package:care/options.dart';
 
 class RegisterShopContactDetails extends StatefulWidget {
   final String shopName;
@@ -22,54 +23,9 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _facebookController = TextEditingController();
   final FocusNode _facebookFocusNode = FocusNode();
-
-  List<String> serviceOptions = [
-    'Oil Change',
-    'Tire Repair & Vulcanizing',
-    'Brake Service',
-    'Engine Tune-Up & Repair',
-    'Transmission Repair',
-    'Battery Check & Replacement',
-    'Aircon Cleaning & Repair',
-    'Wheel Alignment & Balancing',
-    'Suspension Check & Repair',
-    'Exhaust System Repair',
-    'Computerized Diagnostic Test',
-    'Electrical Wiring & Repair',
-    'Car Wash',
-    'Interior & Exterior Detailing',
-    'Auto Paint & Repainting',
-    'Body Repair & Fender Bender',
-    'Glass & Windshield Replacement',
-    'Rustproofing & Undercoating',
-    'Towing Service',
-    '24/7 Roadside Assistance',
-    'Underwash',
-    'Headlight & Taillight Replacement',
-    'Radiator Flush & Repair',
-    'Change Oil & Filter',
-    'Fuel System Cleaning',
-    'Brake Pad Replacement',
-    'Muffler Repair',
-    'Clutch Repair',
-    'Car Tint Installation',
-    'Dash Cam Installation'
-  ];
-
   List<String> selectedServices = [];
-
   TimeOfDay? openingTime;
   TimeOfDay? closingTime;
-
-  List<String> daysOfWeek = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday'
-  ];
   Map<String, bool> selectedDays = {
     'Monday': false,
     'Tuesday': false,
@@ -82,14 +38,26 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
 
   void _toggleService(String service) {
     setState(() {
-      if (selectedServices.contains(service)) {
-        selectedServices.remove(service);
+      if (service == 'Select All') {
+        if (selectedServices.contains('Select All')) {
+          selectedServices.clear();
+        } else {
+          selectedServices = List.from(serviceOptions);
+        }
       } else {
-        selectedServices.add(service);
+        // Regular service selection logic
+        if (selectedServices.contains(service)) {
+          selectedServices.remove(service);
+          selectedServices.remove('Select All');
+        } else {
+          selectedServices.add(service);
+          if (selectedServices.length == serviceOptions.length - 1) {
+            selectedServices.add('Select All');
+          }
+        }
       }
     });
   }
-
   void _toggleDay(String day) {
     setState(() {
       selectedDays[day] = !selectedDays[day]!;
@@ -108,7 +76,6 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
 
   Future<void> _selectTime(BuildContext context, bool isOpening) async {
     FocusScope.of(context).unfocus();
-
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
