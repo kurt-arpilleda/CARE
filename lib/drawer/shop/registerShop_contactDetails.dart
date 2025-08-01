@@ -63,6 +63,14 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
       selectedDays[day] = !selectedDays[day]!;
     });
   }
+  void _toggleAllDays() {
+    setState(() {
+      bool allSelected = selectedDays.values.every((value) => value);
+      for (var day in selectedDays.keys) {
+        selectedDays[day] = !allSelected;
+      }
+    });
+  }
 
   String _getDayIndexes() {
     List<int> indexes = [];
@@ -404,22 +412,48 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: daysOfWeek.map((day) {
-                          bool isSelected = selectedDays[day]!;
-                          return ChoiceChip(
-                            label: Text(day),
-                            selected: isSelected,
-                            onSelected: (_) => _toggleDay(day),
+                        children: [
+                          ...daysOfWeek.map((day) {
+                            bool isSelected = selectedDays[day]!;
+                            return ChoiceChip(
+                              label: Text(day),
+                              selected: isSelected,
+                              onSelected: (_) => _toggleDay(day),
+                              selectedColor: const Color(0xFF1A3D63),
+                              backgroundColor: Colors.white,
+                              labelStyle: TextStyle(
+                                color: isSelected ? Colors.white : const Color(0xFF1A3D63),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                side: BorderSide(
+                                  color: isSelected
+                                      ? const Color(0xFF1A3D63)
+                                      : Colors.grey[300]!,
+                                ),
+                              ),
+                              showCheckmark: false,
+                              visualDensity: const VisualDensity(horizontal: 0, vertical: 0),
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            );
+                          }).toList(),
+                          ChoiceChip(
+                            label: const Text('Select All'),
+                            selected: selectedDays.values.every((value) => value),
+                            onSelected: (_) => _toggleAllDays(),
                             selectedColor: const Color(0xFF1A3D63),
                             backgroundColor: Colors.white,
                             labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : const Color(0xFF1A3D63),
+                              color: selectedDays.values.every((value) => value)
+                                  ? Colors.white
+                                  : const Color(0xFF1A3D63),
                               fontWeight: FontWeight.w500,
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                               side: BorderSide(
-                                color: isSelected
+                                color: selectedDays.values.every((value) => value)
                                     ? const Color(0xFF1A3D63)
                                     : Colors.grey[300]!,
                               ),
@@ -427,8 +461,8 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
                             showCheckmark: false,
                             visualDensity: const VisualDensity(horizontal: 0, vertical: 0),
                             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          );
-                        }).toList(),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 40),
                       Row(
