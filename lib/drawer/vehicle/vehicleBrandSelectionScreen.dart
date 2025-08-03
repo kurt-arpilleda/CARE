@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'vehicleRegister.dart';
 import 'package:care/anim/dotLoading.dart';
 
-class VehicleBrandsScreen extends StatefulWidget {
+class VehicleBrandSelectionScreen extends StatefulWidget {
   final String vehicleType;
 
-  const VehicleBrandsScreen({Key? key, required this.vehicleType}) : super(key: key);
+  const VehicleBrandSelectionScreen({Key? key, required this.vehicleType}) : super(key: key);
 
   @override
-  _VehicleBrandsScreenState createState() => _VehicleBrandsScreenState();
+  _VehicleBrandSelectionScreenState createState() => _VehicleBrandSelectionScreenState();
 }
 
-class _VehicleBrandsScreenState extends State<VehicleBrandsScreen> {
+class _VehicleBrandSelectionScreenState extends State<VehicleBrandSelectionScreen> {
   List<String> brands = [];
   List<String> filteredBrands = [];
   bool _isLoading = true;
@@ -218,15 +217,8 @@ class _VehicleBrandsScreenState extends State<VehicleBrandsScreen> {
           child: ListTile(
             title: Text(brand),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => VehicleRegisterScreen(
-                    vehicleType: widget.vehicleType,
-                    vehicleBrand: brand,
-                  ),
-                ),
-              );
+              // Return the selected brand instead of navigating
+              Navigator.pop(context, brand);
             },
           ),
         );

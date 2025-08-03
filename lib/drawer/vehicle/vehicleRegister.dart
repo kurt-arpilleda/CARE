@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:care/api_service.dart';
+import 'vehicleBrandSelectionScreen.dart';
 
 class VehicleRegisterScreen extends StatefulWidget {
   final String vehicleType;
+  final String? vehicleBrand;
 
-  const VehicleRegisterScreen({Key? key, required this.vehicleType}) : super(key: key);
+  const VehicleRegisterScreen({
+    Key? key,
+    required this.vehicleType,
+    this.vehicleBrand,
+  }) : super(key: key);
 
   @override
   _VehicleRegisterScreenState createState() => _VehicleRegisterScreenState();
@@ -13,12 +19,26 @@ class VehicleRegisterScreen extends StatefulWidget {
 
 class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
   List<Map<String, dynamic>> vehicles = [
-    {'model': '', 'plateNumber': '', 'hasError': false, 'errorMessage': ''}
+    {
+      'brand': '',
+      'model': '',
+      'plateNumber': '',
+      'hasError': false,
+      'errorMessage': ''
+    }
   ];
   final _apiService = ApiService();
   bool _isSaving = false;
   List<TextEditingController> modelControllers = [TextEditingController()];
   List<TextEditingController> plateControllers = [TextEditingController()];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.vehicleBrand != null) {
+      vehicles[0]['brand'] = widget.vehicleBrand;
+    }
+  }
 
   @override
   void dispose() {
@@ -42,7 +62,8 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
 
     for (int i = 0; i < vehicles.length; i++) {
       final vehicle = vehicles[i];
-      if (vehicle['model'].toString().trim().isEmpty ||
+      if (vehicle['brand'].toString().trim().isEmpty ||
+          vehicle['model'].toString().trim().isEmpty ||
           vehicle['plateNumber'].toString().trim().isEmpty) {
         setState(() {
           vehicles[i]['hasError'] = true;
@@ -52,6 +73,7 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
       } else {
         validVehicles.add({
           'vehicleType': widget.vehicleType,
+          'brand': vehicle['brand'],
           'model': vehicle['model'],
           'plateNumber': vehicle['plateNumber']
         });
@@ -98,7 +120,13 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
         Fluttertoast.showToast(msg: response['message']);
         setState(() {
           vehicles = [
-            {'model': '', 'plateNumber': '', 'hasError': false, 'errorMessage': ''}
+            {
+              'brand': '',
+              'model': '',
+              'plateNumber': '',
+              'hasError': false,
+              'errorMessage': ''
+            }
           ];
           for (var controller in modelControllers) {
             controller.dispose();
@@ -127,6 +155,31 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
       Fluttertoast.showToast(msg: 'Error: ${e.toString()}');
     } finally {
       setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _addNewVehicle() async {
+    // Navigate to brand selection and wait for result
+    final selectedBrand = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VehicleBrandSelectionScreen(vehicleType: widget.vehicleType),
+      ),
+    );
+
+    // If a brand was selected, add it to the vehicles list
+    if (selectedBrand != null) {
+      setState(() {
+        vehicles.add({
+          'brand': selectedBrand,
+          'model': '',
+          'plateNumber': '',
+          'hasError': false,
+          'errorMessage': ''
+        });
+        modelControllers.add(TextEditingController());
+        plateControllers.add(TextEditingController());
+      });
     }
   }
 
@@ -172,7 +225,7 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
                         '${widget.vehicleType} Registration',
                         style: TextStyle(
                           color: const Color(0xFFF6FAFD),
-                          fontSize: widget.vehicleType.length > 9 ? 22 : 23, // Reduce size if long word
+                          fontSize: widget.vehicleType.length > 9 ? 22 : 23,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -181,18 +234,7 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
                         child: IconButton(
                           icon: const Icon(Icons.add_circle_outline, color: Color(0xFFF6FAFD), size: 30),
                           tooltip: 'Add Vehicle',
-                          onPressed: () {
-                            setState(() {
-                              vehicles.add({
-                                'model': '',
-                                'plateNumber': '',
-                                'hasError': false,
-                                'errorMessage': ''
-                              });
-                              modelControllers.add(TextEditingController());
-                              plateControllers.add(TextEditingController());
-                            });
-                          },
+                          onPressed: _addNewVehicle,
                         ),
                       ),
                     ],
@@ -278,6 +320,64 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
                       ),
                     ),
                   const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () async {
+                      final selectedBrand = await Navigator.push<String>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => VehicleBrandSelectionScreen(vehicleType: widget.vehicleType),
+                        ),
+                      );
+                      if (selectedBrand != null) {
+                        setState(() {
+                          vehicles[index]['brand'] = selectedBrand;
+                        });
+                      }
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Brand',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: vehicle['hasError']
+                                  ? Colors.red
+                                  : Colors.grey[300]!,
+                              width: 1,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    vehicle['brand'].isEmpty ? 'Select Brand' : vehicle['brand'],
+                                    style: TextStyle(
+                                      color: vehicle['brand'].isEmpty ? Colors.grey : Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                                const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   Text(
                     'Model',
                     style: TextStyle(

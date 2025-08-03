@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'vehicleRegister.dart';
+import 'vehicleBrands.dart';
 
 class VehicleOptionsScreen extends StatelessWidget {
   const VehicleOptionsScreen({Key? key}) : super(key: key);
@@ -60,7 +60,7 @@ class VehicleOptionsScreen extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => VehicleRegisterScreen(vehicleType: title),
+            builder: (context) => VehicleBrandsScreen(vehicleType: title),
           ),
         );
       },
@@ -79,7 +79,6 @@ class VehicleOptionsScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Foreground glassy card content
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
