@@ -113,25 +113,37 @@ class _VehicleBrandsScreenState extends State<VehicleBrandsScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search ${widget.vehicleType} brands...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-              ),
+          Positioned.fill(
+            child: Image.asset(
+              _getBackgroundImage(),
+              fit: BoxFit.cover,
+              color: Colors.black.withOpacity(0.6),
+              colorBlendMode: BlendMode.darken,
             ),
           ),
-          Expanded(
-            child: _buildBrandList(),
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search ${widget.vehicleType} brands...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: _buildBrandList(),
+              ),
+            ],
           ),
         ],
       ),
@@ -149,7 +161,7 @@ class _VehicleBrandsScreenState extends State<VehicleBrandsScreen> {
             Text(
               'Loading brands...',
               style: TextStyle(
-                color: Color(0xFF1A3D63),
+                color: Color(0xFFF6FAFD),
                 fontSize: 16,
               ),
             ),
@@ -210,13 +222,13 @@ class _VehicleBrandsScreenState extends State<VehicleBrandsScreen> {
       itemBuilder: (context, index) {
         final brand = filteredBrands[index];
         return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          elevation: 2,
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 4,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          child: ListTile(
-            title: Text(brand),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
             onTap: () {
               Navigator.push(
                 context,
@@ -228,9 +240,70 @@ class _VehicleBrandsScreenState extends State<VehicleBrandsScreen> {
                 ),
               );
             },
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Row(
+                children: [
+                  Icon(
+                    _getVehicleIcon(),
+                    size: 32,
+                    color: const Color(0xFF1A3D63),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      brand,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right, color: Colors.grey),
+                ],
+              ),
+            ),
           ),
         );
       },
     );
+  }
+
+  String _getBackgroundImage() {
+    switch (widget.vehicleType.toLowerCase()) {
+      case 'car':
+        return 'assets/images/car.jpg';
+      case 'motorcycle':
+        return 'assets/images/motorcycle.jpg';
+      case 'van':
+        return 'assets/images/van.jpg';
+      case 'truck':
+        return 'assets/images/truck.jpg';
+      case 'bus':
+        return 'assets/images/bus.jpg';
+      case 'jeep':
+        return 'assets/images/jeep.jpg';
+      default:
+        return 'assets/images/car.jpg';
+    }
+  }
+
+  IconData _getVehicleIcon() {
+    switch (widget.vehicleType.toLowerCase()) {
+      case 'car':
+        return Icons.directions_car;
+      case 'motorcycle':
+        return Icons.motorcycle;
+      case 'van':
+        return Icons.airport_shuttle;
+      case 'truck':
+        return Icons.local_shipping;
+      case 'bus':
+        return Icons.directions_bus;
+      case 'jeep':
+        return Icons.directions_bus_outlined;
+      default:
+        return Icons.directions_car;
+    }
   }
 }
