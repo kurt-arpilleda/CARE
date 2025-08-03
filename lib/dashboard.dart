@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'drawer/drawerNavigation.dart';
 import 'auto_update.dart';
+import 'googleMap.dart';
+
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
 
@@ -59,10 +61,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 IconButton(
                   icon: const Icon(Icons.notifications_none, color: Colors.white),
                   onPressed: () {
-                    // Handle notification tap
                   },
                 ),
-                // Notification badge
                 Positioned(
                   right: 6,
                   top: 6,
@@ -120,7 +120,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 IconButton(
                   icon: const Icon(Icons.filter_list, color: Colors.white),
                   onPressed: () {
-                    // Handle filter
                   },
                 ),
               ],
@@ -131,11 +130,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.all(16),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  'assets/images/map.png',
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                ),
+                child: const GoogleMapWidget(),
               ),
             ),
           ),

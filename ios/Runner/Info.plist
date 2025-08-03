@@ -52,7 +52,10 @@
       <string>https</string>
       <string>http</string>
     </array>
-
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>This app needs location access to show repair shops near you</string>
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>This app needs location access to show repair shops near you</string>
     <!-- Network Security Configuration -->
     <key>NSAppTransportSecurity</key>
     <dict>
