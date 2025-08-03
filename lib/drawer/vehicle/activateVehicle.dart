@@ -3,6 +3,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:care/api_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:care/anim/dotLoading.dart';
+import 'vehicleBrandSelectionScreen.dart';
 
 class ActivateVehicleScreen extends StatefulWidget {
   const ActivateVehicleScreen({Key? key}) : super(key: key);
@@ -28,6 +29,7 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
   };
   List<TextEditingController> _modelControllers = [];
   List<TextEditingController> _plateControllers = [];
+  List<String> _brands = [];
 
   IconData _getVehicleIcon(String vehicleType) {
     switch (vehicleType) {
@@ -79,6 +81,7 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
           _vehicles = response['vehicles'];
           _modelControllers = _vehicles.map((v) => TextEditingController(text: v['vehicle_model'])).toList();
           _plateControllers = _vehicles.map((v) => TextEditingController(text: v['plate_number'])).toList();
+          _brands = _vehicles.map((v) => v['vehicle_brand'].toString()).toList();
           _isLoading = false;
         });
       } else {
@@ -131,6 +134,7 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
       for (int i = 0; i < _vehicles.length; i++) {
         updatedVehicles.add({
           'id': _vehicles[i]['id'],
+          'vehicle_brand': _brands[i],
           'vehicle_model': _modelControllers[i].text,
           'plate_number': _plateControllers[i].text,
         });
@@ -148,6 +152,22 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
       Fluttertoast.showToast(msg: 'Error saving changes: ${e.toString()}');
     } finally {
       setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _selectBrand(int index) async {
+    final selectedBrand = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VehicleBrandSelectionScreen(
+          vehicleType: _vehicleTypeMap[_vehicles[index]['vehicle_type'].toString()] ?? 'Car',
+        ),
+      ),
+    );
+    if (selectedBrand != null) {
+      setState(() {
+        _brands[index] = selectedBrand;
+      });
     }
   }
 
@@ -299,6 +319,39 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
+                    'Brand',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () => _selectBrand(index),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _brands[index],
+                              style: const TextStyle(
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
                     'Model',
                     style: TextStyle(
                       fontSize: 14,
@@ -341,6 +394,46 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
               )
                   : Column(
                 children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 100,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'Brand',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.grey[300]!,
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            _brands[index],
+                            style: const TextStyle(
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:care/api_service.dart';
 import 'vehicleBrandSelectionScreen.dart';
+import 'activateVehicle.dart';
 
 class VehicleRegisterScreen extends StatefulWidget {
   final String vehicleType;
@@ -118,25 +119,10 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
 
       if (response['success'] == true) {
         Fluttertoast.showToast(msg: response['message']);
-        setState(() {
-          vehicles = [
-            {
-              'brand': '',
-              'model': '',
-              'plateNumber': '',
-              'hasError': false,
-              'errorMessage': ''
-            }
-          ];
-          for (var controller in modelControllers) {
-            controller.dispose();
-          }
-          for (var controller in plateControllers) {
-            controller.dispose();
-          }
-          modelControllers = [TextEditingController()];
-          plateControllers = [TextEditingController()];
-        });
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ActivateVehicleScreen()),
+        );
       } else if (response['duplicates'] != null) {
         for (var error in response['duplicates']) {
           final index = error['index'];
