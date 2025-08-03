@@ -79,54 +79,21 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
     }
   }
 
-  void _focusOnMyLocation() async {
-    if (_controller != null) {
-      LocationData currentLocation = await _location.getLocation();
-      if (currentLocation.latitude != null && currentLocation.longitude != null) {
-        _controller!.animateCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(
-              target: LatLng(currentLocation.latitude!, currentLocation.longitude!),
-              zoom: 16.0,
-            ),
-          ),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        GoogleMap(
-          onMapCreated: (GoogleMapController controller) {
-            _controller = controller;
-            if (_currentLocation != null) {
-              _moveToCurrentLocation();
-            }
-          },
-          initialCameraPosition: _initialPosition,
-          markers: _markers,
-          myLocationEnabled: true,
-          myLocationButtonEnabled: false,
-          zoomControlsEnabled: false,
-          mapType: MapType.normal,
-        ),
-        Positioned(
-          bottom: 20,
-          right: 20,
-          child: FloatingActionButton(
-            onPressed: _focusOnMyLocation,
-            backgroundColor: Colors.white,
-            mini: true,
-            child: const Icon(
-              Icons.my_location,
-              color: Color(0xFF1A3D63),
-            ),
-          ),
-        ),
-      ],
+    return GoogleMap(
+      onMapCreated: (GoogleMapController controller) {
+        _controller = controller;
+        if (_currentLocation != null) {
+          _moveToCurrentLocation();
+        }
+      },
+      initialCameraPosition: _initialPosition,
+      markers: _markers,
+      myLocationEnabled: true,
+      myLocationButtonEnabled: true,
+      zoomControlsEnabled: true,
+      mapType: MapType.normal,
     );
   }
 }
