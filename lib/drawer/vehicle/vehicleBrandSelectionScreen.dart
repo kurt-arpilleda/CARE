@@ -68,7 +68,8 @@ class _VehicleBrandSelectionScreenState extends State<VehicleBrandSelectionScree
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final results = List<Map<String, dynamic>>.from(data['Results']);
-        final brandList = results.map((item) => item['MakeName'].toString()).toList();
+        final brandList = results.map((item) => item['MakeName'].toString()).toList()
+          ..sort((a, b) => a.compareTo(b));
 
         setState(() {
           brands = brandList;
@@ -88,7 +89,6 @@ class _VehicleBrandSelectionScreenState extends State<VehicleBrandSelectionScree
       });
     }
   }
-
   void _filterBrands() {
     final query = _searchController.text.toLowerCase();
     setState(() {
