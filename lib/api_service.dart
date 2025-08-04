@@ -134,7 +134,14 @@ class ApiService {
       ).timeout(requestTimeout);
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          await saveAuthToken(data['token']);
+          // Check if user has vehicles
+          final vehiclesResponse = await getVehicles();
+          data['hasVehicles'] = vehiclesResponse['success'] && (vehiclesResponse['vehicles']?.isNotEmpty ?? false);
+        }
+        return data;
       }
       throw HttpException("HTTP ${response.statusCode}");
     });
@@ -158,7 +165,14 @@ class ApiService {
       ).timeout(requestTimeout);
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          await saveAuthToken(data['token']);
+          // Check if user has vehicles
+          final vehiclesResponse = await getVehicles();
+          data['hasVehicles'] = vehiclesResponse['success'] && (vehiclesResponse['vehicles']?.isNotEmpty ?? false);
+        }
+        return data;
       }
       throw HttpException("HTTP ${response.statusCode}");
     });

@@ -4,7 +4,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'api_service.dart';
 import 'dashboard.dart';
 import 'google_signin_service.dart';
-
+import 'drawer/vehicle/vehicleOptions.dart';
 import 'dialog/forgot_password_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -52,7 +52,6 @@ class _LoginScreenState extends State<LoginScreen> {
       _passwordHasInput = _passwordController.text.isNotEmpty;
     });
   }
-
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
@@ -64,11 +63,14 @@ class _LoginScreenState extends State<LoginScreen> {
         );
 
         if (response['success'] == true) {
-          await _apiService.saveAuthToken(response['token']);
           if (mounted) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const DashboardScreen()),
+              MaterialPageRoute(
+                builder: (context) => response['hasVehicles']
+                    ? const DashboardScreen()
+                    : const VehicleOptionsScreen(),
+              ),
             );
           }
         } else {
@@ -105,11 +107,14 @@ class _LoginScreenState extends State<LoginScreen> {
           );
 
           if (loginResponse['success'] == true) {
-            await _apiService.saveAuthToken(loginResponse['token']);
             if (mounted) {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                MaterialPageRoute(
+                  builder: (context) => loginResponse['hasVehicles']
+                      ? const DashboardScreen()
+                      : const VehicleOptionsScreen(),
+                ),
               );
             }
           } else if (loginResponse['message'] == 'Google account not found') {
@@ -137,11 +142,14 @@ class _LoginScreenState extends State<LoginScreen> {
               );
 
               if (newLoginResponse['success'] == true) {
-                await _apiService.saveAuthToken(newLoginResponse['token']);
                 if (mounted) {
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => newLoginResponse['hasVehicles']
+                          ? const DashboardScreen()
+                          : const VehicleOptionsScreen(),
+                    ),
                   );
                 }
               } else {
@@ -174,7 +182,6 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {

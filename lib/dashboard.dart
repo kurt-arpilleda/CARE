@@ -240,12 +240,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: const GoogleMapWidget(),
-              ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(0),
+              child: const GoogleMapWidget(),
             ),
           ),
         ],
