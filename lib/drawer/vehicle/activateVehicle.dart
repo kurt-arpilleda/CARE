@@ -4,6 +4,7 @@ import 'package:care/api_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:care/anim/dotLoading.dart';
 import 'vehicleBrandSelectionScreen.dart';
+import 'package:care/dashboard.dart';
 
 class ActivateVehicleScreen extends StatefulWidget {
   const ActivateVehicleScreen({Key? key}) : super(key: key);
@@ -552,7 +553,13 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
                         alignment: Alignment.centerLeft,
                         child: IconButton(
                           icon: const Icon(Icons.arrow_back, color: Color(0xFFF6FAFD)),
-                          onPressed: () => Navigator.of(context).pop(),
+                          onPressed: () {
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                                  (Route<dynamic> route) => false,
+                            );
+                          },
                         ),
                       ),
                       const Text(
@@ -587,20 +594,6 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
                 ? const DotLoading()
                 : _vehicles.isEmpty
                 ? _buildNoDataView()
-                : _vehicles.length <= 2
-                ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: _vehicles.map((vehicle) {
-                  int index = _vehicles.indexOf(vehicle);
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    width: MediaQuery.of(context).size.width * 0.85,
-                    child: _buildVehicleCard(vehicle, index),
-                  );
-                }).toList(),
-              ),
-            )
                 : CustomScrollView(
               slivers: [
                 SliverPadding(
