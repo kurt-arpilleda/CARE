@@ -89,6 +89,7 @@ class _VehicleBrandSelectionScreenState extends State<VehicleBrandSelectionScree
       });
     }
   }
+
   void _filterBrands() {
     final query = _searchController.text.toLowerCase();
     setState(() {
@@ -96,6 +97,48 @@ class _VehicleBrandSelectionScreenState extends State<VehicleBrandSelectionScree
           .where((brand) => brand.toLowerCase().contains(query))
           .toList();
     });
+  }
+
+  void _showCustomBrandDialog() {
+    final TextEditingController customBrandController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Custom Brand'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Can\'t find your brand? Enter it below:'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: customBrandController,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(
+                hintText: 'Enter brand name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final customBrand = customBrandController.text.trim();
+              if (customBrand.isNotEmpty) {
+                Navigator.pop(context);
+                Navigator.pop(context, customBrand);
+              }
+            },
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -111,6 +154,14 @@ class _VehicleBrandSelectionScreenState extends State<VehicleBrandSelectionScree
         backgroundColor: const Color(0xFF1A3D63),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showCustomBrandDialog,
+        backgroundColor: const Color(0xFF1A3D63),
+        child: const Icon(
+          Icons.help_outline,
+          color: Colors.white,
+        ),
       ),
       body: Stack(
         children: [

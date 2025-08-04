@@ -31,6 +31,9 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
   List<TextEditingController> _modelControllers = [];
   List<TextEditingController> _plateControllers = [];
   List<String> _brands = [];
+  List<String> _originalBrands = [];
+  List<String> _originalModels = [];
+  List<String> _originalPlates = [];
 
   IconData _getVehicleIcon(String vehicleType) {
     switch (vehicleType) {
@@ -83,6 +86,9 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
           _modelControllers = _vehicles.map((v) => TextEditingController(text: v['vehicle_model'])).toList();
           _plateControllers = _vehicles.map((v) => TextEditingController(text: v['plate_number'])).toList();
           _brands = _vehicles.map((v) => v['vehicle_brand'].toString()).toList();
+          _originalBrands = List.from(_brands);
+          _originalModels = _vehicles.map((v) => v['vehicle_model'].toString()).toList();
+          _originalPlates = _vehicles.map((v) => v['plate_number'].toString()).toList();
           _isLoading = false;
         });
       } else {
@@ -93,6 +99,18 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
       Fluttertoast.showToast(msg: 'Error loading vehicles: ${e.toString()}');
       setState(() => _isLoading = false);
     }
+  }
+
+  void _resetToOriginalValues() {
+    setState(() {
+      _brands = List.from(_originalBrands);
+      for (int i = 0; i < _modelControllers.length; i++) {
+        _modelControllers[i].text = _originalModels[i];
+      }
+      for (int i = 0; i < _plateControllers.length; i++) {
+        _plateControllers[i].text = _originalPlates[i];
+      }
+    });
   }
 
   Future<void> _toggleVehicle(int vehicleId, bool isActive) async {
@@ -562,9 +580,9 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
                           },
                         ),
                       ),
-                      const Text(
-                        'Activate Vehicle',
-                        style: TextStyle(
+                      Text(
+                        _isEditing ? 'Edit Vehicle' : 'Activate Vehicle',
+                        style: const TextStyle(
                           color: Color(0xFFF6FAFD),
                           fontSize: 25,
                           fontWeight: FontWeight.w600,
@@ -578,6 +596,9 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
                               color: const Color(0xFFF6FAFD)),
                           onPressed: () {
                             setState(() {
+                              if (_isEditing) {
+                                _resetToOriginalValues();
+                              }
                               _isEditing = !_isEditing;
                             });
                           },
