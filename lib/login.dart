@@ -4,7 +4,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'api_service.dart';
 import 'dashboard.dart';
 import 'google_signin_service.dart';
-
+import 'drawer/vehicle/vehicleOptions.dart';
 import 'dialog/forgot_password_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -65,10 +65,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (response['success'] == true) {
           await _apiService.saveAuthToken(response['token']);
+          final vehicleStatus = await _apiService.checkVehicleStatus();
+
           if (mounted) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const DashboardScreen()),
+              MaterialPageRoute(
+                builder: (context) => vehicleStatus['hasVehicle'] == 1
+                    ? const DashboardScreen()
+                    : const VehicleOptionsScreen(),
+              ),
             );
           }
         } else {
@@ -106,10 +112,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
           if (loginResponse['success'] == true) {
             await _apiService.saveAuthToken(loginResponse['token']);
+            final vehicleStatus = await _apiService.checkVehicleStatus();
+
             if (mounted) {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                MaterialPageRoute(
+                  builder: (context) => vehicleStatus['hasVehicle'] == 1
+                      ? const DashboardScreen()
+                      : const VehicleOptionsScreen(),
+                ),
               );
             }
           } else if (loginResponse['message'] == 'Google account not found') {
@@ -141,7 +153,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (mounted) {
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => const VehicleOptionsScreen(),
+                    ),
                   );
                 }
               } else {
