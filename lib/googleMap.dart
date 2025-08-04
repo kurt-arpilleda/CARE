@@ -24,9 +24,10 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
   BitmapDescriptor? _customMarkerIcon;
 
   final CameraPosition _initialPosition = const CameraPosition(
-    target: LatLng(14.1753, 121.0582),
-    zoom: 14.0,
+    target: LatLng(12.8797, 121.7740),
+    zoom: 5.5,
   );
+
 
   Set<Marker> _markers = {};
 
@@ -169,12 +170,16 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
   void _moveToCurrentLocation() {
     if (_controller != null && _currentLocation != null) {
       _controller!.animateCamera(
-        CameraUpdate.newLatLng(
-          LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
+            zoom: 14.0,
+          ),
         ),
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
