@@ -73,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
               MaterialPageRoute(
                 builder: (context) => vehicleStatus['hasVehicle'] == 1
                     ? const DashboardScreen()
-                    : const VehicleOptionsScreen(),
+                    : const VehicleOptionsScreen(fromLogin: true),
               ),
             );
           }
@@ -120,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 MaterialPageRoute(
                   builder: (context) => vehicleStatus['hasVehicle'] == 1
                       ? const DashboardScreen()
-                      : const VehicleOptionsScreen(),
+                      : const VehicleOptionsScreen(fromLogin: true),
                 ),
               );
             }

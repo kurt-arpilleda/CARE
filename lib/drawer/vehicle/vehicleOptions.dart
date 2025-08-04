@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:care/dashboard.dart';
 import 'vehicleBrands.dart';
 
 class VehicleOptionsScreen extends StatelessWidget {
-  const VehicleOptionsScreen({Key? key}) : super(key: key);
+  final bool fromLogin;
+
+  const VehicleOptionsScreen({Key? key, this.fromLogin = false}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +19,21 @@ class VehicleOptionsScreen extends StatelessWidget {
         backgroundColor: const Color(0xFF1A3D63),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          if (fromLogin)
+            TextButton(
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                );
+              },
+              child: const Text(
+                'Skip',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(
