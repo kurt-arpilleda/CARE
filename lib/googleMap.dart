@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
+import 'package:care/api_service.dart';
+import 'dart:ui' as ui;
+import 'dart:typed_data';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'dart:math';
 
 class GoogleMapWidget extends StatefulWidget {
   const GoogleMapWidget({Key? key}) : super(key: key);
@@ -13,6 +19,9 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
   GoogleMapController? _controller;
   LocationData? _currentLocation;
   Location _location = Location();
+  final ApiService _apiService = ApiService();
+  Map<String, dynamic> _userData = {};
+  BitmapDescriptor? _customMarkerIcon;
 
   final CameraPosition _initialPosition = const CameraPosition(
     target: LatLng(14.1753, 121.0582),
@@ -24,7 +33,95 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     _getCurrentLocation();
+  }
+
+  @override
+  void dispose() {
+    _apiService.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final response = await _apiService.getUserData();
+      if (response['success'] == true && response['user'] != null) {
+        setState(() {
+          _userData = response['user'];
+        });
+        await _createCustomMarkerIcon();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _createCustomMarkerIcon() async {
+    try {
+      final String? photoUrl = _userData['photoUrl'];
+      Uint8List? imageBytes;
+
+      if (photoUrl != null && photoUrl.isNotEmpty) {
+        final String imageUrl = photoUrl.contains('http')
+            ? photoUrl
+            : '${ApiService.apiUrl}profilePicture/$photoUrl';
+
+        try {
+          final response = await http.get(Uri.parse(imageUrl));
+          if (response.statusCode == 200) {
+            imageBytes = response.bodyBytes;
+          }
+        } catch (_) {}
+      }
+
+      if (imageBytes == null) {
+        final ByteData data = await rootBundle.load('assets/images/profilePlaceHolder.png');
+        imageBytes = data.buffer.asUint8List();
+      }
+
+      final ui.Codec codec = await ui.instantiateImageCodec(
+        imageBytes,
+        targetWidth: 100,
+        targetHeight: 100,
+      );
+      final ui.FrameInfo frameInfo = await codec.getNextFrame();
+      final ui.Image image = frameInfo.image;
+
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+      final double size = 120;
+      final double radius = 40;
+      final Offset center = Offset(size / 2, radius + 10);
+
+      final Paint borderPaint = Paint()..color = Color(0xFF1A3D63)..style = PaintingStyle.fill;
+      final Paint whitePaint = Paint()..color = Colors.white..style = PaintingStyle.fill;
+
+      canvas.drawCircle(center, radius + 6, whitePaint);
+      canvas.drawCircle(center, radius + 3, borderPaint);
+
+      final Path clipPath = Path()..addOval(Rect.fromCircle(center: center, radius: radius));
+      canvas.save();
+      canvas.clipPath(clipPath);
+
+      final Rect imageRect = Rect.fromCircle(center: center, radius: radius);
+      canvas.drawImageRect(image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), imageRect, Paint());
+      canvas.restore();
+
+      final Path pinPath = Path();
+      pinPath.moveTo(size / 2 - 10, radius * 2 + 15);
+      pinPath.lineTo(size / 2 + 10, radius * 2 + 15);
+      pinPath.lineTo(size / 2, radius * 2 + 35);
+      pinPath.close();
+      canvas.drawPath(pinPath, borderPaint);
+
+      final ui.Picture picture = recorder.endRecording();
+      final ui.Image finalImage = await picture.toImage(size.toInt(), (radius * 2 + 40).toInt());
+      final ByteData? byteData = await finalImage.toByteData(format: ui.ImageByteFormat.png);
+      final Uint8List finalImageBytes = byteData!.buffer.asUint8List();
+
+      _customMarkerIcon = BitmapDescriptor.fromBytes(finalImageBytes);
+    } catch (_) {
+      _customMarkerIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
+    }
   }
 
   Future<void> _getCurrentLocation() async {
@@ -34,17 +131,13 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
     serviceEnabled = await _location.serviceEnabled();
     if (!serviceEnabled) {
       serviceEnabled = await _location.requestService();
-      if (!serviceEnabled) {
-        return;
-      }
+      if (!serviceEnabled) return;
     }
 
     permissionGranted = await _location.hasPermission();
     if (permissionGranted == PermissionStatus.denied) {
       permissionGranted = await _location.requestPermission();
-      if (permissionGranted != PermissionStatus.granted) {
-        return;
-      }
+      if (permissionGranted != PermissionStatus.granted) return;
     }
 
     _currentLocation = await _location.getLocation();
@@ -61,8 +154,12 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
           Marker(
             markerId: const MarkerId('current_location'),
             position: LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
-            infoWindow: const InfoWindow(title: 'Your Location'),
-            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+            infoWindow: InfoWindow(
+              title: 'Your Location',
+              snippet: '${_userData['firstName'] ?? ''} ${_userData['surName'] ?? ''}',
+            ),
+            icon: _customMarkerIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+            anchor: Offset(0.5, 1.0),
           ),
         );
       });
@@ -90,7 +187,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
       },
       initialCameraPosition: _initialPosition,
       markers: _markers,
-      myLocationEnabled: true,
+      myLocationEnabled: false,
       myLocationButtonEnabled: true,
       zoomControlsEnabled: true,
       mapType: MapType.normal,
