@@ -236,7 +236,7 @@ class _RegisterShopBasicInfoState extends State<RegisterShopBasicInfo> {
                       ),
                       const SizedBox(height: 20),
                       const Text(
-                        'Location',
+                        'Address',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -248,7 +248,7 @@ class _RegisterShopBasicInfoState extends State<RegisterShopBasicInfo> {
                         decoration: _fieldShadowBox(),
                         child: TextFormField(
                           controller: _locationController,
-                          decoration: _inputDecoration('Enter shop location'),
+                          decoration: _inputDecoration('Enter shop address'),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter shop location';
