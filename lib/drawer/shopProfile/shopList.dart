@@ -310,7 +310,7 @@ class _ShopListScreenState extends State<ShopListScreen> {
                           const Text(
                             'Loading shops...',
                             style: TextStyle(
-                              color: Color(0xFF1A3D63),
+                              color: Color(0xFFF6FAFD),
                               fontSize: 16,
                             ),
                           ),
