@@ -10,10 +10,17 @@ class ShopLocationPicker extends StatefulWidget {
 }
 
 class _ShopLocationPickerState extends State<ShopLocationPicker> {
-  late GoogleMapController _mapController;
-  LatLng? _selectedLocation;
-  final Location _locationService = Location();
-  bool _isLoading = true;
+  GoogleMapController? _controller;
+  LocationData? _currentLocation;
+  Location _location = Location();
+  LatLng? _selectedPosition;
+
+  final CameraPosition _initialPosition = const CameraPosition(
+    target: LatLng(12.8797, 121.7740),
+    zoom: 5.5,
+  );
+
+  Set<Marker> _markers = {};
 
   @override
   void initState() {
@@ -22,16 +29,59 @@ class _ShopLocationPickerState extends State<ShopLocationPicker> {
   }
 
   Future<void> _getCurrentLocation() async {
-    try {
-      final locationData = await _locationService.getLocation();
-      setState(() {
-        _selectedLocation = LatLng(locationData.latitude!, locationData.longitude!);
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+    bool serviceEnabled;
+    PermissionStatus permissionGranted;
+
+    serviceEnabled = await _location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await _location.requestService();
+      if (!serviceEnabled) return;
+    }
+
+    permissionGranted = await _location.hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await _location.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) return;
+    }
+
+    _currentLocation = await _location.getLocation();
+    if (_currentLocation != null) {
+      _moveToCurrentLocation();
+      _addMarker(LatLng(
+          _currentLocation!.latitude!,
+          _currentLocation!.longitude!
+      ));
+    }
+  }
+
+  void _addMarker(LatLng position) {
+    setState(() {
+      _selectedPosition = position;
+      _markers = {
+        Marker(
+          markerId: const MarkerId('selected_location'),
+          position: position,
+          draggable: true,
+          onDragEnd: (LatLng newPosition) {
+            setState(() {
+              _selectedPosition = newPosition;
+            });
+          },
+        )
+      };
+    });
+  }
+
+  void _moveToCurrentLocation() {
+    if (_controller != null && _currentLocation != null) {
+      _controller!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
+            zoom: 14.0,
+          ),
+        ),
+      );
     }
   }
 
@@ -40,43 +90,48 @@ class _ShopLocationPickerState extends State<ShopLocationPicker> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Select Shop Location'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: _selectedLocation == null
-                ? null
-                : () {
-              Navigator.pop(context, {
-                'latitude': _selectedLocation!.latitude,
-                'longitude': _selectedLocation!.longitude,
-              });
+      ),
+      body: Stack(
+        children: [
+          GoogleMap(
+            onMapCreated: (GoogleMapController controller) {
+              _controller = controller;
+              if (_currentLocation != null) {
+                _moveToCurrentLocation();
+              }
             },
+            initialCameraPosition: _initialPosition,
+            markers: _markers,
+            myLocationEnabled: true,
+            myLocationButtonEnabled: true,
+            onTap: (LatLng position) => _addMarker(position),
+          ),
+          Positioned(
+            bottom: 20,
+            left: 20,
+            right: 20,
+            child: ElevatedButton(
+              onPressed: _selectedPosition == null
+                  ? null
+                  : () => Navigator.pop(context, _selectedPosition),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1A3D63),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Confirm Location',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           ),
         ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : GoogleMap(
-        onMapCreated: (controller) => _mapController = controller,
-        initialCameraPosition: CameraPosition(
-          target: _selectedLocation ?? const LatLng(14.5995, 120.9842),
-          zoom: 14.0,
-        ),
-        markers: _selectedLocation == null
-            ? {}
-            : {
-          Marker(
-            markerId: const MarkerId('selected_location'),
-            position: _selectedLocation!,
-          ),
-        },
-        onTap: (LatLng location) {
-          setState(() {
-            _selectedLocation = location;
-          });
-        },
-        myLocationEnabled: true,
-        myLocationButtonEnabled: true,
       ),
     );
   }

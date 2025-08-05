@@ -7,12 +7,16 @@ class RegisterShopContactDetails extends StatefulWidget {
   final String shopName;
   final String location;
   final String expertise;
+  final double latitude;
+  final double longitude;
 
   const RegisterShopContactDetails({
     Key? key,
     required this.shopName,
     required this.location,
     required this.expertise,
+    required this.latitude,
+    required this.longitude,
   }) : super(key: key);
 
   @override
@@ -156,6 +160,8 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
             startTime: _formatTimeForAPI(openingTime),
             closeTime: _formatTimeForAPI(closingTime),
             dayIndex: _getDayIndexes(),
+            latitude: widget.latitude,
+            longitude: widget.longitude,
           ),
         ),
       );

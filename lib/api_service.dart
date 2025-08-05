@@ -397,6 +397,8 @@ class ApiService {
     String? dayIndex,
     required File businessDocu,
     required File validId,
+    required double latitude,
+    required double longitude,
   }) async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
@@ -416,6 +418,8 @@ class ApiService {
       if (startTime != null) request.fields['startTime'] = startTime;
       if (closeTime != null) request.fields['closeTime'] = closeTime;
       if (dayIndex != null) request.fields['dayIndex'] = dayIndex;
+      request.fields['latitude'] = latitude.toString();
+      request.fields['longitude'] = longitude.toString();
 
       request.files.add(await http.MultipartFile.fromPath(
         'businessDocu',

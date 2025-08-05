@@ -14,6 +14,8 @@ class RegisterShopBusinessDocu extends StatefulWidget {
   final String? startTime;
   final String? closeTime;
   final String? dayIndex;
+  final double latitude;
+  final double longitude;
 
   const RegisterShopBusinessDocu({
     Key? key,
@@ -25,6 +27,8 @@ class RegisterShopBusinessDocu extends StatefulWidget {
     this.startTime,
     this.closeTime,
     this.dayIndex,
+    required this.latitude,
+    required this.longitude,
   }) : super(key: key);
 
   @override
@@ -274,6 +278,8 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
         dayIndex: widget.dayIndex,
         businessDocu: _businessPermitFile!,
         validId: _governmentIdFile!,
+        latitude: widget.latitude,
+        longitude: widget.longitude,
       );
 
       if (response['success'] == true) {
