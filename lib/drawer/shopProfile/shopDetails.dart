@@ -706,7 +706,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                           ),
                           const SizedBox(height: 16),
                           const Text(
-                            'Location',
+                            'Address',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
@@ -720,7 +720,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                               controller: _locationController,
                               enabled: _isEditing,
                               style: const TextStyle(color: Colors.black),
-                              decoration: _inputDecoration('Enter shop location'),
+                              decoration: _inputDecoration('Enter shop address'),
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -732,7 +732,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                                 onPressed: () => _getLocation(context),
                                 icon: const Icon(Icons.location_on),
                                 label: Text(
-                                  'Update Shop Location (${_latitude.toStringAsFixed(5)}, ${_longitude.toStringAsFixed(5)})',
+                                  'Update Location (${_latitude.toStringAsFixed(5)}, ${_longitude.toStringAsFixed(5)})',
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
