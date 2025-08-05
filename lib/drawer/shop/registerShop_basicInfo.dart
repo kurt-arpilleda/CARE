@@ -251,7 +251,7 @@ class _RegisterShopBasicInfoState extends State<RegisterShopBasicInfo> {
                           decoration: _inputDecoration('Enter shop address'),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter shop location';
+                              return 'Please enter shop address';
                             }
                             return null;
                           },
