@@ -656,7 +656,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                                         ? FileImage(_shopLogoFile!)
                                         : (_currentShopData['shopLogo'] != null && _currentShopData['shopLogo'].isNotEmpty)
                                         ? NetworkImage('${ApiService.apiUrl}shopLogo/${_currentShopData['shopLogo']}')
-                                        : const AssetImage('assets/images/placeholderCar.png') as ImageProvider,
+                                        : const AssetImage('assets/images/shopLogo.jpg') as ImageProvider,
                                   ),
                                   if (_isEditing)
                                     Positioned(
