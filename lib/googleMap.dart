@@ -6,7 +6,6 @@ import 'dart:ui' as ui;
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'dart:math';
 
 class GoogleMapWidget extends StatefulWidget {
   const GoogleMapWidget({Key? key}) : super(key: key);
@@ -28,14 +27,12 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
     zoom: 5.5,
   );
 
-
   Set<Marker> _markers = {};
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
-    _getCurrentLocation();
+    _initMap();
   }
 
   @override
@@ -44,13 +41,18 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
     super.dispose();
   }
 
+  Future<void> _initMap() async {
+    await _getCurrentLocation();
+    await _loadUserData();
+    _addCurrentLocationMarker();
+    _moveToCurrentLocation();
+  }
+
   Future<void> _loadUserData() async {
     try {
       final response = await _apiService.getUserData();
       if (response['success'] == true && response['user'] != null) {
-        setState(() {
-          _userData = response['user'];
-        });
+        _userData = response['user'];
         await _createCustomMarkerIcon();
       }
     } catch (_) {}
@@ -142,28 +144,23 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
     }
 
     _currentLocation = await _location.getLocation();
-    if (_currentLocation != null) {
-      _addCurrentLocationMarker();
-      _moveToCurrentLocation();
-    }
   }
 
   void _addCurrentLocationMarker() {
     if (_currentLocation != null) {
-      setState(() {
-        _markers.add(
-          Marker(
-            markerId: const MarkerId('current_location'),
-            position: LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
-            infoWindow: InfoWindow(
-              title: 'Your Location',
-              snippet: '${_userData['firstName'] ?? ''} ${_userData['surName'] ?? ''}',
-            ),
-            icon: _customMarkerIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-            anchor: Offset(0.5, 1.0),
+      _markers.add(
+        Marker(
+          markerId: const MarkerId('current_location'),
+          position: LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
+          infoWindow: InfoWindow(
+            title: 'Your Location',
+            snippet: '${_userData['firstName'] ?? ''} ${_userData['surName'] ?? ''}',
           ),
-        );
-      });
+          icon: _customMarkerIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+          anchor: Offset(0.5, 1.0),
+        ),
+      );
+      setState(() {});
     }
   }
 
@@ -179,7 +176,6 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
       );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {

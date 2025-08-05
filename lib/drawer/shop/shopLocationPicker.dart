@@ -32,8 +32,7 @@ class _ShopLocationPickerState extends State<ShopLocationPicker> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
-    _getCurrentLocation();
+    _initialize();
   }
 
   @override
@@ -42,17 +41,23 @@ class _ShopLocationPickerState extends State<ShopLocationPicker> {
     super.dispose();
   }
 
+  Future<void> _initialize() async {
+    await _getCurrentLocation();
+    await _loadUserData();
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
   Future<void> _loadUserData() async {
     try {
       final response = await _apiService.getUserData();
       if (response['success'] == true && response['user'] != null) {
-        setState(() {
-          _userData = response['user'];
-        });
+        _userData = response['user'];
         await _createCustomMarkerIcon();
       }
     } catch (_) {
-      setState(() => _isLoading = false);
+      _customMarkerIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
     }
   }
 
@@ -119,15 +124,9 @@ class _ShopLocationPickerState extends State<ShopLocationPicker> {
       final ByteData? byteData = await finalImage.toByteData(format: ui.ImageByteFormat.png);
       final Uint8List finalImageBytes = byteData!.buffer.asUint8List();
 
-      setState(() {
-        _customMarkerIcon = BitmapDescriptor.fromBytes(finalImageBytes);
-        _isLoading = false;
-      });
+      _customMarkerIcon = BitmapDescriptor.fromBytes(finalImageBytes);
     } catch (_) {
-      setState(() {
-        _customMarkerIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
-        _isLoading = false;
-      });
+      _customMarkerIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
     }
   }
 
@@ -148,10 +147,6 @@ class _ShopLocationPickerState extends State<ShopLocationPicker> {
     }
 
     _currentLocation = await _location.getLocation();
-    if (_currentLocation != null) {
-      setState(() {});
-      _moveToCurrentLocation();
-    }
   }
 
   void _moveToCurrentLocation() {
@@ -219,9 +214,7 @@ class _ShopLocationPickerState extends State<ShopLocationPicker> {
           GoogleMap(
             onMapCreated: (GoogleMapController controller) {
               _controller = controller;
-              if (_currentLocation != null) {
-                _moveToCurrentLocation();
-              }
+              _moveToCurrentLocation();
             },
             initialCameraPosition: _initialPosition,
             markers: _getMarkers(),
