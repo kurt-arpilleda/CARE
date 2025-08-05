@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
+import 'package:care/api_service.dart';
+import 'dart:ui' as ui;
+import 'dart:typed_data';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 
 class ShopLocationPicker extends StatefulWidget {
   const ShopLocationPicker({Key? key}) : super(key: key);
@@ -14,18 +19,116 @@ class _ShopLocationPickerState extends State<ShopLocationPicker> {
   LocationData? _currentLocation;
   Location _location = Location();
   LatLng? _selectedPosition;
+  final ApiService _apiService = ApiService();
+  Map<String, dynamic> _userData = {};
+  BitmapDescriptor? _customMarkerIcon;
+  bool _isLoading = true;
 
   final CameraPosition _initialPosition = const CameraPosition(
     target: LatLng(12.8797, 121.7740),
     zoom: 5.5,
   );
 
-  Set<Marker> _markers = {};
-
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     _getCurrentLocation();
+  }
+
+  @override
+  void dispose() {
+    _apiService.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final response = await _apiService.getUserData();
+      if (response['success'] == true && response['user'] != null) {
+        setState(() {
+          _userData = response['user'];
+        });
+        await _createCustomMarkerIcon();
+      }
+    } catch (_) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _createCustomMarkerIcon() async {
+    try {
+      final String? photoUrl = _userData['photoUrl'];
+      Uint8List? imageBytes;
+
+      if (photoUrl != null && photoUrl.isNotEmpty) {
+        final String imageUrl = photoUrl.contains('http')
+            ? photoUrl
+            : '${ApiService.apiUrl}profilePicture/$photoUrl';
+
+        try {
+          final response = await http.get(Uri.parse(imageUrl));
+          if (response.statusCode == 200) {
+            imageBytes = response.bodyBytes;
+          }
+        } catch (_) {}
+      }
+
+      if (imageBytes == null) {
+        final ByteData data = await rootBundle.load('assets/images/profilePlaceHolder.png');
+        imageBytes = data.buffer.asUint8List();
+      }
+
+      final ui.Codec codec = await ui.instantiateImageCodec(
+        imageBytes,
+        targetWidth: 100,
+        targetHeight: 100,
+      );
+      final ui.FrameInfo frameInfo = await codec.getNextFrame();
+      final ui.Image image = frameInfo.image;
+
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+      final double size = 120;
+      final double radius = 40;
+      final Offset center = Offset(size / 2, radius + 10);
+
+      final Paint borderPaint = Paint()..color = Color(0xFF1A3D63)..style = PaintingStyle.fill;
+      final Paint whitePaint = Paint()..color = Colors.white..style = PaintingStyle.fill;
+
+      canvas.drawCircle(center, radius + 6, whitePaint);
+      canvas.drawCircle(center, radius + 3, borderPaint);
+
+      final Path clipPath = Path()..addOval(Rect.fromCircle(center: center, radius: radius));
+      canvas.save();
+      canvas.clipPath(clipPath);
+
+      final Rect imageRect = Rect.fromCircle(center: center, radius: radius);
+      canvas.drawImageRect(image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), imageRect, Paint());
+      canvas.restore();
+
+      final Path pinPath = Path();
+      pinPath.moveTo(size / 2 - 10, radius * 2 + 15);
+      pinPath.lineTo(size / 2 + 10, radius * 2 + 15);
+      pinPath.lineTo(size / 2, radius * 2 + 35);
+      pinPath.close();
+      canvas.drawPath(pinPath, borderPaint);
+
+      final ui.Picture picture = recorder.endRecording();
+      final ui.Image finalImage = await picture.toImage(size.toInt(), (radius * 2 + 40).toInt());
+      final ByteData? byteData = await finalImage.toByteData(format: ui.ImageByteFormat.png);
+      final Uint8List finalImageBytes = byteData!.buffer.asUint8List();
+
+      setState(() {
+        _customMarkerIcon = BitmapDescriptor.fromBytes(finalImageBytes);
+        _isLoading = false;
+      });
+    } catch (_) {
+      setState(() {
+        _customMarkerIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _getCurrentLocation() async {
@@ -46,30 +149,9 @@ class _ShopLocationPickerState extends State<ShopLocationPicker> {
 
     _currentLocation = await _location.getLocation();
     if (_currentLocation != null) {
+      setState(() {});
       _moveToCurrentLocation();
-      _addMarker(LatLng(
-          _currentLocation!.latitude!,
-          _currentLocation!.longitude!
-      ));
     }
-  }
-
-  void _addMarker(LatLng position) {
-    setState(() {
-      _selectedPosition = position;
-      _markers = {
-        Marker(
-          markerId: const MarkerId('selected_location'),
-          position: position,
-          draggable: true,
-          onDragEnd: (LatLng newPosition) {
-            setState(() {
-              _selectedPosition = newPosition;
-            });
-          },
-        )
-      };
-    });
   }
 
   void _moveToCurrentLocation() {
@@ -85,13 +167,54 @@ class _ShopLocationPickerState extends State<ShopLocationPicker> {
     }
   }
 
+  Set<Marker> _getMarkers() {
+    final Set<Marker> markers = {};
+
+    if (_currentLocation != null && _customMarkerIcon != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('current_location'),
+          position: LatLng(
+            _currentLocation!.latitude!,
+            _currentLocation!.longitude!,
+          ),
+          icon: _customMarkerIcon!,
+          anchor: const Offset(0.5, 1.0),
+        ),
+      );
+    }
+
+    if (_selectedPosition != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('selected_location'),
+          position: _selectedPosition!,
+          draggable: true,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          onDragEnd: (LatLng newPosition) {
+            setState(() => _selectedPosition = newPosition);
+          },
+        ),
+      );
+    }
+
+    return markers;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Select Shop Location'),
+        backgroundColor: const Color(0xFF1A3D63),
+        title: const Text(
+          'Select Shop Location',
+          style: TextStyle(color: Colors.white),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Stack(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
         children: [
           GoogleMap(
             onMapCreated: (GoogleMapController controller) {
@@ -101,36 +224,37 @@ class _ShopLocationPickerState extends State<ShopLocationPicker> {
               }
             },
             initialCameraPosition: _initialPosition,
-            markers: _markers,
+            markers: _getMarkers(),
             myLocationEnabled: true,
             myLocationButtonEnabled: true,
-            onTap: (LatLng position) => _addMarker(position),
+            onTap: (LatLng position) {
+              setState(() => _selectedPosition = position);
+            },
           ),
-          Positioned(
-            bottom: 20,
-            left: 20,
-            right: 20,
-            child: ElevatedButton(
-              onPressed: _selectedPosition == null
-                  ? null
-                  : () => Navigator.pop(context, _selectedPosition),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1A3D63),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          if (_selectedPosition != null)
+            Positioned(
+              bottom: 20,
+              left: 20,
+              right: 20,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context, _selectedPosition),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1A3D63),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-              ),
-              child: const Text(
-                'Confirm Location',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                child: const Text(
+                  'Confirm Location',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
