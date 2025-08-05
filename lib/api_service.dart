@@ -468,6 +468,8 @@ class ApiService {
     required String startTime,
     required String closeTime,
     required String dayIndex,
+    required double latitude,
+    required double longitude,
     File? shopLogoFile,
     File? businessDocuFile,
     File? validIdFile,
@@ -491,6 +493,8 @@ class ApiService {
       request.fields['startTime'] = startTime;
       request.fields['closeTime'] = closeTime;
       request.fields['dayIndex'] = dayIndex;
+      request.fields['latitude'] = latitude.toString();
+      request.fields['longitude'] = longitude.toString();
 
       if (shopLogoFile != null) {
         request.files.add(await http.MultipartFile.fromPath(

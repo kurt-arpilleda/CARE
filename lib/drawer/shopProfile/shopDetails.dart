@@ -4,7 +4,9 @@ import 'dart:io';
 import 'package:care/api_service.dart';
 import 'package:care/anim/dotLoading.dart';
 import 'package:care/options.dart';
-
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../shop/shopLocationPicker.dart';
 class ShopDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> shopData;
 
@@ -34,6 +36,8 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
   late TimeOfDay openingTime;
   late TimeOfDay closingTime;
   late Map<String, bool> selectedDays;
+  late double _latitude;
+  late double _longitude;
 
   @override
   void initState() {
@@ -46,7 +50,8 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
     _shopNameController = TextEditingController(text: _currentShopData['shop_name'] ?? '');
     _locationController = TextEditingController(text: _currentShopData['location'] ?? '');
     _facebookController = TextEditingController(text: _currentShopData['home_page'] ?? '');
-
+    _latitude = double.tryParse(_currentShopData['latitude']?.toString() ?? '0') ?? 0.0;
+    _longitude = double.tryParse(_currentShopData['longitude']?.toString() ?? '0') ?? 0.0;
     selectedExpertise = [];
     if (_currentShopData['expertise'] != null) {
       final expertiseIds = (_currentShopData['expertise'] as String).split(',');
@@ -450,6 +455,8 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
         startTime: _formatTimeForAPI(openingTime),
         closeTime: _formatTimeForAPI(closingTime),
         dayIndex: _getDayIndexes(),
+        latitude: _latitude,
+        longitude: _longitude,
         shopLogoFile: _shopLogoFile,
         businessDocuFile: _businessPermitFile,
         validIdFile: _governmentIdFile,
@@ -482,7 +489,60 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
       });
     }
   }
+  Future<void> _getLocation(BuildContext context) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Location Confirmation'),
+          content: const Text('Are you at the shop right now?'),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await _getCurrentLocation();
+              },
+              child: const Text('Yes'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                final position = await Navigator.push<LatLng>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ShopLocationPicker(),
+                  ),
+                );
+                if (position != null) {
+                  setState(() {
+                    _latitude = position.latitude;
+                    _longitude = position.longitude;
+                  });
+                }
+              },
+              child: const Text('No'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
+  Future<void> _getCurrentLocation() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      setState(() {
+        _latitude = position.latitude;
+        _longitude = position.longitude;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to get current location')),
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -663,6 +723,55 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                               decoration: _inputDecoration('Enter shop location'),
                             ),
                           ),
+                          const SizedBox(height: 20),
+                          if (_isEditing) ...[
+                            SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton.icon(
+                                onPressed: () => _getLocation(context),
+                                icon: const Icon(Icons.location_on),
+                                label: Text(
+                                  'Update Shop Location (${_latitude.toStringAsFixed(5)}, ${_longitude.toStringAsFixed(5)})',
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: const Color(0xFF1A3D63),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: const BorderSide(color: Color(0xFF1A3D63)),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ] else ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.location_on, color: Color(0xFF1A3D63)),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Location: ${_latitude.toStringAsFixed(5)}, ${_longitude.toStringAsFixed(5)}',
+                                      style: const TextStyle(color: Colors.black),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 16),
                           const Text(
                             'Expertise',
