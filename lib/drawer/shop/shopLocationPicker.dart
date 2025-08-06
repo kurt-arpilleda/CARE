@@ -205,6 +205,7 @@ class _ShopLocationPickerState extends State<ShopLocationPicker> {
           'Select Shop Location',
           style: TextStyle(color: Colors.white),
         ),
+        centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _isLoading

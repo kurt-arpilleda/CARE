@@ -3,6 +3,7 @@ import 'drawer/drawerNavigation.dart';
 import 'auto_update.dart';
 import 'googleMap.dart';
 import 'options.dart';
+import 'notification/notifList.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -174,7 +175,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.notifications_none, color: Colors.white),
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const NotificationList()),
+                    );
+                  },
                 ),
                 Positioned(
                   right: 6,
