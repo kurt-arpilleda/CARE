@@ -25,7 +25,22 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
   bool _isEditing = false;
   bool _isLoading = false;
   bool _isSaving = false;
-
+  bool _canEditDocuments() {
+    if (_currentShopData['isValidated'] == 1) {
+      final stampString = _currentShopData['stamp']?.toString();
+      if (stampString != null && stampString.isNotEmpty) {
+        try {
+          final stampDate = DateTime.parse(stampString);
+          final oneYearLater = stampDate.add(const Duration(days: 365));
+          return DateTime.now().isAfter(oneYearLater);
+        } catch (e) {
+          return false;
+        }
+      }
+      return false;
+    }
+    return true;
+  }
   late TextEditingController _shopNameController;
   late TextEditingController _locationController;
   late TextEditingController _facebookController;
@@ -445,6 +460,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
     });
 
     try {
+      final canEditDocs = _canEditDocuments();
       final response = await _apiService.updateShop(
         shopId: int.parse(_currentShopData['id'].toString()),
         shopName: _shopNameController.text,
@@ -458,8 +474,8 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
         latitude: _latitude,
         longitude: _longitude,
         shopLogoFile: _shopLogoFile,
-        businessDocuFile: _businessPermitFile,
-        validIdFile: _governmentIdFile,
+        businessDocuFile: canEditDocs ? _businessPermitFile : null,
+        validIdFile: canEditDocs ? _governmentIdFile : null,
       );
 
       if (response['success'] == true) {
@@ -472,7 +488,6 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
           _businessPermitFile = null;
           _governmentIdFile = null;
         });
-
         await _refreshShopData();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1115,7 +1130,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                               color: Color(0xFF1A3D63),
                             ),
                           ),
-                          if (_isEditing) ...[
+                          if (_isEditing && _canEditDocuments()) ...[
                             const SizedBox(height: 8),
                             GestureDetector(
                               onTap: () => _showImageSourceDialog('business'),
@@ -1157,7 +1172,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                               color: Color(0xFF1A3D63),
                             ),
                           ),
-                          if (_isEditing) ...[
+                          if (_isEditing && _canEditDocuments()) ...[
                             const SizedBox(height: 8),
                             GestureDetector(
                               onTap: () => _showImageSourceDialog('government'),
