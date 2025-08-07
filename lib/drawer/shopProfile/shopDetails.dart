@@ -579,6 +579,23 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
       );
     }
   }
+  Icon _getValidationIcon(int isValidated) {
+    switch (isValidated) {
+      case 1:
+        return Icon(Icons.check_circle, color: Colors.green, size: 28);
+      case 2:
+        return Icon(Icons.cancel, color: Colors.red, size: 28);
+      default:
+        return Icon(Icons.access_time, color: Colors.orange, size: 28);
+    }
+  }
+  String _getValidationStatusText(int isValidated) {
+    switch (isValidated) {
+      case 1: return 'Verified';
+      case 2: return 'Rejected';
+      default: return 'Pending';
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -707,9 +724,37 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                                         ),
                                         child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
                                       ),
+                                    )
+                                  else if (!_isEditing && _currentShopData['isValidated'] != null)
+                                    Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: GestureDetector(
+                                        onLongPress: () {
+                                          final status = _getValidationStatusText(_currentShopData['isValidated']);
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text('Status: $status'),
+                                              duration: const Duration(seconds: 1),
+                                            ),
+                                          );
+                                        },
+                                        child: Tooltip(
+                                          message: _getValidationStatusText(_currentShopData['isValidated']),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              shape: BoxShape.circle,
+                                              border: Border.all(color: Colors.white, width: 2),
+                                            ),
+                                            child: _getValidationIcon(_currentShopData['isValidated']),
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                 ],
-                              ),
+                              )
                             ),
                           ),
                           const SizedBox(height: 32),
