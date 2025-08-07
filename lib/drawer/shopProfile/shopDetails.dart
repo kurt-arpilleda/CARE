@@ -7,6 +7,8 @@ import 'package:care/options.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../shop/shopLocationPicker.dart';
+import 'package:intl/intl.dart';
+
 class ShopDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> shopData;
 
@@ -453,7 +455,16 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
     }
     return indexes.join(',');
   }
-
+  String formatRenewalDate(String stampString) {
+    try {
+      final stampDate = DateTime.parse(stampString);
+      final oneYearLater = stampDate.add(const Duration(days: 365));
+      final formattedDate = DateFormat('MMMM d, y hh:mm a').format(oneYearLater);
+      return 'Documents are validated and cannot be changed until renewal on $formattedDate';
+    } catch (e) {
+      return 'Documents are validated and cannot be changed until renewal period';
+    }
+  }
   Future<void> _saveChanges() async {
     setState(() {
       _isSaving = true;
@@ -1130,6 +1141,26 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                               color: Color(0xFF1A3D63),
                             ),
                           ),
+                          if (_isEditing && !_canEditDocuments() && _currentShopData['isValidated'] == 1) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              formatRenewalDate(_currentShopData['stamp']?.toString() ?? ''),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                          if (_isEditing && _canEditDocuments() && _currentShopData['isValidated'] == 1) ...[
+                            const SizedBox(height: 8),
+                            const Text(
+                              'You can upload business permit for renewing',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
                           if (_isEditing && _canEditDocuments()) ...[
                             const SizedBox(height: 8),
                             GestureDetector(
@@ -1172,6 +1203,26 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                               color: Color(0xFF1A3D63),
                             ),
                           ),
+                          if (_isEditing && !_canEditDocuments() && _currentShopData['isValidated'] == 1) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              formatRenewalDate(_currentShopData['stamp']?.toString() ?? ''),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                          if (_isEditing && _canEditDocuments() && _currentShopData['isValidated'] == 1) ...[
+                            const SizedBox(height: 8),
+                            const Text(
+                              'You can upload valid ID for renewing',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
                           if (_isEditing && _canEditDocuments()) ...[
                             const SizedBox(height: 8),
                             GestureDetector(
