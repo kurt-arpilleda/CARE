@@ -466,12 +466,22 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
     }
   }
   Future<void> _saveChanges() async {
+    final canEditDocs = _canEditDocuments();
+    final isEditingBusiness = _businessPermitFile != null && canEditDocs;
+    final isEditingGovId = _governmentIdFile != null && canEditDocs;
+
+    if ((isEditingBusiness && !isEditingGovId) || (!isEditingBusiness && isEditingGovId)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please renew both documents together')),
+      );
+      return;
+    }
+
     setState(() {
       _isSaving = true;
     });
 
     try {
-      final canEditDocs = _canEditDocuments();
       final response = await _apiService.updateShop(
         shopId: int.parse(_currentShopData['id'].toString()),
         shopName: _shopNameController.text,
