@@ -469,8 +469,16 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
     final canEditDocs = _canEditDocuments();
     final isEditingBusiness = _businessPermitFile != null && canEditDocs;
     final isEditingGovId = _governmentIdFile != null && canEditDocs;
+    final isRejected = _currentShopData['isValidated'] == 2;
 
-    if ((isEditingBusiness && !isEditingGovId) || (!isEditingBusiness && isEditingGovId)) {
+    if (isRejected) {
+      if (!isEditingBusiness || !isEditingGovId) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You need to change both business permit and government ID documents')),
+        );
+        return;
+      }
+    } else if ((isEditingBusiness && !isEditingGovId) || (!isEditingBusiness && isEditingGovId)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please renew both documents together')),
       );
@@ -497,6 +505,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
         shopLogoFile: _shopLogoFile,
         businessDocuFile: canEditDocs ? _businessPermitFile : null,
         validIdFile: canEditDocs ? _governmentIdFile : null,
+        isRejected: isRejected,
       );
 
       if (response['success'] == true) {

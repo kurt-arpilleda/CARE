@@ -473,6 +473,7 @@ class ApiService {
     File? shopLogoFile,
     File? businessDocuFile,
     File? validIdFile,
+    bool isRejected = false,
   }) async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
@@ -495,6 +496,7 @@ class ApiService {
       request.fields['dayIndex'] = dayIndex;
       request.fields['latitude'] = latitude.toString();
       request.fields['longitude'] = longitude.toString();
+      request.fields['isRejected'] = isRejected ? '1' : '0';
 
       if (shopLogoFile != null) {
         request.files.add(await http.MultipartFile.fromPath(
