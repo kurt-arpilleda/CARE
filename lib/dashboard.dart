@@ -35,9 +35,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _notificationCount = response['notifications'].length;
         });
       }
-    } catch (e) {
-      // Handle error silently
-    }
+    } catch (e) {}
   }
 
   @override
@@ -49,6 +47,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _showServiceDialog() {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
@@ -57,99 +56,237 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 service.toLowerCase().contains(_searchController.text.toLowerCase()))
                 .toList();
 
-            return AlertDialog(
-              title: Text('Select Services'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search services...',
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (value) {
-                      setState(() {});
-                    },
+            return MediaQuery.removeViewInsets(
+              context: context,
+              removeBottom: true,
+              child: Dialog(
+                insetPadding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width * 0.05,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                backgroundColor: Colors.transparent,
+                child: Container(
+                  height: MediaQuery.of(context).size.height * 0.75, // fixed height
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  SizedBox(height: 10),
-                  Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Checkbox(
-                        value: _selectAll,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectAll = value!;
-                            for (int i = 0; i < _selectedServices.length; i++) {
-                              _selectedServices[i] = _selectAll;
-                            }
-                          });
-                        },
+                      // HEADER
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Select Services',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A3D63),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.grey),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
                       ),
-                      Text('Select All'),
-                      Spacer(),
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            for (int i = 0; i < _selectedServices.length; i++) {
-                              _selectedServices[i] = false;
-                            }
-                            _selectAll = false;
-                          });
-                        },
-                        child: Text('Clear All'),
+                      const SizedBox(height: 8),
+
+                      // SEARCH
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Search services...',
+                            hintStyle: TextStyle(color: Colors.grey[600]),
+                            prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          onChanged: (value) {
+                            setState(() {});
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // SELECT ALL
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF6FAFD),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Row(
+                          children: [
+                            Checkbox(
+                              value: _selectAll,
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectAll = value!;
+                                  for (int i = 0; i < _selectedServices.length; i++) {
+                                    _selectedServices[i] = _selectAll;
+                                  }
+                                });
+                              },
+                              activeColor: const Color(0xFF1A3D63),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                            const Text('Select All',
+                                style: TextStyle(fontWeight: FontWeight.w500)),
+                            const Spacer(),
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  for (int i = 0; i < _selectedServices.length; i++) {
+                                    _selectedServices[i] = false;
+                                  }
+                                  _selectAll = false;
+                                });
+                              },
+                              child: const Text('Clear All',
+                                  style: TextStyle(color: Colors.red)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // FIXED HEIGHT LIST
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children: filteredServices.map((service) {
+                                int index = serviceOptions.indexOf(service);
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 4),
+                                  decoration: BoxDecoration(
+                                    color: _selectedServices[index]
+                                        ? const Color(0xFFE8F0FE)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: ListTile(
+                                    contentPadding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
+                                    leading: Checkbox(
+                                      value: _selectedServices[index],
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedServices[index] = value!;
+                                          _selectAll =
+                                              _selectedServices.every((val) => val);
+                                        });
+                                      },
+                                      activeColor: const Color(0xFF1A3D63),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                    title: Text(
+                                      service,
+                                      style: TextStyle(
+                                        fontWeight: _selectedServices[index]
+                                            ? FontWeight.w600
+                                            : FontWeight.normal,
+                                      ),
+                                    ),
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedServices[index] =
+                                        !_selectedServices[index];
+                                        _selectAll =
+                                            _selectedServices.every((val) => val);
+                                      });
+                                    },
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // BUTTONS
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(context),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                side: const BorderSide(color: Color(0xFF1A3D63)),
+                              ),
+                              child: const Text('Cancel',
+                                  style: TextStyle(color: Color(0xFF1A3D63))),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                List<String> selected = [];
+                                for (int i = 0; i < _selectedServices.length; i++) {
+                                  if (_selectedServices[i]) {
+                                    selected.add(serviceOptions[i]);
+                                  }
+                                }
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content:
+                                    Text('Selected: ${selected.length} services'),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                backgroundColor: const Color(0xFF1A3D63),
+                              ),
+                              child:
+                              const Text('Apply', style: TextStyle(color: Colors.white)),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  SizedBox(height: 10),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: filteredServices.map((service) {
-                          int index = serviceOptions.indexOf(service);
-                          return CheckboxListTile(
-                            title: Text(service),
-                            value: _selectedServices[index],
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedServices[index] = value!;
-                                _selectAll = _selectedServices.every((val) => val);
-                              });
-                            },
-                            controlAffinity: ListTileControlAffinity.leading,
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-              actions: [
-                TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('Cancel')),
-                TextButton(
-                    onPressed: () {
-                      List<String> selected = [];
-                      for (int i = 0; i < _selectedServices.length; i++) {
-                        if (_selectedServices[i]) {
-                          selected.add(serviceOptions[i]);
-                        }
-                      }
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Selected: ${selected.length} services')),
-                      );
-                    },
-                    child: Text('Apply')),
-              ],
             );
           },
         );
       },
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
