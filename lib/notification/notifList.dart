@@ -1,7 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:care/api_service.dart';
 
-class NotificationList extends StatelessWidget {
+class NotificationList extends StatefulWidget {
   const NotificationList({Key? key}) : super(key: key);
+
+  @override
+  _NotificationListState createState() => _NotificationListState();
+}
+
+class _NotificationListState extends State<NotificationList> {
+  final ApiService _apiService = ApiService();
+  List<dynamic> _notifications = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      final response = await _apiService.getNotifications();
+      if (response['success']) {
+        setState(() {
+          _notifications = response['notifications'];
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _formatTimeAgo(String dateString) {
+    final date = DateTime.parse(dateString);
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
+    } else {
+      return 'Just now';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,17 +68,16 @@ class NotificationList extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
       ),
-      body: ListView.builder(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _notifications.isEmpty
+          ? const Center(child: Text('No notifications available'))
+          : ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: 10,
+        itemCount: _notifications.length,
         itemBuilder: (context, index) {
+          final notification = _notifications[index];
           return Container(
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
@@ -63,7 +111,7 @@ class NotificationList extends StatelessWidget {
                 ),
               ),
               title: Text(
-                'Notification ${index + 1}',
+                notification['title'],
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1A3D63),
@@ -74,14 +122,14 @@ class NotificationList extends StatelessWidget {
                 children: [
                   const SizedBox(height: 4),
                   Text(
-                    'This is a sample notification message for item ${index + 1}',
+                    notification['message'],
                     style: TextStyle(
                       color: Colors.grey[600],
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '${index + 1} hour${index > 0 ? 's' : ''} ago',
+                    _formatTimeAgo(notification['stamp']),
                     style: TextStyle(
                       color: Colors.grey[500],
                       fontSize: 12,
@@ -89,11 +137,6 @@ class NotificationList extends StatelessWidget {
                   ),
                 ],
               ),
-              trailing: Icon(
-                Icons.chevron_right,
-                color: Colors.grey[400],
-              ),
-              onTap: () {},
             ),
           );
         },
