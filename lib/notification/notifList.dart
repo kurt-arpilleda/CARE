@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:care/api_service.dart';
 import '../drawer/shopProfile/shopList.dart';
-import '../anim/dotLoading.dart'; // Import your DotLoading widget
+import '../anim/dotLoading.dart';
 
 class NotificationList extends StatefulWidget {
   const NotificationList({Key? key}) : super(key: key);
