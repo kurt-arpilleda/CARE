@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'api_service.dart';
 import 'dashboard.dart';
+import 'google_signin_service.dart';
 import 'login.dart';
 import 'drawer/vehicle/vehicleOptions.dart';
 
@@ -16,7 +17,10 @@ class _CheckAccountScreenState extends State<CheckAccountScreen> {
   final _apiService = ApiService();
   bool _isLoading = true;
   bool _isBanned = false;
+  bool _isSuspended = false;
   String _banMessage = 'Your account has been banned due to violations of our terms of service';
+  String _suspensionMessage = '';
+  DateTime? _suspendedUntil;
 
   @override
   void initState() {
@@ -30,25 +34,29 @@ class _CheckAccountScreenState extends State<CheckAccountScreen> {
 
       if (response['success'] == true) {
         final reportAction = response['user']['reportAction'] ?? 0;
+        final suspendedUntil = response['user']['suspendedUntil'];
 
         if (reportAction == 2) {
           setState(() {
             _isBanned = true;
             _isLoading = false;
           });
-        } else {
-          // Check vehicle status only if account is not banned
-          final vehicleStatus = await _apiService.checkVehicleStatus();
-          if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => vehicleStatus['hasVehicle'] == 1
-                    ? const DashboardScreen()
-                    : const VehicleOptionsScreen(fromLogin: true),
-              ),
-            );
+        } else if (reportAction == 1 && suspendedUntil != null) {
+          final now = DateTime.now();
+          final suspensionEnd = DateTime.parse(suspendedUntil);
+
+          if (now.isBefore(suspensionEnd)) {
+            setState(() {
+              _isSuspended = true;
+              _isLoading = false;
+              _suspendedUntil = suspensionEnd;
+              _suspensionMessage = 'Your account is suspended until ${_formatDateTime(suspensionEnd)}';
+            });
+          } else {
+            await _proceedToDashboard();
           }
+        } else {
+          await _proceedToDashboard();
         }
       } else {
         await _apiService.clearAuthToken();
@@ -66,10 +74,40 @@ class _CheckAccountScreenState extends State<CheckAccountScreen> {
     }
   }
 
+  Future<void> _proceedToDashboard() async {
+    final vehicleStatus = await _apiService.checkVehicleStatus();
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => vehicleStatus['hasVehicle'] == 1
+              ? const DashboardScreen()
+              : const VehicleOptionsScreen(fromLogin: true),
+        ),
+      );
+    }
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    final monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    final month = monthNames[dateTime.month - 1];
+    final day = dateTime.day;
+    final year = dateTime.year;
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+
+    return '$month $day, $year $hour:$minute';
+  }
+
   Future<void> _logout() async {
     try {
       await _apiService.logout();
       await _apiService.clearAuthToken();
+      await GoogleSignInService.signOut();
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -114,14 +152,14 @@ class _CheckAccountScreenState extends State<CheckAccountScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.block,
+                Icon(
+                  _isBanned ? Icons.block : Icons.timer,
                   size: 80,
-                  color: Colors.red,
+                  color: _isBanned ? Colors.red : Colors.orange,
                 ),
                 const SizedBox(height: 30),
                 Text(
-                  'ACCOUNT BANNED',
+                  _isBanned ? 'ACCOUNT BANNED' : 'ACCOUNT SUSPENDED',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 28,
@@ -141,10 +179,13 @@ class _CheckAccountScreenState extends State<CheckAccountScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: Colors.red.withOpacity(0.5)),
+                    border: Border.all(
+                        color: _isBanned
+                            ? Colors.red.withOpacity(0.5)
+                            : Colors.orange.withOpacity(0.5)),
                   ),
                   child: Text(
-                    _banMessage,
+                    _isBanned ? _banMessage : _suspensionMessage,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
@@ -157,7 +198,7 @@ class _CheckAccountScreenState extends State<CheckAccountScreen> {
                 ElevatedButton(
                   onPressed: _logout,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+                    backgroundColor: _isBanned ? Colors.red : Colors.orange,
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 50),
                     shape: RoundedRectangleBorder(
