@@ -162,14 +162,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-
-                      // FIXED HEIGHT LIST
                       Expanded(
                         child: Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: SingleChildScrollView(
+                          child: filteredServices.isEmpty
+                              ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.search_off,
+                                    size: 48, color: Colors.grey.withOpacity(0.7)),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'No matching services',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                              : SingleChildScrollView(
                             child: Column(
                               children: filteredServices.map((service) {
                                 int index = serviceOptions.indexOf(service);
@@ -189,8 +205,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       onChanged: (value) {
                                         setState(() {
                                           _selectedServices[index] = value!;
-                                          _selectAll =
-                                              _selectedServices.every((val) => val);
+                                          _selectAll = _selectedServices.every((val) => val);
                                         });
                                       },
                                       activeColor: const Color(0xFF1A3D63),
@@ -221,7 +236,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 16),
 
                       // BUTTONS
@@ -295,6 +309,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
     return Scaffold(
       key: _scaffoldKey,
+      resizeToAvoidBottomInset: false,
       drawer: const DashboardDrawer(),
       backgroundColor: const Color(0xFFF6FAFD),
       appBar: AppBar(
