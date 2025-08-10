@@ -53,8 +53,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           builder: (context, setState) {
             List<String> filteredServices = serviceOptions
                 .where((service) =>
+            service.toLowerCase() != 'select all' &&
                 service.toLowerCase().contains(_searchController.text.toLowerCase()))
                 .toList();
+
 
             return MediaQuery.removeViewInsets(
               context: context,
@@ -188,7 +190,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               : SingleChildScrollView(
                             child: Column(
                               children: filteredServices.map((service) {
-                                int index = serviceOptions.indexOf(service);
+                                int index = serviceOptions.indexWhere(
+                                        (s) => s.toLowerCase() == service.toLowerCase());
                                 return Container(
                                   margin: const EdgeInsets.only(bottom: 4),
                                   decoration: BoxDecoration(
@@ -300,8 +303,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
     );
   }
-
-
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
