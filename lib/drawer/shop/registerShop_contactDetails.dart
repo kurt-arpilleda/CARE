@@ -87,7 +87,8 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
   }
 
   Future<void> _selectTime(BuildContext context, bool isOpening) async {
-    FocusScope.of(context).unfocus();
+    _facebookFocusNode.unfocus();
+    FocusScope.of(context).requestFocus(FocusNode());
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
@@ -98,7 +99,6 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
         );
       },
     );
-
     if (picked != null) {
       setState(() {
         if (isOpening) {

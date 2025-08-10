@@ -27,6 +27,9 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
   bool _isEditing = false;
   bool _isLoading = false;
   bool _isSaving = false;
+  final FocusNode _shopNameFocusNode = FocusNode();
+  final FocusNode _locationFocusNode = FocusNode();
+  final FocusNode _facebookFocusNode = FocusNode();
   bool _canEditDocuments() {
     if (_currentShopData['isValidated'] == 1) {
       final stampString = _currentShopData['stamp']?.toString();
@@ -410,6 +413,10 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
   }
 
   Future<void> _selectTime(BuildContext context, bool isOpening) async {
+    _shopNameFocusNode.unfocus();
+    _locationFocusNode.unfocus();
+    _facebookFocusNode.unfocus();
+    FocusScope.of(context).unfocus();
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: isOpening ? openingTime : closingTime,
@@ -606,6 +613,13 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
     }
   }
   @override
+  void dispose() {
+    _shopNameFocusNode.dispose();
+    _locationFocusNode.dispose();
+    _facebookFocusNode.dispose();
+    super.dispose();
+  }
+  @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
@@ -788,6 +802,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                           Container(
                             decoration: _fieldShadowBox(),
                             child: TextFormField(
+                              focusNode: _shopNameFocusNode,
                               controller: _shopNameController,
                               enabled: _isEditing,
                               style: const TextStyle(color: Colors.black),
@@ -807,6 +822,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                           Container(
                             decoration: _fieldShadowBox(),
                             child: TextFormField(
+                              focusNode: _locationFocusNode,
                               controller: _locationController,
                               enabled: _isEditing,
                               style: const TextStyle(color: Colors.black),
@@ -954,6 +970,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                           Container(
                             decoration: _fieldShadowBox(),
                             child: TextFormField(
+                              focusNode: _facebookFocusNode,
                               controller: _facebookController,
                               enabled: _isEditing,
                               style: const TextStyle(color: Colors.black),
