@@ -97,7 +97,7 @@ class _NotificationListState extends State<NotificationList> {
               'No notifications available',
               style: TextStyle(
                 color: Color(0xFF1A3D63),
-                fontSize: 188,
+                fontSize: 18,
               ),
             ),
           ],
