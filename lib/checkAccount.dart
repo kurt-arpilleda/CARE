@@ -5,7 +5,7 @@ import 'dashboard.dart';
 import 'google_signin_service.dart';
 import 'login.dart';
 import 'drawer/vehicle/vehicleOptions.dart';
-
+import 'anim/dotLoading.dart';
 class CheckAccountScreen extends StatefulWidget {
   const CheckAccountScreen({Key? key}) : super(key: key);
 
@@ -133,19 +133,11 @@ class _CheckAccountScreenState extends State<CheckAccountScreen> {
         ),
         child: Center(
           child: _isLoading
-              ? Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(color: Colors.white),
-              const SizedBox(height: 20),
-              Text(
-                'Checking account status...',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 16,
-                ),
-              ),
-            ],
+              ? const Center(
+            child: DotLoading(
+              dotColor: Colors.white,
+              dotSize: 12.0,
+            ),
           )
               : Padding(
             padding: const EdgeInsets.all(20.0),
