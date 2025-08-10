@@ -51,7 +51,7 @@ class _NearestShopScreenState extends State<NearestShopScreen> {
 
   Future<void> _loadNearbyShops() async {
     try {
-      final response = await _apiService.getShops();
+      final response = await _apiService.getAllShops();
       if (response['success']) {
         List<dynamic> allShops = response['shops'];
         DateTime now = DateTime.now();
