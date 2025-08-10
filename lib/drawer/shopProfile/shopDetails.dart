@@ -598,11 +598,11 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
   Icon _getValidationIcon(int isValidated) {
     switch (isValidated) {
       case 1:
-        return Icon(Icons.check_circle, color: Colors.green, size: 28);
+        return Icon(Icons.check_circle, color: Colors.green, size: 32);
       case 2:
-        return Icon(Icons.cancel, color: Colors.red, size: 28);
+        return Icon(Icons.cancel, color: Colors.red, size: 32);
       default:
-        return Icon(Icons.access_time, color: Colors.orange, size: 28);
+        return Icon(Icons.access_time, color: Colors.orange, size: 32);
     }
   }
   String _getValidationStatusText(int isValidated) {
@@ -765,11 +765,11 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                                         child: Tooltip(
                                           message: _getValidationStatusText(_currentShopData['isValidated']),
                                           child: Container(
-                                            padding: const EdgeInsets.all(6),
+                                            padding: const EdgeInsets.all(1),
                                             decoration: BoxDecoration(
-                                              color: Colors.white,
+                                              color: Color(0xFFF6FAFD),
                                               shape: BoxShape.circle,
-                                              border: Border.all(color: Colors.white, width: 2),
+                                              border: Border.all(color: Colors.white, width: 1),
                                             ),
                                             child: _getValidationIcon(_currentShopData['isValidated']),
                                           ),
