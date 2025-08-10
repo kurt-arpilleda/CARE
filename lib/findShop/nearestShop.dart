@@ -1,27 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:intl/intl.dart';
 import 'package:care/api_service.dart';
+import 'package:geolocator/geolocator.dart';
+import '../anim/dotLoading.dart';
 
-class NearestShopDialog extends StatefulWidget {
+class NearestShopScreen extends StatefulWidget {
   final List<String> selectedServices;
-  final ApiService apiService;
 
-  const NearestShopDialog({
-    Key? key,
-    required this.selectedServices,
-    required this.apiService,
-  }) : super(key: key);
+  const NearestShopScreen({Key? key, required this.selectedServices}) : super(key: key);
 
   @override
-  _NearestShopDialogState createState() => _NearestShopDialogState();
+  _NearestShopScreenState createState() => _NearestShopScreenState();
 }
 
-class _NearestShopDialogState extends State<NearestShopDialog> {
-  Position? _currentPosition;
-  bool _isLoading = true;
+class _NearestShopScreenState extends State<NearestShopScreen> {
+  final ApiService _apiService = ApiService();
   List<dynamic> _shops = [];
-  String _errorMessage = '';
+  bool _isLoading = true;
+  Position? _currentPosition;
 
   @override
   void initState() {
@@ -33,10 +28,7 @@ class _NearestShopDialogState extends State<NearestShopDialog> {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'Location services are disabled.';
-        });
+        setState(() => _isLoading = false);
         return;
       }
 
@@ -44,307 +36,268 @@ class _NearestShopDialogState extends State<NearestShopDialog> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          setState(() {
-            _isLoading = false;
-            _errorMessage = 'Location permissions are denied.';
-          });
+          setState(() => _isLoading = false);
           return;
         }
       }
 
-      if (permission == LocationPermission.deniedForever) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'Location permissions are permanently denied.';
-        });
-        return;
-      }
-
       Position position = await Geolocator.getCurrentPosition();
-      setState(() {
-        _currentPosition = position;
-      });
-      _fetchNearbyShops();
+      setState(() => _currentPosition = position);
+      _loadNearbyShops();
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = 'Failed to get location: ${e.toString()}';
-      });
+      setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _fetchNearbyShops() async {
-    if (_currentPosition == null) return;
-
+  Future<void> _loadNearbyShops() async {
     try {
-      final response = await widget.apiService.getShops();
+      final response = await _apiService.getShops();
       if (response['success']) {
-        final now = DateTime.now();
-        final currentDay = now.weekday - 1;
-        final currentTime = DateFormat('HH:mm').format(now);
+        List<dynamic> allShops = response['shops'];
+        DateTime now = DateTime.now();
+        int currentDay = now.weekday - 1;
+        String currentTime = "${now.hour}:${now.minute}";
 
-        List<dynamic> filteredShops = response['shops'].where((shop) {
-          bool hasService = widget.selectedServices.any((service) =>
-          shop['services']?.toLowerCase().contains(service.toLowerCase()) ?? false);
+        const double maxDistance = 10000;
 
+        List<dynamic> filteredShops = allShops.where((shop) {
           bool isValidated = shop['isValidated'] == 1;
           bool isNotArchived = shop['isArchive'] == 0;
-          bool isOpenToday = shop['day_index']?.contains(currentDay.toString()) ?? false;
+          bool hasSelectedServices = widget.selectedServices.any((service) => shop['services'].contains(service));
+          bool isOpenToday = shop['day_index'].contains(currentDay.toString());
 
-          bool isOpenNow = false;
-          if (isOpenToday) {
-            try {
-              final startTime = shop['start_time'] ?? '00:00';
-              final closeTime = shop['close_time'] ?? '23:59';
-              isOpenNow = currentTime.compareTo(startTime) >= 0 &&
-                  currentTime.compareTo(closeTime) <= 0;
-            } catch (e) {}
+          if (_currentPosition != null) {
+            double distance = Geolocator.distanceBetween(
+              _currentPosition!.latitude,
+              _currentPosition!.longitude,
+              shop['latitude'],
+              shop['longitude'],
+            );
+            bool isWithinDistance = distance <= maxDistance;
+            return isValidated && isNotArchived && hasSelectedServices && isWithinDistance;
           }
 
-          return hasService && isValidated && isNotArchived;
+          return isValidated && isNotArchived && hasSelectedServices;
         }).toList();
 
-        filteredShops.sort((a, b) {
-          double distanceA = Geolocator.distanceBetween(
-            _currentPosition!.latitude,
-            _currentPosition!.longitude,
-            double.parse(a['latitude'] ?? '0'),
-            double.parse(a['longitude'] ?? '0'),
-          );
-          double distanceB = Geolocator.distanceBetween(
-            _currentPosition!.latitude,
-            _currentPosition!.longitude,
-            double.parse(b['latitude'] ?? '0'),
-            double.parse(b['longitude'] ?? '0'),
-          );
-          return distanceA.compareTo(distanceB);
-        });
+        if (_currentPosition != null) {
+          filteredShops.sort((a, b) {
+            double distanceA = Geolocator.distanceBetween(
+              _currentPosition!.latitude,
+              _currentPosition!.longitude,
+              a['latitude'],
+              a['longitude'],
+            );
+            double distanceB = Geolocator.distanceBetween(
+              _currentPosition!.latitude,
+              _currentPosition!.longitude,
+              b['latitude'],
+              b['longitude'],
+            );
+            return distanceA.compareTo(distanceB);
+          });
+        }
 
         setState(() {
           _shops = filteredShops;
           _isLoading = false;
         });
       } else {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = response['message'] ?? 'Failed to load shops';
-        });
+        setState(() => _isLoading = false);
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = 'Failed to fetch shops: ${e.toString()}';
-      });
+      setState(() => _isLoading = false);
+    }
+  }
+
+  bool _isShopOpen(dynamic shop) {
+    try {
+      DateTime now = DateTime.now();
+      int currentDay = now.weekday - 1;
+      if (!shop['day_index'].contains(currentDay.toString())) return false;
+
+      List<String> startParts = shop['start_time'].split(':');
+      List<String> closeParts = shop['close_time'].split(':');
+
+      TimeOfDay startTime = TimeOfDay(
+        hour: int.parse(startParts[0]),
+        minute: int.parse(startParts[1]),
+      );
+      TimeOfDay closeTime = TimeOfDay(
+        hour: int.parse(closeParts[0]),
+        minute: int.parse(closeParts[1]),
+      );
+      TimeOfDay currentTime = TimeOfDay.fromDateTime(now);
+
+      int startInMinutes = startTime.hour * 60 + startTime.minute;
+      int closeInMinutes = closeTime.hour * 60 + closeTime.minute;
+      int currentInMinutes = currentTime.hour * 60 + currentTime.minute;
+
+      if (closeInMinutes < startInMinutes) {
+        return currentInMinutes >= startInMinutes || currentInMinutes <= closeInMinutes;
+      } else {
+        return currentInMinutes >= startInMinutes && currentInMinutes <= closeInMinutes;
+      }
+    } catch (e) {
+      return false;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      insetPadding: EdgeInsets.symmetric(
-        horizontal: MediaQuery.of(context).size.width * 0.05,
-        vertical: 20,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.8,
+    return Scaffold(
+      backgroundColor: const Color(0xFFF6FAFD),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1A3D63),
+        title: const Text(
+          'Nearby Shops',
+          style: TextStyle(color: Colors.white),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Nearby Repair Shops',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A3D63),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.grey),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Services: ${widget.selectedServices.join(', ')}',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: _buildContent(),
-            ),
-          ],
+        centerTitle: true,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-    );
-  }
-
-  Widget _buildContent() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_errorMessage.isNotEmpty) {
-      return Center(
-        child: Text(
-          _errorMessage,
-          style: TextStyle(color: Colors.red),
-          textAlign: TextAlign.center,
-        ),
-      );
-    }
-
-    if (_shops.isEmpty) {
-      return Center(
+      body: _isLoading
+          ? const Center(
+        child: DotLoading(dotColor: Color(0xFF1A3D63), dotSize: 12),
+      )
+          : _shops.isEmpty
+          ? Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off, size: 48, color: Colors.grey.withOpacity(0.7)),
-            const SizedBox(height: 8),
+          children: const [
+            Icon(Icons.store_mall_directory_outlined,
+                size: 72, color: Color(0xFF1A3D63)),
+            SizedBox(height: 12),
             Text(
-              'No shops found matching your criteria',
+              'No nearby shops found',
               style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 16,
+                color: Color(0xFF1A3D63),
+                fontSize: 18,
               ),
             ),
           ],
         ),
-      );
-    }
+      )
+          : ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _shops.length,
+        itemBuilder: (context, index) {
+          final shop = _shops[index];
+          bool isOpen = _isShopOpen(shop);
 
-    return ListView.builder(
-      itemCount: _shops.length,
-      itemBuilder: (context, index) {
-        final shop = _shops[index];
-        final now = DateTime.now();
-        final currentDay = now.weekday - 1;
-        final currentTime = DateFormat('HH:mm').format(now);
-
-        bool isOpenToday = shop['day_index']?.contains(currentDay.toString()) ?? false;
-        bool isOpenNow = false;
-
-        if (isOpenToday) {
-          try {
-            final startTime = shop['start_time'] ?? '00:00';
-            final closeTime = shop['close_time'] ?? '23:59';
-            isOpenNow = currentTime.compareTo(startTime) >= 0 &&
-                currentTime.compareTo(closeTime) <= 0;
-          } catch (e) {}
-        }
-
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: shop['shopLogo'] != null
-                      ? Image.network(
-                    '${ApiService.apiUrl}shopLogo/${shop['shopLogo']}',
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 60,
-                        height: 60,
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.store, color: Colors.grey),
-                      );
-                    },
-                  )
-                      : Container(
-                    width: 60,
-                    height: 60,
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.store, color: Colors.grey),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        shop['shop_name'] ?? 'Unknown Shop',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        shop['location'] ?? 'Unknown Location',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isOpenNow
-                                  ? Colors.green[50]
-                                  : Colors.orange[50],
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              isOpenNow ? 'Open' : 'Closed',
-                              style: TextStyle(
-                                color: isOpenNow
-                                    ? Colors.green[800]
-                                    : Colors.orange[800],
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          if (isOpenToday && !isOpenNow)
-                            Text(
-                              'Opens at ${shop['start_time']}',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 2,
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-          ),
-        );
-      },
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              leading: Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  image: shop['shopLogo'] != null
+                      ? DecorationImage(
+                    image: NetworkImage(
+                      '${ApiService.apiUrl}shopLogo/${shop['shopLogo']}',
+                    ),
+                    fit: BoxFit.cover,
+                  )
+                      : null,
+                  color: const Color(0xFF1A3D63).withOpacity(0.1),
+                ),
+                child: shop['shopLogo'] == null
+                    ? const Icon(
+                  Icons.store,
+                  color: Color(0xFF1A3D63),
+                  size: 28,
+                )
+                    : null,
+              ),
+              title: Text(
+                shop['shop_name'],
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A3D63),
+                ),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 4),
+                  Text(
+                    shop['location'],
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isOpen
+                              ? Colors.green.withOpacity(0.1)
+                              : Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          isOpen ? 'OPEN' : 'CLOSED',
+                          style: TextStyle(
+                            color: isOpen ? Colors.green : Colors.red,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      if (_currentPosition != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(
+                            '${(Geolocator.distanceBetween(
+                              _currentPosition!.latitude,
+                              _currentPosition!.longitude,
+                              shop['latitude'],
+                              shop['longitude'],
+                            ) / 1000)
+                                .toStringAsFixed(1)} km',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+              trailing: const Icon(
+                Icons.chevron_right,
+                color: Color(0xFF1A3D63),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

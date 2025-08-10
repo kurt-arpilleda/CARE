@@ -5,6 +5,7 @@ import 'googleMap.dart';
 import 'options.dart';
 import 'notification/notifList.dart';
 import 'api_service.dart';
+import 'findShop/nearestShop.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -57,7 +58,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 service.toLowerCase().contains(_searchController.text.toLowerCase()))
                 .toList();
 
-
             return MediaQuery.removeViewInsets(
               context: context,
               removeBottom: true,
@@ -70,7 +70,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 backgroundColor: Colors.transparent,
                 child: Container(
-                  height: MediaQuery.of(context).size.height * 0.75, // fixed height
+                  height: MediaQuery.of(context).size.height * 0.75,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -79,7 +79,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // HEADER
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -98,8 +97,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
                       const SizedBox(height: 8),
-
-                      // SEARCH
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey[100],
@@ -120,8 +117,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-
-                      // SELECT ALL
                       Container(
                         decoration: BoxDecoration(
                           color: const Color(0xFFF6FAFD),
@@ -240,8 +235,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-
-                      // BUTTONS
                       Row(
                         children: [
                           Expanded(
@@ -264,21 +257,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               onPressed: () {
                                 List<String> selected = [];
                                 for (int i = 0; i < _selectedServices.length; i++) {
-                                  if (_selectedServices[i]) {
+                                  if (_selectedServices[i] && serviceOptions[i] != 'Select All') {
                                     selected.add(serviceOptions[i]);
                                   }
                                 }
                                 Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content:
-                                    Text('Selected: ${selected.length} services'),
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
+                                if (selected.isNotEmpty) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => NearestShopScreen(
+                                        selectedServices: selected,
+                                      ),
                                     ),
-                                  ),
-                                );
+                                  );
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 14),
