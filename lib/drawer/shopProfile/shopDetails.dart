@@ -728,52 +728,50 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                                   CircleAvatar(
                                     radius: 80,
                                     backgroundColor: Colors.grey.shade300,
-                                    backgroundImage: _shopLogoFile != null
-                                        ? FileImage(_shopLogoFile!)
+                                    child: _shopLogoFile != null
+                                        ? ClipOval(
+                                      child: Image.file(
+                                        _shopLogoFile!,
+                                        width: 160,
+                                        height: 160,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
                                         : (_currentShopData['shopLogo'] != null && _currentShopData['shopLogo'].isNotEmpty)
-                                        ? NetworkImage('${ApiService.apiUrl}shopLogo/${_currentShopData['shopLogo']}')
-                                        : const AssetImage('assets/images/shopLogo.jpg') as ImageProvider,
-                                    child: _shopLogoFile == null &&
-                                        (_currentShopData['shopLogo'] == null || _currentShopData['shopLogo'].isEmpty)
-                                        ? null
-                                        : (_currentShopData['shopLogo'] != null && _currentShopData['shopLogo'].isNotEmpty && _shopLogoFile == null)
                                         ? ClipOval(
                                       child: Image.network(
                                         '${ApiService.apiUrl}shopLogo/${_currentShopData['shopLogo']}',
-                                        fit: BoxFit.cover,
                                         width: 160,
                                         height: 160,
+                                        fit: BoxFit.cover,
                                         errorBuilder: (context, error, stackTrace) {
                                           return Image.asset(
                                             'assets/images/shopLogo.jpg',
-                                            fit: BoxFit.cover,
                                             width: 160,
                                             height: 160,
+                                            fit: BoxFit.cover,
                                           );
                                         },
                                         loadingBuilder: (context, child, loadingProgress) {
                                           if (loadingProgress == null) return child;
-                                          return Container(
-                                            width: 160,
-                                            height: 160,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: Colors.grey.shade300,
-                                            ),
-                                            child: Center(
-                                              child: CircularProgressIndicator(
-                                                value: loadingProgress.expectedTotalBytes != null
-                                                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                                    : null,
-                                                strokeWidth: 3,
-                                                color: const Color(0xFF1A3D63),
-                                              ),
+                                          return Center(
+                                            child: CircularProgressIndicator(
+                                              value: loadingProgress.expectedTotalBytes != null
+                                                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                                  : null,
                                             ),
                                           );
                                         },
                                       ),
                                     )
-                                        : null,
+                                        : ClipOval(
+                                      child: Image.asset(
+                                        'assets/images/shopLogo.jpg',
+                                        width: 160,
+                                        height: 160,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
                                   ),
                                   if (_isEditing)
                                     Positioned(
