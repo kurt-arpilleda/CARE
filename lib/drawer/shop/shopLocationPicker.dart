@@ -221,6 +221,10 @@ class _ShopLocationPickerState extends State<ShopLocationPicker> {
             markers: _getMarkers(),
             myLocationEnabled: true,
             myLocationButtonEnabled: true,
+            padding: EdgeInsets.only(
+              bottom: _selectedPosition != null ? 80.0 : 20.0,
+              right: 10.0,
+            ),
             onTap: (LatLng position) {
               setState(() => _selectedPosition = position);
             },
