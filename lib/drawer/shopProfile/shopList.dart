@@ -381,7 +381,7 @@ class _ShopListScreenState extends State<ShopListScreen> {
   Widget _buildShopCard(BuildContext context, Map<String, dynamic> shop) {
     final int isValidated = shop['isValidated'] ?? 0;
     final borderColor = _getValidationBorderColor(isValidated);
-    final int shopId = shop['id'] ?? 0;
+    final int shopId = shop['shopId'] ?? 0;
     final bool isSelected = _selectedShopIds.contains(shopId);
 
     return Card(
