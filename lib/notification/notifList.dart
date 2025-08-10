@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:care/api_service.dart';
+import '../drawer/shopProfile/shopList.dart';
+import '../anim/dotLoading.dart'; // Import your DotLoading widget
 
 class NotificationList extends StatefulWidget {
   const NotificationList({Key? key}) : super(key: key);
@@ -28,11 +29,11 @@ class _NotificationListState extends State<NotificationList> {
           _notifications = response['notifications'];
           _isLoading = false;
         });
+      } else {
+        setState(() => _isLoading = false);
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
@@ -49,6 +50,17 @@ class _NotificationListState extends State<NotificationList> {
       return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
     } else {
       return 'Just now';
+    }
+  }
+
+  void _handleNotificationTap(dynamic notification) {
+    if (notification['title'] == "Shop Notification") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ShopListScreen(),
+        ),
+      );
     }
   }
 
@@ -70,9 +82,27 @@ class _NotificationListState extends State<NotificationList> {
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+        child: DotLoading(dotColor: Color(0xFF1A3D63), dotSize: 12),
+      )
           : _notifications.isEmpty
-          ? const Center(child: Text('No notifications available'))
+          ? Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.notifications_none,
+                size: 72, color: Color(0xFF1A3D63)),
+            SizedBox(height: 12),
+            Text(
+              'No notifications available',
+              style: TextStyle(
+                color: Color(0xFF1A3D63),
+                fontSize: 188,
+              ),
+            ),
+          ],
+        ),
+      )
           : ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _notifications.length,
@@ -101,7 +131,8 @@ class _NotificationListState extends State<NotificationList> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A3D63).withOpacity(0.1),
+                  color:
+                  const Color(0xFF1A3D63).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -137,6 +168,7 @@ class _NotificationListState extends State<NotificationList> {
                   ),
                 ],
               ),
+              onTap: () => _handleNotificationTap(notification),
             ),
           );
         },
