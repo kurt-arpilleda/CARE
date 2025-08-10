@@ -498,7 +498,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
 
     try {
       final response = await _apiService.updateShop(
-        shopId: int.parse(_currentShopData['id'].toString()),
+        shopId: int.parse(_currentShopData['shopId'].toString()),
         shopName: _shopNameController.text,
         location: _locationController.text,
         expertise: _getExpertiseIds(),
