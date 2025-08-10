@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'splashScreen.dart';
 import 'login.dart';
 import 'dashboard.dart';
+import 'checkAccount.dart';
 import 'api_service.dart';
 
 void main() async {
@@ -12,7 +13,6 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   final isFirstOpen = prefs.getBool('isFirstOpen') ?? true;
 
-  // Check auth token from secure storage
   final apiService = ApiService();
   final authToken = await apiService.getAuthToken();
 
@@ -20,7 +20,7 @@ void main() async {
     initialRoute: isFirstOpen
         ? '/splash'
         : authToken != null
-        ? '/dashboard'
+        ? '/checkAccount'
         : '/login',
   ));
 }
@@ -47,6 +47,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/splash': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
+        '/checkAccount': (context) => const CheckAccountScreen(),
         '/dashboard': (context) => const DashboardScreen(),
       },
     );

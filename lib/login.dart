@@ -2,10 +2,9 @@ import 'package:care/signup.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'api_service.dart';
-import 'dashboard.dart';
 import 'google_signin_service.dart';
-import 'drawer/vehicle/vehicleOptions.dart';
 import 'dialog/forgot_password_dialog.dart';
+import 'checkAccount.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -65,16 +64,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (response['success'] == true) {
           await _apiService.saveAuthToken(response['token']);
-          final vehicleStatus = await _apiService.checkVehicleStatus();
-
           if (mounted) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (context) => vehicleStatus['hasVehicle'] == 1
-                    ? const DashboardScreen()
-                    : const VehicleOptionsScreen(fromLogin: true),
-              ),
+              MaterialPageRoute(builder: (context) => const CheckAccountScreen()),
             );
           }
         } else {
@@ -112,19 +105,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
           if (loginResponse['success'] == true) {
             await _apiService.saveAuthToken(loginResponse['token']);
-            final vehicleStatus = await _apiService.checkVehicleStatus();
-
             if (mounted) {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => vehicleStatus['hasVehicle'] == 1
-                      ? const DashboardScreen()
-                      : const VehicleOptionsScreen(fromLogin: true),
-                ),
+                MaterialPageRoute(builder: (context) => const CheckAccountScreen()),
               );
             }
-          } else if (loginResponse['message'] == 'Google account not found') {
+          }else if (loginResponse['message'] == 'Google account not found') {
             String firstName = '';
             String surName = '';
 
@@ -153,9 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (mounted) {
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const VehicleOptionsScreen(),
-                    ),
+                    MaterialPageRoute(builder: (context) => const CheckAccountScreen()),
                   );
                 }
               } else {
