@@ -331,13 +331,24 @@ class _ShopListScreenState extends State<ShopListScreen> {
                         snapshot.data!['shops'] ?? []);
 
                     if (shops.isEmpty) {
-                      return const Center(
-                        child: Text(
-                          'No shops registered yet',
-                          style: TextStyle(
-                            color: Color(0xFF1A3D63),
-                            fontSize: 16,
-                          ),
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.store_mall_directory,
+                              size: 80,
+                              color: Colors.white,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'No shops registered yet',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     }
