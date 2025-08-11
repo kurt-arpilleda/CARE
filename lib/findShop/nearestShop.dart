@@ -62,7 +62,6 @@ class _NearestShopScreenState extends State<NearestShopScreen> {
 
         List<dynamic> filteredShops = allShops.where((shop) {
           bool isValidated = shop['isValidated'] == 1;
-          bool isNotArchived = shop['isArchive'] == 0;
           bool hasSelectedServices = widget.selectedServices.any((service) => shop['services'].contains(service));
           bool isOpenToday = shop['day_index'].contains(currentDay.toString());
 
@@ -74,10 +73,10 @@ class _NearestShopScreenState extends State<NearestShopScreen> {
               shop['longitude'],
             );
             bool isWithinDistance = distance <= maxDistance;
-            return isValidated && isNotArchived && hasSelectedServices && isWithinDistance;
+            return isValidated && hasSelectedServices && isWithinDistance;
           }
 
-          return isValidated && isNotArchived && hasSelectedServices;
+          return isValidated && hasSelectedServices;
         }).toList();
 
         if (_currentPosition != null) {
