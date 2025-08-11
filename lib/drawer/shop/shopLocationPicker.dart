@@ -98,7 +98,7 @@ class _ShopLocationPickerState extends State<ShopLocationPicker> {
       final double radius = 40;
       final Offset center = Offset(size / 2, radius + 10);
 
-      final Paint borderPaint = Paint()..color = Color(0xFF1A3D63)..style = PaintingStyle.fill;
+      final Paint borderPaint = Paint()..color = Color(0xFF4285F4)..style = PaintingStyle.fill;
       final Paint whitePaint = Paint()..color = Colors.white..style = PaintingStyle.fill;
 
       canvas.drawCircle(center, radius + 6, whitePaint);
