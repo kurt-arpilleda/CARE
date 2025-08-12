@@ -26,7 +26,9 @@ class RegisterShopContactDetails extends StatefulWidget {
 class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _facebookController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final FocusNode _facebookFocusNode = FocusNode();
+  final FocusNode _phoneFocusNode = FocusNode();
   List<String> selectedServices = [];
   TimeOfDay? openingTime;
   TimeOfDay? closingTime;
@@ -49,7 +51,6 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
           selectedServices = List.from(serviceOptions);
         }
       } else {
-        // Regular service selection logic
         if (selectedServices.contains(service)) {
           selectedServices.remove(service);
           selectedServices.remove('Select All');
@@ -62,11 +63,13 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
       }
     });
   }
+
   void _toggleDay(String day) {
     setState(() {
       selectedDays[day] = !selectedDays[day]!;
     });
   }
+
   void _toggleAllDays() {
     setState(() {
       bool allSelected = selectedDays.values.every((value) => value);
@@ -88,6 +91,7 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
 
   Future<void> _selectTime(BuildContext context, bool isOpening) async {
     _facebookFocusNode.unfocus();
+    _phoneFocusNode.unfocus();
     FocusScope.of(context).requestFocus(FocusNode());
     final TimeOfDay? picked = await showTimePicker(
       context: context,
@@ -156,6 +160,7 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
             location: widget.location,
             expertise: widget.expertise,
             homePage: _facebookController.text.isNotEmpty ? _facebookController.text : null,
+            phoneNum: _phoneController.text,
             services: selectedServices.join(','),
             startTime: _formatTimeForAPI(openingTime),
             closeTime: _formatTimeForAPI(closingTime),
@@ -202,7 +207,9 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
   @override
   void dispose() {
     _facebookController.dispose();
+    _phoneController.dispose();
     _facebookFocusNode.dispose();
+    _phoneFocusNode.dispose();
     super.dispose();
   }
 
@@ -271,6 +278,35 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
                           controller: _facebookController,
                           focusNode: _facebookFocusNode,
                           decoration: _inputDecoration('Enter home page link'),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Contact Number',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF1A3D63),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: _fieldShadowBox(),
+                        child: TextFormField(
+                          controller: _phoneController,
+                          focusNode: _phoneFocusNode,
+                          keyboardType: TextInputType.phone,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          decoration: _inputDecoration('Enter contact number'),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter contact number';
+                            }
+                            if (value.length < 10) {
+                              return 'Enter a valid phone number';
+                            }
+                            return null;
+                          },
                         ),
                       ),
                       const SizedBox(height: 20),

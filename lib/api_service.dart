@@ -385,12 +385,12 @@ class ApiService {
       throw HttpException("HTTP ${response.statusCode}");
     });
   }
-
   Future<Map<String, dynamic>> registerShop({
     required String shopName,
     required String location,
     required String expertise,
     String? homePage,
+    required String phoneNum,
     required String services,
     String? startTime,
     String? closeTime,
@@ -414,6 +414,7 @@ class ApiService {
       request.fields['location'] = location;
       request.fields['expertise'] = expertise;
       if (homePage != null) request.fields['homePage'] = homePage;
+      request.fields['phoneNum'] = phoneNum;
       request.fields['services'] = services;
       if (startTime != null) request.fields['startTime'] = startTime;
       if (closeTime != null) request.fields['closeTime'] = closeTime;
@@ -483,6 +484,7 @@ class ApiService {
     required String location,
     required String expertise,
     String? homePage,
+    String? phoneNum,
     required String services,
     required String startTime,
     required String closeTime,
@@ -509,6 +511,7 @@ class ApiService {
       request.fields['location'] = location;
       request.fields['expertise'] = expertise;
       if (homePage != null) request.fields['homePage'] = homePage;
+      if (phoneNum != null) request.fields['phoneNum'] = phoneNum;
       request.fields['services'] = services;
       request.fields['startTime'] = startTime;
       request.fields['closeTime'] = closeTime;

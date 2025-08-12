@@ -10,6 +10,7 @@ class RegisterShopBusinessDocu extends StatefulWidget {
   final String location;
   final String expertise;
   final String? homePage;
+  final String phoneNum;
   final String services;
   final String? startTime;
   final String? closeTime;
@@ -23,6 +24,7 @@ class RegisterShopBusinessDocu extends StatefulWidget {
     required this.location,
     required this.expertise,
     this.homePage,
+    required this.phoneNum,
     required this.services,
     this.startTime,
     this.closeTime,
@@ -272,6 +274,7 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
         location: widget.location,
         expertise: widget.expertise,
         homePage: widget.homePage,
+        phoneNum: widget.phoneNum,
         services: widget.services,
         startTime: widget.startTime,
         closeTime: widget.closeTime,

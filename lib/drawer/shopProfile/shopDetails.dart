@@ -30,6 +30,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
   final FocusNode _shopNameFocusNode = FocusNode();
   final FocusNode _locationFocusNode = FocusNode();
   final FocusNode _facebookFocusNode = FocusNode();
+  final FocusNode _phoneNumFocusNode = FocusNode();
   bool _canEditDocuments() {
     if (_currentShopData['isValidated'] == 1) {
       final stampString = _currentShopData['stamp']?.toString();
@@ -49,6 +50,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
   late TextEditingController _shopNameController;
   late TextEditingController _locationController;
   late TextEditingController _facebookController;
+  late TextEditingController _phoneNumController;
 
   late Map<String, dynamic> _currentShopData;
   late List<String> selectedExpertise;
@@ -70,6 +72,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
     _shopNameController = TextEditingController(text: _currentShopData['shop_name'] ?? '');
     _locationController = TextEditingController(text: _currentShopData['location'] ?? '');
     _facebookController = TextEditingController(text: _currentShopData['home_page'] ?? '');
+    _phoneNumController = TextEditingController(text: _currentShopData['phoneNum'] ?? '');
     _latitude = double.tryParse(_currentShopData['latitude']?.toString() ?? '0') ?? 0.0;
     _longitude = double.tryParse(_currentShopData['longitude']?.toString() ?? '0') ?? 0.0;
     selectedExpertise = [];
@@ -416,6 +419,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
     _shopNameFocusNode.unfocus();
     _locationFocusNode.unfocus();
     _facebookFocusNode.unfocus();
+    _phoneNumFocusNode.unfocus();
     FocusScope.of(context).unfocus();
     final TimeOfDay? picked = await showTimePicker(
       context: context,
@@ -503,6 +507,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
         location: _locationController.text,
         expertise: _getExpertiseIds(),
         homePage: _facebookController.text.isNotEmpty ? _facebookController.text : null,
+        phoneNum: _phoneNumController.text.isNotEmpty ? _phoneNumController.text : null,
         services: selectedServices.join(','),
         startTime: _formatTimeForAPI(openingTime),
         closeTime: _formatTimeForAPI(closingTime),
@@ -519,13 +524,24 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Shop details updated successfully')),
         );
+
+        if (_shopLogoFile != null && response['shopLogo'] != null) {
+          setState(() {
+            _currentShopData['shopLogo'] = response['shopLogo'];
+          });
+        }
+
         setState(() {
           _isEditing = false;
-          _shopLogoFile = null;
           _businessPermitFile = null;
           _governmentIdFile = null;
         });
+
         await _refreshShopData();
+
+        setState(() {
+          _shopLogoFile = null;
+        });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(response['message'] ?? 'Failed to update shop details')),
@@ -617,6 +633,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
     _shopNameFocusNode.dispose();
     _locationFocusNode.dispose();
     _facebookFocusNode.dispose();
+    _phoneNumFocusNode.dispose();
     super.dispose();
   }
   @override
@@ -1014,6 +1031,26 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                               enabled: _isEditing,
                               style: const TextStyle(color: Colors.black),
                               decoration: _inputDecoration('Enter home page link'),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Contact Number',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF1A3D63),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            decoration: _fieldShadowBox(),
+                            child: TextFormField(
+                              focusNode: _phoneNumFocusNode,
+                              controller: _phoneNumController,
+                              enabled: _isEditing,
+                              style: const TextStyle(color: Colors.black),
+                              decoration: _inputDecoration('Enter contact number'),
                             ),
                           ),
                           const SizedBox(height: 16),
