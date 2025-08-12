@@ -70,7 +70,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 backgroundColor: Colors.transparent,
                 child: Container(
-                  height: MediaQuery.of(context).size.height * 0.75,
+                  height: MediaQuery.of(context).size.height * 0.9,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
