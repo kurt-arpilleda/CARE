@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:care/api_service.dart';
 import 'package:geolocator/geolocator.dart';
 import '../anim/dotLoading.dart';
+import 'nearbyshopProfile.dart';
 
 class NearestShopScreen extends StatefulWidget {
   final List<String> selectedServices;
@@ -293,6 +294,14 @@ class _NearestShopScreenState extends State<NearestShopScreen> {
                 Icons.chevron_right,
                 color: Color(0xFF1A3D63),
               ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => NearbyShopProfileScreen(shop: shop),
+                  ),
+                );
+              },
             ),
           );
         },
