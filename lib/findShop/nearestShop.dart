@@ -213,23 +213,26 @@ class _NearestShopScreenState extends State<NearestShopScreen> {
                 height: 60,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  image: shop['shopLogo'] != null
-                      ? DecorationImage(
-                    image: NetworkImage(
-                      '${ApiService.apiUrl}shopLogo/${shop['shopLogo']}',
-                    ),
-                    fit: BoxFit.cover,
-                  )
-                      : null,
                   color: const Color(0xFF1A3D63).withOpacity(0.1),
                 ),
-                child: shop['shopLogo'] == null
-                    ? const Icon(
-                  Icons.store,
-                  color: Color(0xFF1A3D63),
-                  size: 28,
+                child: shop['shopLogo'] != null
+                    ? ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    '${ApiService.apiUrl}shopLogo/${shop['shopLogo']}',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.directions_car,
+                      color: Color(0xFF1A3D63),
+                      size: 28,
+                    ),
+                  ),
                 )
-                    : null,
+                    : const Icon(
+                  Icons.car_repair,
+                  color: Color(0xFF1A3D63),
+                  size: 30,
+                ),
               ),
               title: Text(
                 shop['shop_name'],

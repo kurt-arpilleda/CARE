@@ -107,23 +107,26 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
                           offset: const Offset(0, 4),
                         ),
                       ],
-                      image: widget.shop['shopLogo'] != null
-                          ? DecorationImage(
-                        image: NetworkImage(
-                          '${ApiService.apiUrl}shopLogo/${widget.shop['shopLogo']}',
-                        ),
-                        fit: BoxFit.cover,
-                      )
-                          : null,
                       color: Colors.white,
                     ),
-                    child: widget.shop['shopLogo'] == null
-                        ? const Icon(
-                      Icons.store,
+                    child: widget.shop['shopLogo'] != null
+                        ? ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.network(
+                        '${ApiService.apiUrl}shopLogo/${widget.shop['shopLogo']}',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => const Icon(
+                          Icons.car_repair,
+                          color: Color(0xFF1A3D63),
+                          size: 50,
+                        ),
+                      ),
+                    )
+                        : const Icon(
+                      Icons.car_repair,
                       color: Color(0xFF1A3D63),
                       size: 50,
-                    )
-                        : null,
+                    ),
                   ),
                 ),
               ),

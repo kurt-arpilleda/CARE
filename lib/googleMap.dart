@@ -48,7 +48,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
   Future<void> _initMap() async {
     await _getCurrentLocation();
     await _loadUserData();
-    _addCurrentLocationMarker();
+    await _createCustomMarkerIcon();
     _moveToCurrentLocation();
     await _loadNearbyShops();
     await _addShopMarkers();
@@ -59,7 +59,6 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
       final response = await _apiService.getUserData();
       if (response['success'] == true && response['user'] != null) {
         _userData = response['user'];
-        await _createCustomMarkerIcon();
       }
     } catch (_) {}
   }
@@ -298,15 +297,21 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
 
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final Canvas canvas = Canvas(recorder);
-      final double size = 120;
-      final double radius = 40;
-      final Offset center = Offset(size / 2, radius + 10);
+      final double size = 130;
+      final double radius = 42;
+      final Offset center = Offset(size / 2, radius + 12);
+
+      final Paint shadowPaint = Paint()
+        ..color = Colors.black.withOpacity(0.25)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3.0);
+
+      canvas.drawCircle(Offset(center.dx + 3, center.dy + 3), radius + 8, shadowPaint);
 
       final Paint borderPaint = Paint()..color = Color(0xFF4285F4)..style = PaintingStyle.fill;
       final Paint whitePaint = Paint()..color = Colors.white..style = PaintingStyle.fill;
 
-      canvas.drawCircle(center, radius + 6, whitePaint);
-      canvas.drawCircle(center, radius + 3, borderPaint);
+      canvas.drawCircle(center, radius + 8, whitePaint);
+      canvas.drawCircle(center, radius + 4, borderPaint);
 
       final Path clipPath = Path()..addOval(Rect.fromCircle(center: center, radius: radius));
       canvas.save();
@@ -317,14 +322,14 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
       canvas.restore();
 
       final Path pinPath = Path();
-      pinPath.moveTo(size / 2 - 10, radius * 2 + 15);
-      pinPath.lineTo(size / 2 + 10, radius * 2 + 15);
-      pinPath.lineTo(size / 2, radius * 2 + 35);
+      pinPath.moveTo(size / 2 - 12, radius * 2 + 18);
+      pinPath.lineTo(size / 2 + 12, radius * 2 + 18);
+      pinPath.lineTo(size / 2, radius * 2 + 38);
       pinPath.close();
       canvas.drawPath(pinPath, borderPaint);
 
       final ui.Picture picture = recorder.endRecording();
-      final ui.Image finalImage = await picture.toImage(size.toInt(), (radius * 2 + 40).toInt());
+      final ui.Image finalImage = await picture.toImage(size.toInt(), (radius * 2 + 45).toInt());
       final ByteData? byteData = await finalImage.toByteData(format: ui.ImageByteFormat.png);
       final Uint8List finalImageBytes = byteData!.buffer.asUint8List();
 
@@ -353,41 +358,8 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
     _currentLocation = await _location.getLocation();
   }
 
-  void _addCurrentLocationMarker() {
-    if (_currentLocation != null) {
-      _markers.add(
-        Marker(
-          markerId: const MarkerId('current_location'),
-          position: LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
-          infoWindow: InfoWindow(
-            title: 'Your Location',
-            snippet: '${_userData['firstName'] ?? ''} ${_userData['surName'] ?? ''}',
-          ),
-          icon: _customMarkerIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-          anchor: Offset(0.5, 1.0),
-        ),
-      );
-      setState(() {});
-    }
-  }
-
   Future<void> _addShopMarkers() async {
     Set<Marker> newMarkers = {};
-
-    if (_currentLocation != null) {
-      newMarkers.add(
-        Marker(
-          markerId: const MarkerId('current_location'),
-          position: LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
-          infoWindow: InfoWindow(
-            title: 'Your Location',
-            snippet: '${_userData['firstName'] ?? ''} ${_userData['surName'] ?? ''}',
-          ),
-          icon: _customMarkerIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-          anchor: Offset(0.5, 1.0),
-        ),
-      );
-    }
 
     for (int i = 0; i < _shops.length; i++) {
       final shop = _shops[i];
@@ -416,6 +388,23 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
           ),
           icon: shopIcon,
           anchor: Offset(anchorX, 1.0),
+          zIndex: 1.0,
+        ),
+      );
+    }
+
+    if (_currentLocation != null && _customMarkerIcon != null) {
+      newMarkers.add(
+        Marker(
+          markerId: const MarkerId('current_location'),
+          position: LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
+          infoWindow: InfoWindow(
+            title: 'Your Location',
+            snippet: '${_userData['firstName'] ?? ''} ${_userData['surName'] ?? ''}',
+          ),
+          icon: _customMarkerIcon!,
+          anchor: Offset(0.5, 1.0),
+          zIndex: 1000.0,
         ),
       );
     }
