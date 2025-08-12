@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:care/api_service.dart';
+import 'reportDialog.dart';
 
 class NearbyShopProfileScreen extends StatefulWidget {
   final dynamic shop;
@@ -157,8 +158,9 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
               IconButton(
                 icon: const Icon(Icons.report_outlined, color: Colors.white),
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Report functionality coming soon')),
+                  showDialog(
+                    context: context,
+                    builder: (context) => const ReportDialog(),
                   );
                 },
               ),
