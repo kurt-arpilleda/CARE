@@ -161,7 +161,7 @@ class _RegisterShopContactDetailsState extends State<RegisterShopContactDetails>
             expertise: widget.expertise,
             homePage: _facebookController.text.isNotEmpty ? _facebookController.text : null,
             phoneNum: _phoneController.text,
-            services: selectedServices.join(','),
+            services: selectedServices.where((s) => s != 'Select All').join(','),
             startTime: _formatTimeForAPI(openingTime),
             closeTime: _formatTimeForAPI(closingTime),
             dayIndex: _getDayIndexes(),

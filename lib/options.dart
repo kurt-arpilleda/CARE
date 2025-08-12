@@ -1,5 +1,4 @@
 const List<String> serviceOptions = [
-  '24/7 Roadside Assistance',
   'Aircon Cleaning & Repair',
   'Auto Paint & Repainting',
   'Battery Check & Replacement',
