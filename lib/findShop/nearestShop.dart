@@ -222,9 +222,9 @@ class _NearestShopScreenState extends State<NearestShopScreen> {
                     '${ApiService.apiUrl}shopLogo/${shop['shopLogo']}',
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.directions_car,
+                      Icons.car_repair,
                       color: Color(0xFF1A3D63),
-                      size: 28,
+                      size: 30,
                     ),
                   ),
                 )
