@@ -42,11 +42,29 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
     }
   }
 
+  String _formatTime(String time24) {
+    try {
+      List<String> parts = time24.split(':');
+      if (parts.length < 2) return time24;
+      int hour = int.tryParse(parts[0]) ?? 0;
+      int minute = int.tryParse(parts[1]) ?? 0;
+      String period = hour >= 12 ? 'pm' : 'am';
+      if (hour > 12) hour -= 12;
+      if (hour == 0) hour = 12;
+      String minuteStr = minute.toString().padLeft(2, '0');
+
+      return '$hour:$minuteStr $period';
+    } catch (e) {
+      return time24;
+    }
+  }
+
   String _getOperatingTime() {
     try {
-      String startTime = widget.shop['start_time'] ?? '00:00';
-      String closeTime = widget.shop['close_time'] ?? '23:59';
-      return '$startTime - $closeTime';
+      String startTime = widget.shop['start_time'] ?? '00:00:00';
+      String closeTime = widget.shop['close_time'] ?? '23:59:59';
+
+      return '${_formatTime(startTime)} - ${_formatTime(closeTime)}';
     } catch (e) {
       return 'Time not available';
     }
