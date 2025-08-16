@@ -10,41 +10,7 @@ class NearbyShopProfileScreen extends StatefulWidget {
   @override
   _NearbyShopProfileScreenState createState() => _NearbyShopProfileScreenState();
 }
-class ShopReview {
-  final int accountId;
-  final String firstName;
-  final String surName;
-  final String? photoUrl;
-  final int rating;
-  final String comment;
-  final String date;
 
-  ShopReview({
-    required this.accountId,
-    required this.firstName,
-    required this.surName,
-    required this.photoUrl,
-    required this.rating,
-    required this.comment,
-    required this.date,
-  });
-
-  factory ShopReview.fromJson(Map<String, dynamic> json) {
-    return ShopReview(
-      accountId: json['accountId'],
-      firstName: json['firstName'] ?? 'Anonymous',
-      surName: json['surName'] ?? '',
-      photoUrl: json['photoUrl'],
-      rating: json['ratingStar'] ?? 0,
-      comment: json['ratingFeedback'] ?? '',
-      date: json['stamp'] ?? '',
-    );
-  }
-
-  String get fullName {
-    return '$firstName ${surName.isNotEmpty ? surName[0] + '.' : ''}'.trim();
-  }
-}
 class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
   bool _showFullServices = false;
   int _selectedRating = 0;

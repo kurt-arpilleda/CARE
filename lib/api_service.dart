@@ -668,7 +668,6 @@ class ApiService {
       throw HttpException("HTTP ${response.statusCode}");
     });
   }
-
   Future<void> saveAuthToken(String token) async {
     await _secureStorage.write(key: 'authToken', value: token);
   }
