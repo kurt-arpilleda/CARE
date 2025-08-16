@@ -668,6 +668,32 @@ class ApiService {
       throw HttpException("HTTP ${response.statusCode}");
     });
   }
+  Future<Map<String, dynamic>> fetchShopReviews({
+    required int shopId,
+    int limit = 5,
+  }) async {
+    return _executeWithRetry(() async {
+      final token = await getAuthToken();
+      if (token == null) {
+        throw Exception("No auth token found");
+      }
+
+      final uri = Uri.parse("${apiUrl}cares_fetchReview.php");
+      final response = await httpClient.post(
+        uri,
+        body: {
+          'token': token,
+          'shopId': shopId.toString(),
+          'limit': limit.toString(),
+        },
+      ).timeout(requestTimeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
+  }
   Future<void> saveAuthToken(String token) async {
     await _secureStorage.write(key: 'authToken', value: token);
   }

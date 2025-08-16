@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:care/api_service.dart';
 import 'reportDialog.dart';
+import 'dart:typed_data';
+import 'package:http/http.dart' as http;
 
 class NearbyShopProfileScreen extends StatefulWidget {
   final dynamic shop;
@@ -15,7 +17,88 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
   bool _showFullServices = false;
   int _selectedRating = 0;
   final TextEditingController _feedbackController = TextEditingController();
+  List<dynamic> _reviews = [];
+  bool _loadingReviews = true;
+  int _totalReviews = 0;
+  int _currentLimit = 5;
+  Map<String, Uint8List> _profileImages = {};
+  @override
+  void initState() {
+    super.initState();
+    _loadReviews();
+  }
+  Future<void> _loadReviews({int? limit}) async {
+    try {
+      setState(() {
+        _loadingReviews = true;
+      });
 
+      final response = await ApiService().fetchShopReviews(
+        shopId: widget.shop['shopId'],
+        limit: limit ?? _currentLimit,
+      );
+
+      if (response['success']) {
+        List<dynamic> reviews = response['reviews'];
+
+        for (var review in reviews) {
+          String accountId = review['accountId'].toString();
+          if (!_profileImages.containsKey(accountId)) {
+            await _loadProfileImage(accountId, review['photoUrl']);
+          }
+        }
+
+        setState(() {
+          _reviews = reviews;
+          _totalReviews = response['total'] ?? 0;
+          _loadingReviews = false;
+        });
+      } else {
+        setState(() {
+          _loadingReviews = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _loadingReviews = false;
+      });
+    }
+  }
+
+  Future<void> _loadProfileImage(String accountId, String? photoUrl) async {
+    if (photoUrl == null || photoUrl.isEmpty) return;
+
+    try {
+      final String imageUrl = photoUrl.contains('http')
+          ? photoUrl
+          : '${ApiService.apiUrl}profilePicture/$photoUrl';
+
+      final response = await http.get(Uri.parse(imageUrl));
+      if (response.statusCode == 200) {
+        _profileImages[accountId] = response.bodyBytes;
+      }
+    } catch (_) {}
+  }
+
+  String _formatReviewDate(String dateString) {
+    try {
+      DateTime reviewDate = DateTime.parse(dateString);
+      DateTime now = DateTime.now();
+      Duration difference = now.difference(reviewDate);
+
+      if (difference.inDays > 0) {
+        return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
+      } else if (difference.inHours > 0) {
+        return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
+      } else if (difference.inMinutes > 0) {
+        return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
+      } else {
+        return 'Just now';
+      }
+    } catch (e) {
+      return 'Recently';
+    }
+  }
   @override
   void dispose() {
     _feedbackController.dispose();
@@ -553,6 +636,7 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
                                       _selectedRating = 0;
                                       _feedbackController.clear();
                                     });
+                                    _loadReviews();
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -596,28 +680,81 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
                     _buildSectionCard(
                       title: 'Customer Reviews',
                       icon: Icons.reviews,
-                      child: Column(
+                      child: _loadingReviews
+                          ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF1A3D63),
+                          ),
+                        ),
+                      )
+                          : _reviews.isEmpty
+                          ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Text(
+                            'No reviews yet',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      )
+                          : Column(
                         children: [
-                          _buildReviewItem(
-                            name: 'John Doe',
-                            rating: 5,
-                            comment: 'Excellent service! Very professional and quick repair. Highly recommended.',
-                            date: '2 days ago',
-                          ),
-                          const Divider(),
-                          _buildReviewItem(
-                            name: 'Maria Santos',
-                            rating: 4,
-                            comment: 'Good quality work and reasonable prices. The staff was friendly and helpful.',
-                            date: '1 week ago',
-                          ),
-                          const Divider(),
-                          _buildReviewItem(
-                            name: 'Carlos Rivera',
-                            rating: 5,
-                            comment: 'Amazing experience! They fixed my car perfectly and it was ready ahead of schedule.',
-                            date: '2 weeks ago',
-                          ),
+                          ..._reviews.map((review) => Column(
+                            children: [
+                              _buildReviewItem(
+                                name: '${review['firstName']} ${review['surName']}'.trim(),
+                                rating: review['rating'] ?? 0,
+                                comment: review['feedback'] ?? '',
+                                date: _formatReviewDate(review['stamp']),
+                                accountId: review['accountId'].toString(),
+                              ),
+                              if (_reviews.indexOf(review) != _reviews.length - 1)
+                                const Divider(),
+                            ],
+                          )).toList(),
+                          if (_totalReviews > _currentLimit)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 16),
+                              child: TextButton(
+                                onPressed: () async {
+                                  if (_currentLimit >= _totalReviews) {
+                                    setState(() {
+                                      _currentLimit = 5;
+                                    });
+                                    await _loadReviews(limit: 5);
+                                  } else {
+                                    await _loadReviews(limit: _totalReviews);
+                                    setState(() {
+                                      _currentLimit = _totalReviews;
+                                    });
+                                  }
+                                },
+                                style: TextButton.styleFrom(
+                                  backgroundColor: const Color(0xFF1A3D63),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: Text(
+                                  _currentLimit >= _totalReviews
+                                      ? 'Show Less'
+                                      : 'See More Reviews ($_totalReviews total)',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -684,6 +821,7 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
     required int rating,
     required String comment,
     required String date,
+    required String accountId,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -695,8 +833,13 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
               CircleAvatar(
                 radius: 20,
                 backgroundColor: const Color(0xFF1A3D63),
-                child: Text(
-                  name[0].toUpperCase(),
+                backgroundImage: _profileImages.containsKey(accountId)
+                    ? MemoryImage(_profileImages[accountId]!)
+                    : null,
+                child: _profileImages.containsKey(accountId)
+                    ? null
+                    : Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : 'U',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -709,7 +852,7 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      name,
+                      name.isNotEmpty ? name : 'Anonymous User',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1A3D63),
@@ -742,13 +885,14 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            comment,
-            style: TextStyle(
-              color: Colors.grey[800],
-              fontSize: 14,
+          if (comment.isNotEmpty)
+            Text(
+              comment,
+              style: TextStyle(
+                color: Colors.grey[800],
+                fontSize: 14,
+              ),
             ),
-          ),
         ],
       ),
     );
