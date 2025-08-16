@@ -640,6 +640,35 @@ class ApiService {
       throw HttpException("HTTP ${response.statusCode}");
     });
   }
+  Future<Map<String, dynamic>> submitShopReview({
+    required int shopId,
+    required int rating,
+    String? feedback,
+  }) async {
+    return _executeWithRetry(() async {
+      final token = await getAuthToken();
+      if (token == null) {
+        throw Exception("No auth token found");
+      }
+
+      final uri = Uri.parse("${apiUrl}cares_shopReview.php");
+      final response = await httpClient.post(
+        uri,
+        body: {
+          'token': token,
+          'shopId': shopId.toString(),
+          'rating': rating.toString(),
+          if (feedback != null && feedback.isNotEmpty) 'feedback': feedback,
+        },
+      ).timeout(requestTimeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
+  }
+
   Future<void> saveAuthToken(String token) async {
     await _secureStorage.write(key: 'authToken', value: token);
   }

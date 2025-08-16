@@ -10,7 +10,41 @@ class NearbyShopProfileScreen extends StatefulWidget {
   @override
   _NearbyShopProfileScreenState createState() => _NearbyShopProfileScreenState();
 }
+class ShopReview {
+  final int accountId;
+  final String firstName;
+  final String surName;
+  final String? photoUrl;
+  final int rating;
+  final String comment;
+  final String date;
 
+  ShopReview({
+    required this.accountId,
+    required this.firstName,
+    required this.surName,
+    required this.photoUrl,
+    required this.rating,
+    required this.comment,
+    required this.date,
+  });
+
+  factory ShopReview.fromJson(Map<String, dynamic> json) {
+    return ShopReview(
+      accountId: json['accountId'],
+      firstName: json['firstName'] ?? 'Anonymous',
+      surName: json['surName'] ?? '',
+      photoUrl: json['photoUrl'],
+      rating: json['ratingStar'] ?? 0,
+      comment: json['ratingFeedback'] ?? '',
+      date: json['stamp'] ?? '',
+    );
+  }
+
+  String get fullName {
+    return '$firstName ${surName.isNotEmpty ? surName[0] + '.' : ''}'.trim();
+  }
+}
 class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
   bool _showFullServices = false;
   int _selectedRating = 0;
@@ -530,11 +564,45 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
                           const SizedBox(height: 16),
                           SizedBox(
                             width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Review submission coming soon')),
-                                );
+                            child:
+                            ElevatedButton(
+                              onPressed: _selectedRating == 0
+                                  ? null
+                                  : () async {
+                                try {
+                                  final response = await ApiService().submitShopReview(
+                                    shopId: widget.shop['shopId'],
+                                    rating: _selectedRating,
+                                    feedback: _feedbackController.text.trim(),
+                                  );
+
+                                  if (response['success']) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Review submitted successfully'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                    setState(() {
+                                      _selectedRating = 0;
+                                      _feedbackController.clear();
+                                    });
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(response['message'] ?? 'Failed to submit review'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Error: ${e.toString()}'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF1A3D63),
