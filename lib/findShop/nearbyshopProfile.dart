@@ -75,7 +75,6 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
     String services = widget.shop['services'] ?? '';
     if (services.isEmpty) return ['No services listed'];
 
-    // Split by common delimiters like comma, semicolon, or newline
     List<String> serviceList = services
         .split(RegExp(r'[,;\n]'))
         .map((service) => service.trim())
@@ -160,7 +159,7 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
                 onPressed: () {
                   showDialog(
                     context: context,
-                    builder: (context) => const ReportDialog(),
+                    builder: (context) => ReportDialog(shopId: widget.shop['shopId']),
                   );
                 },
               ),
@@ -205,7 +204,6 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Operating Days Section
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
@@ -265,7 +263,6 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
 
                           const SizedBox(height: 12),
 
-                          // Operating Time Section
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
@@ -483,7 +480,6 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
 
                                   final localPosition = box.globalToLocal(details.globalPosition);
                                   final ratingWidth = box.size.width;
-                                  // Allow dragging left to remove all stars (0 rating)
                                   final rawRating = localPosition.dx / ratingWidth * 5;
                                   final ratingValue = rawRating < 0
                                       ? 0
@@ -501,7 +497,6 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
                                     return GestureDetector(
                                       onTap: () {
                                         setState(() {
-                                          // Toggle between 0 and index+1 when tapping
                                           _selectedRating = _selectedRating == index + 1 ? 0 : index + 1;
                                         });
                                       },

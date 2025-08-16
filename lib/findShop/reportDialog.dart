@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:care/api_service.dart';
 
 class ReportDialog extends StatefulWidget {
-  const ReportDialog({Key? key}) : super(key: key);
+  final int shopId;
+
+  const ReportDialog({Key? key, required this.shopId}) : super(key: key);
 
   @override
   _ReportDialogState createState() => _ReportDialogState();
@@ -10,6 +13,8 @@ class ReportDialog extends StatefulWidget {
 class _ReportDialogState extends State<ReportDialog> {
   String? _selectedReportType;
   final TextEditingController _reportDetailsController = TextEditingController();
+  final ApiService _apiService = ApiService();
+  bool _isSubmitting = false;
 
   final List<String> _reportTypes = [
     'Inappropriate Content',
@@ -26,6 +31,58 @@ class _ReportDialogState extends State<ReportDialog> {
   void dispose() {
     _reportDetailsController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submitReport() async {
+    if (_selectedReportType == null || _selectedReportType!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a report type'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      final response = await _apiService.fileShopReport(
+        shopId: widget.shopId,
+        reportType: _selectedReportType!,
+        reportDetails: _reportDetailsController.text.trim(),
+      );
+
+      if (response['success']) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Report submitted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to submit report'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error submitting report: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isSubmitting = false;
+      });
+    }
   }
 
   @override
@@ -82,7 +139,7 @@ class _ReportDialogState extends State<ReportDialog> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
                     icon: const Icon(
                       Icons.close,
                       color: Colors.grey,
@@ -93,7 +150,7 @@ class _ReportDialogState extends State<ReportDialog> {
               ),
               const SizedBox(height: 24),
               const Text(
-                'Report Type',
+                'Report Type*',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -140,7 +197,7 @@ class _ReportDialogState extends State<ReportDialog> {
                       ),
                     );
                   }).toList(),
-                  onChanged: (String? newValue) {
+                  onChanged: _isSubmitting ? null : (String? newValue) {
                     setState(() {
                       _selectedReportType = newValue;
                     });
@@ -149,7 +206,7 @@ class _ReportDialogState extends State<ReportDialog> {
               ),
               const SizedBox(height: 20),
               const Text(
-                'Report Details',
+                'Report Details (Optional)',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -170,6 +227,7 @@ class _ReportDialogState extends State<ReportDialog> {
                   controller: _reportDetailsController,
                   maxLines: 3,
                   minLines: 3,
+                  enabled: !_isSubmitting,
                   style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF1A3D63),
@@ -190,7 +248,7 @@ class _ReportDialogState extends State<ReportDialog> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         side: const BorderSide(
@@ -214,9 +272,7 @@ class _ReportDialogState extends State<ReportDialog> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
+                      onPressed: _isSubmitting ? null : _submitReport,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF1A3D63),
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -226,7 +282,16 @@ class _ReportDialogState extends State<ReportDialog> {
                         ),
                         shadowColor: const Color(0xFF1A3D63).withOpacity(0.3),
                       ),
-                      child: const Text(
+                      child: _isSubmitting
+                          ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                          : const Text(
                         'Submit',
                         style: TextStyle(
                           fontSize: 16,
