@@ -456,7 +456,6 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 24),
 
                     _buildSectionCard(
@@ -474,21 +473,48 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Row(
-                            children: List.generate(5, (index) {
+                          Builder(
+                            builder: (context) {
                               return GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedRating = index + 1;
-                                  });
+                                behavior: HitTestBehavior.opaque,
+                                onHorizontalDragUpdate: (details) {
+                                  final box = context.findRenderObject() as RenderBox?;
+                                  if (box == null) return;
+
+                                  final localPosition = box.globalToLocal(details.globalPosition);
+                                  final ratingWidth = box.size.width;
+                                  // Allow dragging left to remove all stars (0 rating)
+                                  final rawRating = localPosition.dx / ratingWidth * 5;
+                                  final ratingValue = rawRating < 0
+                                      ? 0
+                                      : rawRating.ceil().clamp(0, 5);
+
+                                  if (ratingValue != _selectedRating) {
+                                    setState(() {
+                                      _selectedRating = ratingValue;
+                                    });
+                                  }
                                 },
-                                child: Icon(
-                                  index < _selectedRating ? Icons.star : Icons.star_border,
-                                  color: const Color(0xFFFFB300),
-                                  size: 30,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: List.generate(5, (index) {
+                                    return GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          // Toggle between 0 and index+1 when tapping
+                                          _selectedRating = _selectedRating == index + 1 ? 0 : index + 1;
+                                        });
+                                      },
+                                      child: Icon(
+                                        index < _selectedRating ? Icons.star : Icons.star_border,
+                                        color: const Color(0xFFFFB300),
+                                        size: 30,
+                                      ),
+                                    );
+                                  }),
                                 ),
                               );
-                            }),
+                            },
                           ),
                           const SizedBox(height: 16),
                           TextField(
