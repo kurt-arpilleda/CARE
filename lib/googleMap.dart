@@ -63,6 +63,25 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
     } catch (_) {}
   }
 
+  bool _isShopSuspended(dynamic shop) {
+    final reportAction = shop['reportAction'];
+    final suspendedUntil = shop['suspendedUntil'];
+
+    if (reportAction == 1 && suspendedUntil != null && suspendedUntil.toString().isNotEmpty) {
+      try {
+        final suspendedDate = DateTime.parse(suspendedUntil.toString());
+        return DateTime.now().isBefore(suspendedDate);
+      } catch (e) {
+        return false;
+      }
+    }
+    return false;
+  }
+
+  bool _isShopBanned(dynamic shop) {
+    return shop['reportAction'] == 2;
+  }
+
   Future<void> _loadNearbyShops() async {
     try {
       final response = await _apiService.getAllShops();
@@ -72,18 +91,27 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
         if (_currentLocation != null) {
           const double maxDistance = 10000;
           List<dynamic> nearbyShops = allShops.where((shop) {
+            bool isValidated = shop['isValidated'] == 1;
+            bool isBanned = _isShopBanned(shop);
+            bool isSuspended = _isShopSuspended(shop);
+
             double distance = Geolocator.distanceBetween(
               _currentLocation!.latitude!,
               _currentLocation!.longitude!,
               shop['latitude'],
               shop['longitude'],
             );
-            return distance <= maxDistance;
+            return distance <= maxDistance && isValidated && !isBanned && !isSuspended;
           }).toList();
 
           _shops = nearbyShops;
         } else {
-          _shops = allShops;
+          _shops = allShops.where((shop) {
+            bool isValidated = shop['isValidated'] == 1;
+            bool isBanned = _isShopBanned(shop);
+            bool isSuspended = _isShopSuspended(shop);
+            return isValidated && !isBanned && !isSuspended;
+          }).toList();
         }
       }
     } catch (_) {}
