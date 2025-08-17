@@ -636,6 +636,24 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
     _phoneNumFocusNode.dispose();
     super.dispose();
   }
+  bool _isShopBanned() {
+    return _currentShopData['reportAction'] == 2;
+  }
+
+  bool _isShopSuspended() {
+    final reportAction = _currentShopData['reportAction'];
+    final suspendedUntil = _currentShopData['suspendedUntil'];
+
+    if (reportAction == 1 && suspendedUntil != null && suspendedUntil.toString().isNotEmpty) {
+      try {
+        final suspendedDate = DateTime.parse(suspendedUntil.toString());
+        return DateTime.now().isBefore(suspendedDate);
+      } catch (e) {
+        return false;
+      }
+    }
+    return false;
+  }
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -673,7 +691,9 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                     ),
                     Align(
                       alignment: Alignment.centerRight,
-                      child: _isSaving
+                      child: _isShopBanned()
+                          ? SizedBox.shrink()
+                          : _isSaving
                           ? const Padding(
                         padding: EdgeInsets.all(8.0),
                         child: SizedBox(
@@ -735,105 +755,116 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                         children: [
                           Center(
                             child: GestureDetector(
-                              onTap: _isEditing
-                                  ? () => _showImageSourceDialog('shopLogo')
-                                  : (_currentShopData['shopLogo'] != null && _currentShopData['shopLogo'].isNotEmpty)
-                                  ? () => _showFullScreenImage(NetworkImage('${ApiService.apiUrl}shopLogo/${_currentShopData['shopLogo']}'))
-                                  : null,
-                              child: Stack(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 80,
-                                    backgroundColor: Colors.grey.shade300,
-                                    child: _shopLogoFile != null
-                                        ? ClipOval(
-                                      child: Image.file(
-                                        _shopLogoFile!,
-                                        width: 160,
-                                        height: 160,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    )
-                                        : (_currentShopData['shopLogo'] != null && _currentShopData['shopLogo'].isNotEmpty)
-                                        ? ClipOval(
-                                      child: Image.network(
-                                        '${ApiService.apiUrl}shopLogo/${_currentShopData['shopLogo']}',
-                                        width: 160,
-                                        height: 160,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return Image.asset(
-                                            'assets/images/shopLogo.jpg',
-                                            width: 160,
-                                            height: 160,
-                                            fit: BoxFit.cover,
-                                          );
-                                        },
-                                        loadingBuilder: (context, child, loadingProgress) {
-                                          if (loadingProgress == null) return child;
-                                          return Center(
-                                            child: CircularProgressIndicator(
-                                              value: loadingProgress.expectedTotalBytes != null
-                                                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                                  : null,
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    )
-                                        : ClipOval(
-                                      child: Image.asset(
-                                        'assets/images/shopLogo.jpg',
-                                        width: 160,
-                                        height: 160,
-                                        fit: BoxFit.cover,
+                                onTap: _isEditing && !_isShopBanned()
+                                    ? () => _showImageSourceDialog('shopLogo')
+                                    : (_currentShopData['shopLogo'] != null && _currentShopData['shopLogo'].isNotEmpty)
+                                    ? () => _showFullScreenImage(NetworkImage('${ApiService.apiUrl}shopLogo/${_currentShopData['shopLogo']}'))
+                                    : null,
+                                child: Stack(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 80,
+                                      backgroundColor: Colors.grey.shade300,
+                                      child: _shopLogoFile != null
+                                          ? ClipOval(
+                                        child: Image.file(
+                                          _shopLogoFile!,
+                                          width: 160,
+                                          height: 160,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                          : (_currentShopData['shopLogo'] != null && _currentShopData['shopLogo'].isNotEmpty)
+                                          ? ClipOval(
+                                        child: Image.network(
+                                          '${ApiService.apiUrl}shopLogo/${_currentShopData['shopLogo']}',
+                                          width: 160,
+                                          height: 160,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return Image.asset(
+                                              'assets/images/shopLogo.jpg',
+                                              width: 160,
+                                              height: 160,
+                                              fit: BoxFit.cover,
+                                            );
+                                          },
+                                          loadingBuilder: (context, child, loadingProgress) {
+                                            if (loadingProgress == null) return child;
+                                            return Center(
+                                              child: CircularProgressIndicator(
+                                                value: loadingProgress.expectedTotalBytes != null
+                                                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                                    : null,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      )
+                                          : ClipOval(
+                                        child: Image.asset(
+                                          'assets/images/shopLogo.jpg',
+                                          width: 160,
+                                          height: 160,
+                                          fit: BoxFit.cover,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  if (_isEditing)
-                                    Positioned(
-                                      bottom: 0,
-                                      right: 0,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF1A3D63),
-                                          shape: BoxShape.circle,
-                                          border: Border.all(color: Colors.white, width: 2),
+                                    if (_isEditing && !_isShopBanned())
+                                      Positioned(
+                                        bottom: 0,
+                                        right: 0,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF1A3D63),
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: Colors.white, width: 2),
+                                          ),
+                                          child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
                                         ),
-                                        child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
-                                      ),
-                                    )
-                                  else if (!_isEditing && _currentShopData['isValidated'] != null)
-                                    Positioned(
-                                      bottom: 0,
-                                      right: 0,
-                                      child: GestureDetector(
-                                        onLongPress: () {
-                                          final status = _getValidationStatusText(_currentShopData['isValidated']);
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text('Status: $status'),
-                                              duration: const Duration(seconds: 1),
+                                      )
+                                    else if (!_isEditing)
+                                      Positioned(
+                                        bottom: 0,
+                                        right: 0,
+                                        child: GestureDetector(
+                                          onLongPress: () {
+                                            String status;
+                                            if (_isShopBanned()) {
+                                              status = 'Banned';
+                                            } else if (_isShopSuspended()) {
+                                              status = 'Suspended';
+                                            } else {
+                                              status = _getValidationStatusText(_currentShopData['isValidated']);
+                                            }
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text('Status: $status'),
+                                                duration: const Duration(seconds: 1),
+                                              ),
+                                            );
+                                          },
+                                          child: Tooltip(
+                                            message: _isShopBanned() ? 'Banned' : _isShopSuspended() ? 'Suspended' : _getValidationStatusText(_currentShopData['isValidated']),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(1),
+                                              decoration: BoxDecoration(
+                                                color: Color(0xFFF6FAFD),
+                                                shape: BoxShape.circle,
+                                                border: Border.all(color: Colors.white, width: 1),
+                                              ),
+                                              child: _isShopBanned()
+                                                  ? Icon(Icons.block, color: Colors.red, size: 32)
+                                                  : _isShopSuspended()
+                                                  ? Icon(Icons.pause_circle, color: Colors.orange, size: 32)
+                                                  : _getValidationIcon(_currentShopData['isValidated']),
                                             ),
-                                          );
-                                        },
-                                        child: Tooltip(
-                                          message: _getValidationStatusText(_currentShopData['isValidated']),
-                                          child: Container(
-                                            padding: const EdgeInsets.all(1),
-                                            decoration: BoxDecoration(
-                                              color: Color(0xFFF6FAFD),
-                                              shape: BoxShape.circle,
-                                              border: Border.all(color: Colors.white, width: 1),
-                                            ),
-                                            child: _getValidationIcon(_currentShopData['isValidated']),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                ],
-                              )
+                                  ],
+                                )
                             ),
                           ),
                           const SizedBox(height: 32),
@@ -1417,7 +1448,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                         ],
                       ),
                     ),
-                    if (_isEditing)
+                    if (_isEditing && !_isShopBanned())
                       Positioned(
                         bottom: 24,
                         left: 24,

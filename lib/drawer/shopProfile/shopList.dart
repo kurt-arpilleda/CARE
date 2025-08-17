@@ -4,6 +4,7 @@ import 'package:care/api_service.dart';
 import 'shopDetails.dart';
 import 'package:care/anim/dotLoading.dart';
 import '../shop/registerShop_basicInfo.dart';
+import 'package:intl/intl.dart';
 
 class ShopListScreen extends StatefulWidget {
   const ShopListScreen({Key? key}) : super(key: key);
@@ -201,6 +202,29 @@ class _ShopListScreenState extends State<ShopListScreen> {
         return 'Pending';
     }
   }
+  bool _isShopSuspended(Map<String, dynamic> shop) {
+    final reportAction = shop['reportAction'];
+    final suspendedUntil = shop['suspendedUntil'];
+
+    if (reportAction == 1 && suspendedUntil != null && suspendedUntil.toString().isNotEmpty) {
+      try {
+        final suspendedDate = DateTime.parse(suspendedUntil.toString());
+        return DateTime.now().isBefore(suspendedDate);
+      } catch (e) {
+        return false;
+      }
+    }
+    return false;
+  }
+
+  String _formatSuspendedDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      return DateFormat('MMMM d, y hh:mm a').format(date);
+    } catch (e) {
+      return dateString;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -391,7 +415,10 @@ class _ShopListScreenState extends State<ShopListScreen> {
 
   Widget _buildShopCard(BuildContext context, Map<String, dynamic> shop) {
     final int isValidated = shop['isValidated'] ?? 0;
-    final borderColor = _getValidationBorderColor(isValidated);
+    final int reportAction = shop['reportAction'] ?? 0;
+    final bool isBanned = reportAction == 2;
+    final bool isSuspended = _isShopSuspended(shop);
+    final borderColor = isBanned ? Colors.red : (isSuspended ? Colors.orange : _getValidationBorderColor(isValidated));
     final int shopId = shop['shopId'] ?? 0;
     final bool isSelected = _selectedShopIds.contains(shopId);
 
@@ -437,7 +464,12 @@ class _ShopListScreenState extends State<ShopListScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    _getValidationIcon(isValidated),
+                    if (isBanned)
+                      Icon(Icons.block, color: Colors.red, size: 24)
+                    else if (isSuspended)
+                      Icon(Icons.pause_circle, color: Colors.orange, size: 24)
+                    else
+                      _getValidationIcon(isValidated),
                     SizedBox(width: 8),
                     Expanded(
                       child: Column(
@@ -471,14 +503,33 @@ class _ShopListScreenState extends State<ShopListScreen> {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            _getValidationText(isValidated),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: borderColor,
-                              fontWeight: FontWeight.bold,
+                          if (isBanned)
+                            Text(
+                              'Banned',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          else if (isSuspended)
+                            Text(
+                              'Suspended until ${_formatSuspendedDate(shop['suspendedUntil'].toString())}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.orange,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          else
+                            Text(
+                              _getValidationText(isValidated),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: borderColor,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),
