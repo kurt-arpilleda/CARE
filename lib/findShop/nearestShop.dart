@@ -50,6 +50,25 @@ class _NearestShopScreenState extends State<NearestShopScreen> {
     }
   }
 
+  bool _isShopSuspended(dynamic shop) {
+    final reportAction = shop['reportAction'];
+    final suspendedUntil = shop['suspendedUntil'];
+
+    if (reportAction == 1 && suspendedUntil != null && suspendedUntil.toString().isNotEmpty) {
+      try {
+        final suspendedDate = DateTime.parse(suspendedUntil.toString());
+        return DateTime.now().isBefore(suspendedDate);
+      } catch (e) {
+        return false;
+      }
+    }
+    return false;
+  }
+
+  bool _isShopBanned(dynamic shop) {
+    return shop['reportAction'] == 2;
+  }
+
   Future<void> _loadNearbyShops() async {
     try {
       final response = await _apiService.getAllShops();
@@ -65,6 +84,8 @@ class _NearestShopScreenState extends State<NearestShopScreen> {
           bool isValidated = shop['isValidated'] == 1;
           bool hasSelectedServices = widget.selectedServices.any((service) => shop['services'].contains(service));
           bool isOpenToday = shop['day_index'].contains(currentDay.toString());
+          bool isBanned = _isShopBanned(shop);
+          bool isSuspended = _isShopSuspended(shop);
 
           if (_currentPosition != null) {
             double distance = Geolocator.distanceBetween(
@@ -74,10 +95,10 @@ class _NearestShopScreenState extends State<NearestShopScreen> {
               shop['longitude'],
             );
             bool isWithinDistance = distance <= maxDistance;
-            return isValidated && hasSelectedServices && isWithinDistance;
+            return isValidated && hasSelectedServices && isWithinDistance && !isBanned && !isSuspended;
           }
 
-          return isValidated && hasSelectedServices;
+          return isValidated && hasSelectedServices && !isBanned && !isSuspended;
         }).toList();
 
         if (_currentPosition != null) {
