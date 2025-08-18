@@ -165,7 +165,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
       }
 
       if (imageBytes == null) {
-        final ByteData data = await rootBundle.load('assets/images/profilePlaceHolder.png');
+        final ByteData data = await rootBundle.load('assets/images/shopLogo.jpg');
         imageBytes = data.buffer.asUint8List();
       }
 
