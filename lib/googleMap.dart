@@ -25,6 +25,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
   BitmapDescriptor? _customMarkerIcon;
   List<dynamic> _shops = [];
   double _currentZoom = 14.0;
+  MapType _currentMapType = MapType.normal;
 
   final CameraPosition _initialPosition = const CameraPosition(
     target: LatLng(12.8797, 121.7740),
@@ -469,23 +470,53 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
     return _currentZoom;
   }
 
+  Widget _mapTypeToggle() {
+    return Align(
+      alignment: Alignment.bottomRight,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 7.0, bottom: 100.0),
+        child: FloatingActionButton(
+          mini: true,
+          backgroundColor: Colors.white,
+          onPressed: () {
+            setState(() {
+              _currentMapType = _currentMapType == MapType.normal
+                  ? MapType.hybrid
+                  : MapType.normal;
+            });
+          },
+          child: Icon(
+            _currentMapType == MapType.normal
+                ? Icons.satellite
+                : Icons.map,
+            color: Colors.blue,
+          ),
+        ),
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
-    return GoogleMap(
-      onMapCreated: (GoogleMapController controller) {
-        _controller = controller;
-        if (_currentLocation != null) {
-          _moveToCurrentLocation();
-        }
-      },
-      initialCameraPosition: _initialPosition,
-      markers: _markers,
-      myLocationEnabled: true,
-      myLocationButtonEnabled: true,
-      zoomControlsEnabled: true,
-      mapType: MapType.normal,
-      onCameraMove: _onCameraMove,
-      onCameraIdle: _onCameraIdle,
+    return Stack(
+      children: [
+        GoogleMap(
+          onMapCreated: (GoogleMapController controller) {
+            _controller = controller;
+            if (_currentLocation != null) {
+              _moveToCurrentLocation();
+            }
+          },
+          initialCameraPosition: _initialPosition,
+          markers: _markers,
+          myLocationEnabled: true,
+          myLocationButtonEnabled: true,
+          zoomControlsEnabled: true,
+          mapType: _currentMapType,
+          onCameraMove: _onCameraMove,
+          onCameraIdle: _onCameraIdle,
+        ),
+        _mapTypeToggle(),
+      ],
     );
   }
 }
