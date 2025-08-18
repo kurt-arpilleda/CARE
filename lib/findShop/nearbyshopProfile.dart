@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:care/api_service.dart';
 import 'reportDialog.dart';
+import 'shopMessaging.dart';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
@@ -237,6 +238,17 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
               onPressed: () => Navigator.pop(context),
             ),
             actions: [
+              IconButton(
+                icon: const Icon(Icons.message_outlined, color: Colors.white),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ShopMessagingScreen(shop: widget.shop),
+                    ),
+                  );
+                },
+              ),
               IconButton(
                 icon: const Icon(Icons.report_outlined, color: Colors.white),
                 onPressed: () {
