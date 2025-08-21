@@ -23,11 +23,13 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
   int _totalReviews = 0;
   int _currentLimit = 5;
   Map<String, Uint8List> _profileImages = {};
+
   @override
   void initState() {
     super.initState();
     _loadReviews();
   }
+
   Future<void> _loadReviews({int? limit}) async {
     try {
       setState(() {
@@ -81,6 +83,17 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
     } catch (_) {}
   }
 
+  double _getOverallRating() {
+    if (_reviews.isEmpty) return 0.0;
+
+    double totalRating = 0.0;
+    for (var review in _reviews) {
+      totalRating += (review['rating'] ?? 0).toDouble();
+    }
+
+    return totalRating / _reviews.length;
+  }
+
   String _formatReviewDate(String dateString) {
     try {
       DateTime reviewDate = DateTime.parse(dateString);
@@ -100,6 +113,7 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
       return 'Recently';
     }
   }
+
   @override
   void dispose() {
     _feedbackController.dispose();
@@ -692,81 +706,122 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
                     _buildSectionCard(
                       title: 'Customer Reviews',
                       icon: Icons.reviews,
-                      child: _loadingReviews
-                          ? const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(20),
-                          child: CircularProgressIndicator(
-                            color: Color(0xFF1A3D63),
-                          ),
-                        ),
-                      )
-                          : _reviews.isEmpty
-                          ? const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(20),
-                          child: Text(
-                            'No reviews yet',
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      )
-                          : Column(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          ..._reviews.map((review) => Column(
-                            children: [
-                              _buildReviewItem(
-                                name: '${review['firstName']} ${review['surName']}'.trim(),
-                                rating: review['rating'] ?? 0,
-                                comment: review['feedback'] ?? '',
-                                date: _formatReviewDate(review['stamp']),
-                                accountId: review['accountId'].toString(),
-                              ),
-                              if (_reviews.indexOf(review) != _reviews.length - 1)
-                                const Divider(),
-                            ],
-                          )).toList(),
-                          if (_totalReviews > _currentLimit)
+                          if (!_loadingReviews && _reviews.isNotEmpty)
                             Padding(
-                              padding: const EdgeInsets.only(top: 16),
-                              child: TextButton(
-                                onPressed: () async {
-                                  if (_currentLimit >= _totalReviews) {
-                                    setState(() {
-                                      _currentLimit = 5;
-                                    });
-                                    await _loadReviews(limit: 5);
-                                  } else {
-                                    await _loadReviews(limit: _totalReviews);
-                                    setState(() {
-                                      _currentLimit = _totalReviews;
-                                    });
-                                  }
-                                },
-                                style: TextButton.styleFrom(
-                                  backgroundColor: const Color(0xFF1A3D63),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  ShaderMask(
+                                    shaderCallback: (bounds) => const LinearGradient(
+                                      colors: [Color(0xFF1A3D63), Color(0xFF2A5A8A)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ).createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height)),
+                                    child: Text(
+                                      _getOverallRating().toStringAsFixed(1),
+                                      style: const TextStyle(
+                                        color: Colors.white, // Will be overridden by ShaderMask
+                                        fontSize: 36,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                  const SizedBox(width: 8),
+                                  Row(
+                                    children: List.generate(5, (index) {
+                                      return Icon(
+                                        index < _getOverallRating().round()
+                                            ? Icons.star
+                                            : Icons.star_border,
+                                        color: const Color(0xFFFFB300),
+                                        size: 28,
+                                      );
+                                    }),
                                   ),
-                                ),
-                                child: Text(
-                                  _currentLimit >= _totalReviews
-                                      ? 'Show Less'
-                                      : 'See More Reviews ($_totalReviews total)',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                ],
+                              ),
+                            ),
+                          _loadingReviews
+                              ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(20),
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF1A3D63),
+                              ),
+                            ),
+                          )
+                              : _reviews.isEmpty
+                              ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(20),
+                              child: Text(
+                                'No reviews yet',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 16,
                                 ),
                               ),
                             ),
+                          )
+                              : Column(
+                            children: [
+                              ..._reviews.map((review) => Column(
+                                children: [
+                                  _buildReviewItem(
+                                    name: '${review['firstName']} ${review['surName']}'.trim(),
+                                    rating: review['rating'] ?? 0,
+                                    comment: review['feedback'] ?? '',
+                                    date: _formatReviewDate(review['stamp']),
+                                    accountId: review['accountId'].toString(),
+                                  ),
+                                  if (_reviews.indexOf(review) != _reviews.length - 1)
+                                    const Divider(),
+                                ],
+                              )).toList(),
+                              if (_totalReviews > _currentLimit)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 16),
+                                  child: TextButton(
+                                    onPressed: () async {
+                                      if (_currentLimit >= _totalReviews) {
+                                        setState(() {
+                                          _currentLimit = 5;
+                                        });
+                                        await _loadReviews(limit: 5);
+                                      } else {
+                                        await _loadReviews(limit: _totalReviews);
+                                        setState(() {
+                                          _currentLimit = _totalReviews;
+                                        });
+                                      }
+                                    },
+                                    style: TextButton.styleFrom(
+                                      backgroundColor: const Color(0xFF1A3D63),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 12,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      _currentLimit >= _totalReviews
+                                          ? 'Show Less'
+                                          : 'See More Reviews ($_totalReviews total)',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
