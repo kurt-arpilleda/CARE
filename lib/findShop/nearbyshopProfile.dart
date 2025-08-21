@@ -724,8 +724,8 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
                                     child: Text(
                                       _getOverallRating().toStringAsFixed(1),
                                       style: const TextStyle(
-                                        color: Colors.white, // Will be overridden by ShaderMask
-                                        fontSize: 36,
+                                        color: Colors.white,
+                                        fontSize: 33,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
