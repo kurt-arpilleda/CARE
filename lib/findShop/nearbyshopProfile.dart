@@ -639,11 +639,9 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
                           const SizedBox(height: 16),
                           SizedBox(
                             width: double.infinity,
-                            child:
-                            ElevatedButton(
-                              onPressed: _selectedRating == 0
-                                  ? null
-                                  : () async {
+                            child: (_selectedRating > 0 || _feedbackController.text.isNotEmpty)
+                                ? ElevatedButton(
+                              onPressed: () async {
                                 try {
                                   final response = await ApiService().submitShopReview(
                                     shopId: widget.shop['shopId'],
@@ -695,7 +693,8 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
                                   color: Colors.white,
                                 ),
                               ),
-                            ),
+                            )
+                                : const SizedBox.shrink(),
                           ),
                         ],
                       ),
