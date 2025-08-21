@@ -694,6 +694,45 @@ class ApiService {
       throw HttpException("HTTP ${response.statusCode}");
     });
   }
+  Future<Map<String, dynamic>> sendMessageToShop({
+    required int shopId,
+    required String message,
+  }) async {
+    try {
+      final token = await getAuthToken();
+      final response = await http.post(
+        Uri.parse('$apiUrl/cares_addMessage.php'),
+        body: {
+          'token': token,
+          'shopId': shopId.toString(),
+          'message': message,
+        },
+      );
+
+      return json.decode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchShopMessages({
+    required int shopId,
+  }) async {
+    try {
+      final token = await getAuthToken();
+      final response = await http.post(
+        Uri.parse('$apiUrl/cares_fetchMessages.php'),
+        body: {
+          'token': token,
+          'shopId': shopId.toString(),
+        },
+      );
+
+      return json.decode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
   Future<void> saveAuthToken(String token) async {
     await _secureStorage.write(key: 'authToken', value: token);
   }

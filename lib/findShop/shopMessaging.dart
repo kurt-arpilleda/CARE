@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:care/api_service.dart';
 
 class ShopMessagingScreen extends StatefulWidget {
   final dynamic shop;
-
   const ShopMessagingScreen({Key? key, required this.shop}) : super(key: key);
 
   @override
@@ -11,28 +11,96 @@ class ShopMessagingScreen extends StatefulWidget {
 
 class _ShopMessagingScreenState extends State<ShopMessagingScreen> {
   final TextEditingController _messageController = TextEditingController();
-  final List<Map<String, dynamic>> _messages = [
-    {
-      'text': 'Hello, I need help with my car',
-      'isMe': true,
-      'time': '10:30 AM'
-    },
-    {
-      'text': 'Sure, what seems to be the problem?',
-      'isMe': false,
-      'time': '10:32 AM'
-    },
-    {
-      'text': 'My engine is making strange noises',
-      'isMe': true,
-      'time': '10:33 AM'
-    },
-    {
-      'text': 'We can check it out. When can you come?',
-      'isMe': false,
-      'time': '10:35 AM'
-    },
-  ];
+  List<Map<String, dynamic>> _messages = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMessages();
+  }
+
+  Future<void> _loadMessages() async {
+    try {
+      setState(() {
+        _loading = true;
+      });
+
+      final response = await ApiService().fetchShopMessages(
+        shopId: widget.shop['shopId'],
+      );
+
+      if (response['success']) {
+        setState(() {
+          _messages = List<Map<String, dynamic>>.from(response['messages']);
+          _loading = false;
+        });
+      } else {
+        setState(() {
+          _loading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to load messages'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _loading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading messages: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _sendMessage() async {
+    if (_messageController.text.trim().isEmpty) return;
+
+    final String messageText = _messageController.text.trim();
+    _messageController.clear();
+
+    try {
+      final response = await ApiService().sendMessageToShop(
+        shopId: widget.shop['shopId'],
+        message: messageText,
+      );
+
+      if (response['success']) {
+        await _loadMessages();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to send message'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        _messageController.text = messageText;
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error sending message: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      _messageController.text = messageText;
+    }
+  }
+
+  String _formatMessageTime(String dateString) {
+    try {
+      DateTime messageDate = DateTime.parse(dateString);
+      return '${messageDate.hour.toString().padLeft(2, '0')}:${messageDate.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return 'Now';
+    }
+  }
 
   @override
   void dispose() {
@@ -51,9 +119,27 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen> {
         ),
         title: Row(
           children: [
-            CircleAvatar(
-              backgroundImage: AssetImage('assets/images/shopLogo.jpg'),
+            widget.shop['shopLogo'] != null
+                ? CircleAvatar(
+              backgroundImage: NetworkImage(
+                '${ApiService.apiUrl}shopLogo/${widget.shop['shopLogo']}',
+              ),
               radius: 20,
+              onBackgroundImageError: (_, __) {},
+            )
+                : CircleAvatar(
+              backgroundColor: const Color(0xFF1A3D63),
+              radius: 20,
+              child: Text(
+                widget.shop['shop_name'] != null &&
+                    widget.shop['shop_name'].isNotEmpty
+                    ? widget.shop['shop_name'][0].toUpperCase()
+                    : 'S',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             Text(
@@ -70,16 +156,23 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen> {
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
+            child: _loading
+                ? const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF1A3D63),
+              ),
+            )
+                : ListView.builder(
               padding: const EdgeInsets.all(16),
               reverse: false,
               itemCount: _messages.length,
               itemBuilder: (context, index) {
                 final message = _messages[index];
                 return _buildMessageBubble(
-                  text: message['text'],
+                  text: message['message'],
                   isMe: message['isMe'],
-                  time: message['time'],
+                  time: _formatMessageTime(message['stamp']),
+                  isShopOwner: !message['isMe'],
                 );
               },
             ),
@@ -90,7 +183,12 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen> {
     );
   }
 
-  Widget _buildMessageBubble({required String text, required bool isMe, required String time}) {
+  Widget _buildMessageBubble({
+    required String text,
+    required bool isMe,
+    required String time,
+    required bool isShopOwner,
+  }) {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -98,51 +196,82 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen> {
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
-        child: Column(
-          crossAxisAlignment:
-          isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: isMe ? MainAxisSize.min : MainAxisSize.max,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-              decoration: BoxDecoration(
-                color: isMe
-                    ? const Color(0xFF1A3D63)
-                    : Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft:
-                  isMe ? const Radius.circular(16) : Radius.zero,
-                  bottomRight:
-                  isMe ? Radius.zero : const Radius.circular(16),
+            if (!isMe && isShopOwner)
+              CircleAvatar(
+                radius: 12,
+                backgroundImage: NetworkImage(
+                  '${ApiService.apiUrl}shopLogo/${widget.shop['shopLogo']}',
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+                onBackgroundImageError: (_, __) {},
+                backgroundColor: const Color(0xFF1A3D63),
+                child: widget.shop['shopLogo'] == null
+                    ? Text(
+                  widget.shop['shop_name'] != null &&
+                      widget.shop['shop_name'].isNotEmpty
+                      ? widget.shop['shop_name'][0].toUpperCase()
+                      : 'S',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                )
+                    : null,
+              ),
+            if (!isMe && isShopOwner) const SizedBox(width: 4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isMe
+                          ? const Color(0xFF1A3D63)
+                          : Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(16),
+                        topRight: const Radius.circular(16),
+                        bottomLeft:
+                        isMe ? const Radius.circular(16) : Radius.zero,
+                        bottomRight:
+                        isMe ? Radius.zero : const Radius.circular(16),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      text,
+                      style: TextStyle(
+                        color: isMe ? Colors.white : Colors.black,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      time,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
                 ],
-              ),
-              child: Text(
-                text,
-                style: TextStyle(
-                  color: isMe ? Colors.white : Colors.black,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                time,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
               ),
             ),
           ],
@@ -202,18 +331,7 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen> {
             ),
             child: IconButton(
               icon: const Icon(Icons.send, color: Colors.white),
-              onPressed: () {
-                if (_messageController.text.trim().isNotEmpty) {
-                  setState(() {
-                    _messages.add({
-                      'text': _messageController.text,
-                      'isMe': true,
-                      'time': 'Now',
-                    });
-                    _messageController.clear();
-                  });
-                }
-              },
+              onPressed: _sendMessage,
             ),
           ),
         ],
