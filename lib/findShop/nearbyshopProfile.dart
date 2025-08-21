@@ -4,6 +4,7 @@ import 'reportDialog.dart';
 import 'shopMessaging.dart';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 class NearbyShopProfileScreen extends StatefulWidget {
   final dynamic shop;
@@ -547,12 +548,28 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
                                   const Icon(Icons.web, color: Color(0xFF1A3D63), size: 18),
                                   const SizedBox(width: 8),
                                   Expanded(
-                                    child: Text(
-                                      widget.shop['home_page'],
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        color: Color(0xFF1A3D63),
-                                        decoration: TextDecoration.underline,
+                                    child: InkWell(
+                                      onTap: () async {
+                                        String urlString = widget.shop['home_page'].trim();
+                                        if (!urlString.startsWith('http')) {
+                                          urlString = 'https://$urlString';
+                                        }
+                                        final Uri url = Uri.parse(urlString);
+                                        if (await canLaunchUrl(url)) {
+                                          await launchUrl(url, mode: LaunchMode.externalApplication);
+                                        } else {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Could not open the link')),
+                                          );
+                                        }
+                                      },
+                                      child: Text(
+                                        widget.shop['home_page'],
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          color: Color(0xFF1A3D63),
+                                          decoration: TextDecoration.underline,
+                                        ),
                                       ),
                                     ),
                                   ),
