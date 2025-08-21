@@ -90,6 +90,7 @@ class VehicleOptionsScreen extends StatelessWidget {
               image: DecorationImage(
                 image: AssetImage(imagePath),
                 fit: BoxFit.cover,
+                alignment: Alignment.center,
                 colorFilter: ColorFilter.mode(
                   Colors.black.withOpacity(0.35),
                   BlendMode.darken,
