@@ -48,3 +48,13 @@ const List<String> expertiseOptions = [
   'Bus',
   'Jeep'
 ];
+const List<String> reportTypes = [
+  'Inappropriate Content',
+  'Fake Information',
+  'Spam or Scam',
+  'Poor Service Quality',
+  'Misleading Business Info',
+  'Harassment or Abuse',
+  'Copyright Violation',
+  'Other'
+];

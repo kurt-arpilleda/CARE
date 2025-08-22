@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:care/api_service.dart';
+import 'package:care/options.dart';
 
 class ReportDialog extends StatefulWidget {
   final int shopId;
@@ -15,17 +16,7 @@ class _ReportDialogState extends State<ReportDialog> {
   final TextEditingController _reportDetailsController = TextEditingController();
   final ApiService _apiService = ApiService();
   bool _isSubmitting = false;
-
-  final List<String> _reportTypes = [
-    'Inappropriate Content',
-    'Fake Information',
-    'Spam or Scam',
-    'Poor Service Quality',
-    'Misleading Business Info',
-    'Harassment or Abuse',
-    'Copyright Violation',
-    'Other'
-  ];
+  final List<String> _reportTypes = reportTypes;
 
   @override
   void dispose() {
