@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:care/api_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:typed_data';
+import 'package:flutter/services.dart';
 
 class ShopMessagingScreen extends StatefulWidget {
   final dynamic shop;
@@ -13,6 +16,7 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen> {
   final TextEditingController _messageController = TextEditingController();
   List<Map<String, dynamic>> _messages = [];
   bool _loading = true;
+  Map<String, dynamic> _shopOwnerData = {};
 
   @override
   void initState() {
@@ -33,6 +37,8 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen> {
       if (response['success']) {
         setState(() {
           _messages = List<Map<String, dynamic>>.from(response['messages']);
+          _shopOwnerData =
+          Map<String, dynamic>.from(response['shopOwnerData'] ?? {});
           _loading = false;
         });
       } else {
@@ -96,9 +102,23 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen> {
   String _formatMessageTime(String dateString) {
     try {
       DateTime messageDate = DateTime.parse(dateString);
-      return '${messageDate.hour.toString().padLeft(2, '0')}:${messageDate.minute.toString().padLeft(2, '0')}';
+      Duration diff = DateTime.now().difference(messageDate);
+
+      if (diff.inSeconds < 60) {
+        return "just now";
+      } else if (diff.inMinutes < 60) {
+        return "${diff.inMinutes}m ago";
+      } else if (diff.inHours < 24) {
+        return "${diff.inHours}h ago";
+      } else if (diff.inDays == 1) {
+        return "yesterday";
+      } else if (diff.inDays < 7) {
+        return "${diff.inDays}d ago";
+      } else {
+        return "${messageDate.month}/${messageDate.day}/${messageDate.year}";
+      }
     } catch (e) {
-      return 'Now';
+      return 'just now';
     }
   }
 
@@ -164,7 +184,6 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen> {
             )
                 : ListView.builder(
               padding: const EdgeInsets.all(16),
-              reverse: false,
               itemCount: _messages.length,
               itemBuilder: (context, index) {
                 final message = _messages[index];
@@ -173,6 +192,7 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen> {
                   isMe: message['isMe'],
                   time: _formatMessageTime(message['stamp']),
                   isShopOwner: !message['isMe'],
+                  messageData: message,
                 );
               },
             ),
@@ -188,104 +208,145 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen> {
     required bool isMe,
     required String time,
     required bool isShopOwner,
+    required Map<String, dynamic> messageData,
   }) {
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisSize: isMe ? MainAxisSize.min : MainAxisSize.max,
-          children: [
-            if (!isMe && isShopOwner)
-              CircleAvatar(
-                radius: 12,
-                backgroundImage: NetworkImage(
-                  '${ApiService.apiUrl}shopLogo/${widget.shop['shopLogo']}',
-                ),
-                onBackgroundImageError: (_, __) {},
-                backgroundColor: const Color(0xFF1A3D63),
-                child: widget.shop['shopLogo'] == null
-                    ? Text(
-                  widget.shop['shop_name'] != null &&
-                      widget.shop['shop_name'].isNotEmpty
-                      ? widget.shop['shop_name'][0].toUpperCase()
-                      : 'S',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                )
-                    : null,
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment:
+        isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          if (!isMe && isShopOwner)
+            Padding(
+              padding: const EdgeInsets.only(top: 20),
+              child: FutureBuilder<Uint8List?>(
+                future: _getProfileImage(messageData['photoUrl']),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Colors.grey[300],
+                    );
+                  }
+                  final imageBytes = snapshot.data;
+                  return CircleAvatar(
+                    radius: 20,
+                    backgroundImage:
+                    imageBytes != null ? MemoryImage(imageBytes) : null,
+                    backgroundColor: const Color(0xFF1A3D63),
+                    child: imageBytes == null
+                        ? Text(
+                      _getInitials(
+                          messageData['firstName'], messageData['surName']),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
+                        : null,
+                  );
+                },
               ),
-            if (!isMe && isShopOwner) const SizedBox(width: 4),
-            Expanded(
-              child: Column(
-                crossAxisAlignment:
-                isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isMe
-                          ? const Color(0xFF1A3D63)
-                          : Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(16),
-                        topRight: const Radius.circular(16),
-                        bottomLeft:
-                        isMe ? const Radius.circular(16) : Radius.zero,
-                        bottomRight:
-                        isMe ? Radius.zero : const Radius.circular(16),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      text,
-                      style: TextStyle(
-                        color: isMe ? Colors.white : Colors.black,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
+            ),
+          if (!isMe && isShopOwner) const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              crossAxisAlignment:
+              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                if (!isMe && isShopOwner)
                   Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.only(bottom: 2),
                     child: Text(
-                      time,
+                      '${messageData['firstName']} ${messageData['surName']}',
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 12,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                ],
-              ),
+                Container(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isMe ? const Color(0xFF1A3D63) : Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(16),
+                      topRight: const Radius.circular(16),
+                      bottomLeft:
+                      isMe ? const Radius.circular(16) : Radius.zero,
+                      bottomRight:
+                      isMe ? Radius.zero : const Radius.circular(16),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    text,
+                    style: TextStyle(
+                      color: isMe ? Colors.white : Colors.black,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    time,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
+  Future<Uint8List?> _getProfileImage(String? photoUrl) async {
+    if (photoUrl == null || photoUrl.isEmpty) {
+      final ByteData data =
+      await rootBundle.load('assets/images/profilePlaceHolder.png');
+      return data.buffer.asUint8List();
+    }
+    try {
+      final String imageUrl = photoUrl.contains('http')
+          ? photoUrl
+          : '${ApiService.apiUrl}profilePicture/$photoUrl';
+      final response = await http.get(Uri.parse(imageUrl));
+      if (response.statusCode == 200) {
+        return response.bodyBytes;
+      }
+    } catch (_) {}
+    final ByteData data =
+    await rootBundle.load('assets/images/profilePlaceHolder.png');
+    return data.buffer.asUint8List();
+  }
+
+  String _getInitials(String? firstName, String? surName) {
+    String firstInitial = firstName != null && firstName.isNotEmpty
+        ? firstName[0].toUpperCase()
+        : '';
+    String surInitial =
+    surName != null && surName.isNotEmpty ? surName[0].toUpperCase() : '';
+    return '$firstInitial$surInitial';
+  }
+
   Widget _buildMessageInput() {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 8,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -309,10 +370,8 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen> {
                 ),
                 filled: true,
                 fillColor: Colors.grey[100],
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
+                contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
             ),
           ),
