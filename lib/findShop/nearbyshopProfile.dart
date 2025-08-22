@@ -527,19 +527,73 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.phone, color: Color(0xFF1A3D63), size: 18),
-                              const SizedBox(width: 8),
-                              Text(
-                                widget.shop['phoneNum'] ?? 'Phone not available',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[800],
-                                ),
+                          if (widget.shop['phoneNum'] != null && widget.shop['phoneNum'].toString().trim().isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.phone, color: Color(0xFF1A3D63), size: 18),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: InkWell(
+                                      onTap: () async {
+                                        final phoneNumber = widget.shop['phoneNum'].toString().trim();
+                                        bool? confirmCall = await showDialog<bool>(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: const Text('Call Shop'),
+                                            content: Text('Do you want to call $phoneNumber?'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context, false),
+                                                child: const Text('Cancel'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context, true),
+                                                child: const Text('Call'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+
+                                        if (confirmCall == true) {
+                                          final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+                                          if (await canLaunchUrl(phoneUri)) {
+                                            await launchUrl(phoneUri);
+                                          } else {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Could not make the call')),
+                                            );
+                                          }
+                                        }
+                                      },
+                                      child: Text(
+                                        widget.shop['phoneNum'],
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          color: Color(0xFF1A3D63),
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            )
+                          else
+                            Row(
+                              children: [
+                                const Icon(Icons.phone, color: Color(0xFF1A3D63), size: 18),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Phone not available',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey[800],
+                                  ),
+                                ),
+                              ],
+                            ),
                           if (widget.shop['home_page'] != null && widget.shop['home_page'].toString().trim().isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 8),

@@ -701,7 +701,7 @@ class ApiService {
     try {
       final token = await getAuthToken();
       final response = await http.post(
-        Uri.parse('$apiUrl/cares_addMessage.php'),
+        Uri.parse('${apiUrl}cares_addMessage.php'),
         body: {
           'token': token,
           'shopId': shopId.toString(),
@@ -721,7 +721,7 @@ class ApiService {
     try {
       final token = await getAuthToken();
       final response = await http.post(
-        Uri.parse('$apiUrl/cares_fetchMessages.php'),
+        Uri.parse('${apiUrl}cares_fetchMessages.php'),
         body: {
           'token': token,
           'shopId': shopId.toString(),

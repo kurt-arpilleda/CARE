@@ -51,6 +51,7 @@
     <array>
       <string>https</string>
       <string>http</string>
+      <string>tel</string>
     </array>
 <key>NSLocationWhenInUseUsageDescription</key>
 <string>This app needs location access to show repair shops near you</string>
