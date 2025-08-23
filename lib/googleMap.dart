@@ -395,15 +395,15 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
       canvas.restore();
 
       if (messageCount > 0) {
-        final double badgeRadius = 22;
-        final double badgeX = pinCenterX + pinRadius - 8;
-        final double badgeY = pinCenterY - pinRadius + 8;
+        final double badgeRadius = 26;
+        final double badgeX = pinCenterX + pinRadius - 6;
+        final double badgeY = pinCenterY - pinRadius + 20; // shifted down to avoid cut
 
         final Paint badgeShadowPaint = Paint()
           ..color = Colors.black.withOpacity(0.3)
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3);
 
-        canvas.drawCircle(Offset(badgeX + 1, badgeY + 1), badgeRadius, badgeShadowPaint);
+        canvas.drawCircle(Offset(badgeX + 1.5, badgeY + 1.5), badgeRadius, badgeShadowPaint);
 
         final Paint badgePaint = Paint()
           ..color = Color(0xFFFF4444)
@@ -413,7 +413,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
           ..color = Colors.white
           ..style = PaintingStyle.fill;
 
-        canvas.drawCircle(Offset(badgeX, badgeY), badgeRadius + 3, badgeBorderPaint);
+        canvas.drawCircle(Offset(badgeX, badgeY), badgeRadius + 4, badgeBorderPaint);
         canvas.drawCircle(Offset(badgeX, badgeY), badgeRadius, badgePaint);
 
         final String countText = messageCount > 99 ? '99+' : messageCount.toString();
@@ -422,7 +422,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
             text: countText,
             style: TextStyle(
               color: Colors.white,
-              fontSize: messageCount > 99 ? 12 : 14,
+              fontSize: messageCount > 99 ? 18 : 20, // balanced font size
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -434,7 +434,6 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
         final double badgeTextY = badgeY - badgeTextPainter.height / 2;
         badgeTextPainter.paint(canvas, Offset(badgeTextX, badgeTextY));
       }
-
       final Path pinPath = Path();
       pinPath.moveTo(pinCenterX - 10, pinRadius * 2 + 20);
       pinPath.lineTo(pinCenterX + 10, pinRadius * 2 + 20);
