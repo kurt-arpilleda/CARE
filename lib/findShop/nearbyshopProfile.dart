@@ -31,7 +31,8 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen>
   Timer? _messagePollingTimer;
   bool _isAppInForeground = true;
   DateTime? _lastMessageCountUpdate;
-
+  bool _isOpen = false;
+  Timer? _statusTimer;
   @override
   void initState() {
     super.initState();
@@ -39,8 +40,59 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen>
     _loadReviews();
     _loadUnreadMessagesCount();
     _startMessagePolling();
+    _updateStatus();
+    _startStatusTimer();
+  }
+  bool _isShopOpen(dynamic shop) {
+    try {
+      DateTime now = DateTime.now();
+      int currentDay = now.weekday - 1;
+      if (!shop['day_index'].contains(currentDay.toString())) return false;
+
+      List<String> startParts = shop['start_time'].split(':');
+      List<String> closeParts = shop['close_time'].split(':');
+
+      TimeOfDay startTime = TimeOfDay(
+        hour: int.parse(startParts[0]),
+        minute: int.parse(startParts[1]),
+      );
+
+      TimeOfDay closeTime = TimeOfDay(
+        hour: int.parse(closeParts[0]),
+        minute: int.parse(closeParts[1]),
+      );
+
+      TimeOfDay currentTime = TimeOfDay.fromDateTime(now);
+
+      int startInMinutes = startTime.hour * 60 + startTime.minute;
+      int closeInMinutes = closeTime.hour * 60 + closeTime.minute;
+      int currentInMinutes = currentTime.hour * 60 + currentTime.minute;
+
+      if (closeInMinutes < startInMinutes) {
+        return currentInMinutes >= startInMinutes || currentInMinutes <= closeInMinutes;
+      } else {
+        return currentInMinutes >= startInMinutes && currentInMinutes <= closeInMinutes;
+      }
+    } catch (e) {
+      return false;
+    }
   }
 
+  void _startStatusTimer() {
+    _statusTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted) {
+        setState(() {
+          _isOpen = _isShopOpen(widget.shop);
+        });
+      }
+    });
+  }
+
+  void _updateStatus() {
+    setState(() {
+      _isOpen = _isShopOpen(widget.shop);
+    });
+  }
   Future<void> _loadUnreadMessagesCount() async {
     try {
       final response = await ApiService().getUnreadMessagesCount(
@@ -152,6 +204,7 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen>
     WidgetsBinding.instance.removeObserver(this);
     _stopMessagePolling();
     _feedbackController.dispose();
+    _statusTimer?.cancel();
     super.dispose();
   }
   @override
@@ -404,6 +457,28 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen>
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey[700],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _isOpen
+                                ? Colors.green.withOpacity(0.1)
+                                : Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            _isOpen ? 'OPEN' : 'CLOSED',
+                            style: TextStyle(
+                              color: _isOpen ? Colors.green : Colors.red,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
