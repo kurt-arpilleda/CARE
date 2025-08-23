@@ -38,18 +38,20 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
   bool _isAppInForeground = true;
   DateTime? _lastMessageCountUpdate;
   Set<int> _visibleShopIds = {};
-
+  Timer? _statusPollingTimer;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initMap();
+    _startStatusPolling();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _messagePollingTimer?.cancel();
+    _statusPollingTimer?.cancel();
     _apiService.dispose();
     super.dispose();
   }
@@ -62,11 +64,34 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
 
     if (_isAppInForeground) {
       _startMessagePolling();
+      _startStatusPolling();
     } else {
       _stopMessagePolling();
+      _stopStatusPolling();
     }
   }
+  void _startStatusPolling() {
+    _stopStatusPolling();
+    _statusPollingTimer = Timer.periodic(const Duration(seconds: 15), (timer) {
+      if (_isAppInForeground && _shops.isNotEmpty) {
+        _updateShopStatusMarkers();
+      }
+    });
+  }
 
+  void _stopStatusPolling() {
+    _statusPollingTimer?.cancel();
+    _statusPollingTimer = null;
+  }
+
+  Future<void> _updateShopStatusMarkers() async {
+    for (final shop in _shops) {
+      final int shopId = shop['shopId'];
+      if (_visibleShopIds.contains(shopId)) {
+        await _updateShopMarker(shopId);
+      }
+    }
+  }
   void _startMessagePolling() {
     _stopMessagePolling();
     _messagePollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
