@@ -33,7 +33,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final response = await _apiService.getNotifications();
       if (response['success']) {
         setState(() {
-          _notificationCount = response['notifications'].length;
+          _notificationCount = response['unreadCount'] ?? 0;
         });
       }
     } catch (e) {}
@@ -347,7 +347,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const NotificationList()),
-                    ).then((_) => _loadNotificationCount());
+                    ).then((_) {
+                      setState(() {
+                        _notificationCount = 0;
+                      });
+                      _loadNotificationCount();
+                    });
                   },
                 ),
                 if (_notificationCount > 0)

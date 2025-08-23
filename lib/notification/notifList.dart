@@ -19,8 +19,15 @@ class _NotificationListState extends State<NotificationList> {
   void initState() {
     super.initState();
     _loadNotifications();
+    _markNotificationsAsRead();
   }
-
+  Future<void> _markNotificationsAsRead() async {
+    try {
+      await _apiService.markNotificationsAsRead();
+    } catch (e) {
+      // Handle error silently
+    }
+  }
   Future<void> _loadNotifications() async {
     try {
       final response = await _apiService.getNotifications();
@@ -131,8 +138,7 @@ class _NotificationListState extends State<NotificationList> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color:
-                  const Color(0xFF1A3D63).withOpacity(0.1),
+                  color: const Color(0xFF1A3D63).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
