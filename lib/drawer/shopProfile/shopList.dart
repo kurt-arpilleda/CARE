@@ -52,17 +52,13 @@ class _ShopListScreenState extends State<ShopListScreen> {
     setState(() {
       _isRefreshing = true;
     });
-
     await Future.delayed(Duration(milliseconds: 300));
-
     setState(() {
       _isLoading = true;
       _shopsFuture = _fetchShops();
       _selectedShopIds.clear();
     });
-
     await _shopsFuture;
-
     setState(() {
       _isRefreshing = false;
     });
@@ -202,6 +198,7 @@ class _ShopListScreenState extends State<ShopListScreen> {
         return 'Pending';
     }
   }
+
   bool _isShopSuspended(Map<String, dynamic> shop) {
     final reportAction = shop['reportAction'];
     final suspendedUntil = shop['suspendedUntil'];
@@ -224,6 +221,39 @@ class _ShopListScreenState extends State<ShopListScreen> {
     } catch (e) {
       return dateString;
     }
+  }
+
+  Widget _buildNoDataView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.store_mall_directory,
+            size: 80,
+            color: Colors.white,
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'No shops registered yet',
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'You don\'t have any shops registered yet.\nTap the + button to add your first shop.',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.white70,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -342,39 +372,15 @@ class _ShopListScreenState extends State<ShopListScreen> {
                       );
                     }
 
-                    if (snapshot.hasError || !snapshot.data!['success']) {
-                      return Center(
-                        child: Text(
-                          'Failed to load shops: ${snapshot.hasError ? snapshot.error.toString() : snapshot.data!['message']}',
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      );
+                    if (snapshot.hasError || (snapshot.hasData && snapshot.data!['success'] == false)) {
+                      return _buildNoDataView();
                     }
 
                     final shops = List<Map<String, dynamic>>.from(
-                        snapshot.data!['shops'] ?? []);
+                        snapshot.data?['shops'] ?? []);
 
                     if (shops.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.store_mall_directory,
-                              size: 80,
-                              color: Colors.white,
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              'No shops registered yet',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
+                      return _buildNoDataView();
                     }
 
                     final bool useCenteredLayout = shops.length <= 4;
@@ -442,7 +448,6 @@ class _ShopListScreenState extends State<ShopListScreen> {
                 builder: (context) => ShopDetailsScreen(shopData: shop),
               ),
             );
-
             if (result == true) {
               _refreshShops();
             }
