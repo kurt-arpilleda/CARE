@@ -216,6 +216,34 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                               Navigator.push(context, MaterialPageRoute(builder: (context) => const VehicleOptionsScreen()));
                             },
                           ),
+                          ListTile(
+                            leading: const Icon(Icons.message),
+                            title: Row(
+                              children: [
+                                const Text("Shop Messages"),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Text(
+                                    "99+",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            onTap: () {
+                              Navigator.pop(context);
+                              // Add navigation logic here later
+                            },
+                          ),
                         ],
                       ),
                     ),

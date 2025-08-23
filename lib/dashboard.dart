@@ -366,7 +366,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       child: Center(
                         child: Text(
-                          _notificationCount.toString(),
+                          _notificationCount > 99 ? '99+' : _notificationCount.toString(),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10,
