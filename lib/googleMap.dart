@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:math' as Math;
+import 'findShop/nearbyshopProfile.dart';
 
 class GoogleMapWidget extends StatefulWidget {
   const GoogleMapWidget({Key? key}) : super(key: key);
@@ -172,8 +173,8 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
 
       final ui.Codec codec = await ui.instantiateImageCodec(
         imageBytes,
-        targetWidth: 90,
-        targetHeight: 90,
+        targetWidth: 120,
+        targetHeight: 120,
       );
       final ui.FrameInfo frameInfo = await codec.getNextFrame();
       final ui.Image image = frameInfo.image;
@@ -188,17 +189,17 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
           style: TextStyle(
             color: Colors.black87,
             fontSize: fontSize,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.bold,
             shadows: [
               Shadow(
-                offset: Offset(0.8, 0.8),
+                offset: Offset(1.0, 1.0),
                 color: Colors.white,
-                blurRadius: 3.5,
+                blurRadius: 4.0,
               ),
               Shadow(
-                offset: Offset(-0.8, -0.8),
+                offset: Offset(-1.0, -1.0),
                 color: Colors.white,
-                blurRadius: 3.5,
+                blurRadius: 4.0,
               ),
             ],
           ),
@@ -208,8 +209,8 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
       );
       textPainter.layout(maxWidth: 160);
 
-      final double pinSize = 110;
-      final double pinRadius = 35;
+      final double pinSize = 130;
+      final double pinRadius = 45;
       final double textPadding = 18;
       final double canvasWidth = pinSize + textPainter.width + textPadding + 25;
       final double canvasHeight = Math.max(pinSize + 25, textPainter.height + 45);
@@ -249,8 +250,8 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
       canvas.drawPath(pinPath, borderPaint);
 
       final RRect textBackground = RRect.fromRectAndRadius(
-        Rect.fromLTWH(textX - 6, textY - 6, textPainter.width + 12, textPainter.height + 12),
-        Radius.circular(8),
+        Rect.fromLTWH(textX - 8, textY - 8, textPainter.width + 16, textPainter.height + 16),
+        Radius.circular(10),
       );
       final Paint backgroundPaint = Paint()
         ..color = Colors.white.withOpacity(0.92)
@@ -258,9 +259,9 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
       canvas.drawRRect(textBackground, backgroundPaint);
 
       final Paint strokePaint = Paint()
-        ..color = Colors.black.withOpacity(0.12)
+        ..color = Colors.black.withOpacity(0.15)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2;
+        ..strokeWidth = 2.0;
       canvas.drawRRect(textBackground, strokePaint);
 
       textPainter.paint(canvas, Offset(textX, textY));
@@ -277,11 +278,11 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
   }
 
   double _getFontSizeForZoom() {
-    if (_currentZoom < 10) return 11;
-    if (_currentZoom < 12) return 13;
-    if (_currentZoom < 14) return 15;
-    if (_currentZoom < 16) return 17;
-    return 19;
+    if (_currentZoom < 10) return 14;
+    if (_currentZoom < 12) return 16;
+    if (_currentZoom < 14) return 18;
+    if (_currentZoom < 16) return 20;
+    return 22;
   }
 
   bool _shouldShowTextOnRight(double shopLat, double shopLng) {
@@ -418,6 +419,9 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
           icon: shopIcon,
           anchor: Offset(anchorX, 1.0),
           zIndex: 1.0,
+          onTap: () {
+            _onShopMarkerTap(shop);
+          },
         ),
       );
     }
@@ -441,6 +445,15 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
     setState(() {
       _markers = newMarkers;
     });
+  }
+
+  void _onShopMarkerTap(dynamic shop) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NearbyShopProfileScreen(shop: shop),
+      ),
+    );
   }
 
   void _moveToCurrentLocation() {
@@ -495,6 +508,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
