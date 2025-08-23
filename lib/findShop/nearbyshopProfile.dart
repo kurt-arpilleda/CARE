@@ -220,7 +220,7 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen>
   }
   void _startMessagePolling() {
     _stopMessagePolling();
-    _messagePollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+    _messagePollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
       if (_isAppInForeground) {
         _updateMessageCount();
       }

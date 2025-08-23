@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'drawer/drawerNavigation.dart';
 import 'auto_update.dart';
@@ -14,18 +16,22 @@ class DashboardScreen extends StatefulWidget {
   _DashboardScreenState createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObserver {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ApiService _apiService = ApiService();
   TextEditingController _searchController = TextEditingController();
   List<bool> _selectedServices = List.generate(serviceOptions.length, (index) => false);
   bool _selectAll = false;
   int _notificationCount = 0;
-
+  Timer? _notificationPollingTimer;
+  bool _isAppInForeground = true;
+  DateTime? _lastNotificationUpdate;
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadNotificationCount();
+    _startNotificationPolling();
   }
 
   Future<void> _loadNotificationCount() async {
@@ -41,10 +47,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _notificationPollingTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    setState(() {
+      _isAppInForeground = state == AppLifecycleState.resumed;
+    });
 
+    if (_isAppInForeground) {
+      _startNotificationPolling();
+    } else {
+      _stopNotificationPolling();
+    }
+  }
+
+  void _startNotificationPolling() {
+    _stopNotificationPolling();
+    _notificationPollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      if (_isAppInForeground) {
+        _updateNotificationCount();
+      }
+    });
+  }
+
+  void _stopNotificationPolling() {
+    _notificationPollingTimer?.cancel();
+    _notificationPollingTimer = null;
+  }
+
+  Future<void> _updateNotificationCount() async {
+    final now = DateTime.now();
+    if (_lastNotificationUpdate != null &&
+        now.difference(_lastNotificationUpdate!).inSeconds < 3) {
+      return;
+    }
+    _lastNotificationUpdate = now;
+    await _loadNotificationCount();
+  }
   void _showServiceDialog() {
     showDialog(
       context: context,
