@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:math' as Math;
+import 'dart:async';
 import 'findShop/nearbyshopProfile.dart';
 
 class GoogleMapWidget extends StatefulWidget {
@@ -17,7 +18,8 @@ class GoogleMapWidget extends StatefulWidget {
   _GoogleMapWidgetState createState() => _GoogleMapWidgetState();
 }
 
-class _GoogleMapWidgetState extends State<GoogleMapWidget> {
+class _GoogleMapWidgetState extends State<GoogleMapWidget>
+    with WidgetsBindingObserver {
   GoogleMapController? _controller;
   LocationData? _currentLocation;
   Location _location = Location();
@@ -27,24 +29,169 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
   List<dynamic> _shops = [];
   double _currentZoom = 14.0;
   MapType _currentMapType = MapType.normal;
-
   final CameraPosition _initialPosition = const CameraPosition(
     target: LatLng(12.8797, 121.7740),
     zoom: 5.5,
   );
 
   Set<Marker> _markers = {};
+  Map<int, int> _shopMessageCounts = {};
+  Timer? _messagePollingTimer;
+  bool _isAppInForeground = true;
+  DateTime? _lastMessageCountUpdate;
+  Set<int> _visibleShopIds = {};
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initMap();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _messagePollingTimer?.cancel();
     _apiService.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    setState(() {
+      _isAppInForeground = state == AppLifecycleState.resumed;
+    });
+
+    if (_isAppInForeground) {
+      _startMessagePolling();
+    } else {
+      _stopMessagePolling();
+    }
+  }
+
+  void _startMessagePolling() {
+    _stopMessagePolling();
+    _messagePollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (_isAppInForeground && _visibleShopIds.isNotEmpty) {
+        _updateMessageCounts();
+      }
+    });
+  }
+
+  void _stopMessagePolling() {
+    _messagePollingTimer?.cancel();
+    _messagePollingTimer = null;
+  }
+
+  Future<void> _updateMessageCounts() async {
+    if (_shops.isEmpty || !_isAppInForeground) return;
+
+    final now = DateTime.now();
+    if (_lastMessageCountUpdate != null &&
+        now.difference(_lastMessageCountUpdate!).inSeconds < 2) {
+      return;
+    }
+
+    _lastMessageCountUpdate = now;
+
+    List<Future<void>> futures = [];
+    for (final shopId in _visibleShopIds.take(10)) {
+      futures.add(_getShopMessageCount(shopId));
+    }
+
+    try {
+      await Future.wait(futures);
+    } catch (e) {}
+  }
+
+  Future<void> _getShopMessageCount(int shopId) async {
+    try {
+      final response = await _apiService.getUnreadMessagesCount(shopId: shopId);
+      if (response['success'] && mounted) {
+        final newCount = response['unreadCount'] ?? 0;
+        final oldCount = _shopMessageCounts[shopId] ?? 0;
+
+        if (newCount != oldCount) {
+          setState(() {
+            _shopMessageCounts[shopId] = newCount;
+          });
+          _updateShopMarker(shopId);
+        }
+      }
+    } catch (e) {}
+  }
+
+  void _updateVisibleShops() {
+    if (_controller == null) return;
+
+    _controller!.getVisibleRegion().then((region) {
+      Set<int> newVisibleShops = {};
+
+      for (final shop in _shops) {
+        final shopLat = double.parse(shop['latitude'].toString());
+        final shopLng = double.parse(shop['longitude'].toString());
+        final shopPosition = LatLng(shopLat, shopLng);
+
+        if (shopPosition.latitude >= region.southwest.latitude &&
+            shopPosition.latitude <= region.northeast.latitude &&
+            shopPosition.longitude >= region.southwest.longitude &&
+            shopPosition.longitude <= region.northeast.longitude) {
+          newVisibleShops.add(shop['shopId']);
+        }
+      }
+
+      if (newVisibleShops.length != _visibleShopIds.length ||
+          !newVisibleShops.every((id) => _visibleShopIds.contains(id))) {
+        _visibleShopIds = newVisibleShops;
+        _updateMessageCounts();
+      }
+    });
+  }
+
+  Future<void> _updateShopMarker(int shopId) async {
+    final shop = _shops.firstWhere(
+          (s) => s['shopId'] == shopId,
+      orElse: () => null,
+    );
+
+    if (shop == null) return;
+
+    final double shopLat = double.parse(shop['latitude'].toString());
+    final double shopLng = double.parse(shop['longitude'].toString());
+    final bool isRightSide = _shouldShowTextOnRight(shopLat, shopLng);
+    final bool isOpen = _isShopOpen(shop);
+    final int messageCount = _shopMessageCounts[shopId] ?? 0;
+
+    final BitmapDescriptor shopIcon = await _createShopMarkerWithName(
+      shop['shopLogo'],
+      shop['shop_name'] ?? 'Shop',
+      isRightSide,
+      isOpen,
+      messageCount,
+    );
+
+    double anchorX = isRightSide ? 0.15 : 0.85;
+    String shopStatus = isOpen ? 'Open' : 'Closed';
+
+    final newMarker = Marker(
+      markerId: MarkerId('shop_${shop['shopId']}'),
+      position: LatLng(shopLat, shopLng),
+      infoWindow: InfoWindow(
+        title: shop['shop_name'],
+        snippet: '${shop['location']} • $shopStatus',
+      ),
+      icon: shopIcon,
+      anchor: Offset(anchorX, 1.0),
+      zIndex: 1.0,
+      onTap: () {
+        _onShopMarkerTap(shop);
+      },
+    );
+
+    setState(() {
+      _markers.removeWhere((m) => m.markerId.value == 'shop_${shop['shopId']}');
+      _markers.add(newMarker);
+    });
   }
 
   Future<void> _initMap() async {
@@ -54,6 +201,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
     _moveToCurrentLocation();
     await _loadNearbyShops();
     await _addShopMarkers();
+    _startMessagePolling();
   }
 
   Future<void> _loadUserData() async {
@@ -103,6 +251,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
               shop['latitude'],
               shop['longitude'],
             );
+
             return distance <= maxDistance && isValidated && !isBanned && !isSuspended;
           }).toList();
 
@@ -123,6 +272,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
     try {
       DateTime now = DateTime.now();
       int currentDay = now.weekday - 1;
+
       if (!shop['day_index'].contains(currentDay.toString())) return false;
 
       List<String> startParts = shop['start_time'].split(':');
@@ -132,10 +282,12 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
         hour: int.parse(startParts[0]),
         minute: int.parse(startParts[1]),
       );
+
       TimeOfDay closeTime = TimeOfDay(
         hour: int.parse(closeParts[0]),
         minute: int.parse(closeParts[1]),
       );
+
       TimeOfDay currentTime = TimeOfDay.fromDateTime(now);
 
       int startInMinutes = startTime.hour * 60 + startTime.minute;
@@ -152,10 +304,9 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
     }
   }
 
-  Future<BitmapDescriptor> _createShopMarkerWithName(String? shopLogo, String shopName, bool isRightSide, bool isOpen) async {
+  Future<BitmapDescriptor> _createShopMarkerWithName(String? shopLogo, String shopName, bool isRightSide, bool isOpen, int messageCount) async {
     try {
       Uint8List? imageBytes;
-
       if (shopLogo != null && shopLogo.isNotEmpty) {
         final String imageUrl = '${ApiService.apiUrl}shopLogo/$shopLogo';
         try {
@@ -176,6 +327,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
         targetWidth: 120,
         targetHeight: 120,
       );
+
       final ui.FrameInfo frameInfo = await codec.getNextFrame();
       final ui.Image image = frameInfo.image;
 
@@ -183,6 +335,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
       final Canvas canvas = Canvas(recorder);
 
       double fontSize = _getFontSizeForZoom();
+
       final textPainter = TextPainter(
         text: TextSpan(
           text: shopName,
@@ -207,17 +360,19 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
         textDirection: TextDirection.ltr,
         maxLines: 2,
       );
+
       textPainter.layout(maxWidth: 160);
 
-      final double pinSize = 130;
-      final double pinRadius = 45;
-      final double textPadding = 18;
-      final double canvasWidth = pinSize + textPainter.width + textPadding + 25;
-      final double canvasHeight = Math.max(pinSize + 25, textPainter.height + 45);
+      final double pinSize = 150;
+      final double pinRadius = 55;
+      final double textPadding = 22;
+      final double canvasWidth = pinSize + textPainter.width + textPadding + 35;
+      final double canvasHeight = Math.max(pinSize + 35, textPainter.height + 55);
 
       final double pinCenterX = isRightSide ? pinSize / 2 : canvasWidth - pinSize / 2;
-      final double pinCenterY = pinRadius + 12;
-      final double textX = isRightSide ? pinSize + textPadding : 12;
+      final double pinCenterY = pinRadius + 15;
+
+      final double textX = isRightSide ? pinSize + textPadding : 16;
       final double textY = (canvasHeight - textPainter.height) / 2;
 
       final Paint shadowPaint = Paint()
@@ -227,47 +382,95 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
       final Paint borderPaint = Paint()
         ..color = isOpen ? Colors.green : Colors.red
         ..style = PaintingStyle.fill;
+
       final Paint whitePaint = Paint()..color = Colors.white..style = PaintingStyle.fill;
 
       canvas.drawCircle(Offset(pinCenterX + 2, pinCenterY + 2), pinRadius + 7, shadowPaint);
-
       canvas.drawCircle(Offset(pinCenterX, pinCenterY), pinRadius + 7, whitePaint);
       canvas.drawCircle(Offset(pinCenterX, pinCenterY), pinRadius + 3.5, borderPaint);
 
       final Path clipPath = Path()..addOval(Rect.fromCircle(center: Offset(pinCenterX, pinCenterY), radius: pinRadius));
+
       canvas.save();
       canvas.clipPath(clipPath);
 
       final Rect imageRect = Rect.fromCircle(center: Offset(pinCenterX, pinCenterY), radius: pinRadius);
       canvas.drawImageRect(image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), imageRect, Paint());
+
       canvas.restore();
+
+      if (messageCount > 0) {
+        final double badgeRadius = 22;
+        final double badgeX = pinCenterX + pinRadius - 8;
+        final double badgeY = pinCenterY - pinRadius + 8;
+
+        final Paint badgeShadowPaint = Paint()
+          ..color = Colors.black.withOpacity(0.35)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 4);
+
+        canvas.drawCircle(Offset(badgeX + 1.5, badgeY + 1.5), badgeRadius, badgeShadowPaint);
+
+        final Paint badgePaint = Paint()
+          ..color = const Color(0xFFFF2222)
+          ..style = PaintingStyle.fill;
+
+        final Paint badgeBorderPaint = Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.fill;
+
+        canvas.drawCircle(Offset(badgeX, badgeY), badgeRadius + 3, badgeBorderPaint);
+        canvas.drawCircle(Offset(badgeX, badgeY), badgeRadius, badgePaint);
+
+        final String countText = messageCount > 99 ? '99+' : messageCount.toString();
+        final TextPainter badgeTextPainter = TextPainter(
+          text: TextSpan(
+            text: countText,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: messageCount > 99 ? 13 : 15,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+
+        badgeTextPainter.layout();
+        final double badgeTextX = badgeX - badgeTextPainter.width / 2;
+        final double badgeTextY = badgeY - badgeTextPainter.height / 2;
+        badgeTextPainter.paint(canvas, Offset(badgeTextX, badgeTextY));
+      }
 
       final Path pinPath = Path();
       pinPath.moveTo(pinCenterX - 8, pinRadius * 2 + 18);
       pinPath.lineTo(pinCenterX + 8, pinRadius * 2 + 18);
       pinPath.lineTo(pinCenterX, pinRadius * 2 + 35);
       pinPath.close();
+
       canvas.drawPath(pinPath, borderPaint);
 
       final RRect textBackground = RRect.fromRectAndRadius(
         Rect.fromLTWH(textX - 8, textY - 8, textPainter.width + 16, textPainter.height + 16),
         Radius.circular(10),
       );
+
       final Paint backgroundPaint = Paint()
         ..color = Colors.white.withOpacity(0.92)
         ..style = PaintingStyle.fill;
+
       canvas.drawRRect(textBackground, backgroundPaint);
 
       final Paint strokePaint = Paint()
         ..color = Colors.black.withOpacity(0.15)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.0;
+
       canvas.drawRRect(textBackground, strokePaint);
 
       textPainter.paint(canvas, Offset(textX, textY));
 
       final ui.Picture picture = recorder.endRecording();
       final ui.Image finalImage = await picture.toImage(canvasWidth.toInt(), canvasHeight.toInt());
+
       final ByteData? byteData = await finalImage.toByteData(format: ui.ImageByteFormat.png);
       final Uint8List finalImageBytes = byteData!.buffer.asUint8List();
 
@@ -322,11 +525,13 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
         targetWidth: 100,
         targetHeight: 100,
       );
+
       final ui.FrameInfo frameInfo = await codec.getNextFrame();
       final ui.Image image = frameInfo.image;
 
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final Canvas canvas = Canvas(recorder);
+
       final double size = 130;
       final double radius = 42;
       final Offset center = Offset(size / 2, radius + 12);
@@ -344,11 +549,13 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
       canvas.drawCircle(center, radius + 4, borderPaint);
 
       final Path clipPath = Path()..addOval(Rect.fromCircle(center: center, radius: radius));
+
       canvas.save();
       canvas.clipPath(clipPath);
 
       final Rect imageRect = Rect.fromCircle(center: center, radius: radius);
       canvas.drawImageRect(image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), imageRect, Paint());
+
       canvas.restore();
 
       final Path pinPath = Path();
@@ -356,10 +563,12 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
       pinPath.lineTo(size / 2 + 12, radius * 2 + 18);
       pinPath.lineTo(size / 2, radius * 2 + 38);
       pinPath.close();
+
       canvas.drawPath(pinPath, borderPaint);
 
       final ui.Picture picture = recorder.endRecording();
       final ui.Image finalImage = await picture.toImage(size.toInt(), (radius * 2 + 45).toInt());
+
       final ByteData? byteData = await finalImage.toByteData(format: ui.ImageByteFormat.png);
       final Uint8List finalImageBytes = byteData!.buffer.asUint8List();
 
@@ -397,15 +606,17 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
       final double shopLng = double.parse(shop['longitude'].toString());
       final bool isRightSide = _shouldShowTextOnRight(shopLat, shopLng);
       final bool isOpen = _isShopOpen(shop);
+      final int messageCount = _shopMessageCounts[shop['shopId']] ?? 0;
+
       final BitmapDescriptor shopIcon = await _createShopMarkerWithName(
         shop['shopLogo'],
         shop['shop_name'] ?? 'Shop',
         isRightSide,
         isOpen,
+        messageCount,
       );
 
       double anchorX = isRightSide ? 0.15 : 0.85;
-
       String shopStatus = isOpen ? 'Open' : 'Closed';
 
       newMarkers.add(
@@ -445,6 +656,8 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
     setState(() {
       _markers = newMarkers;
     });
+
+    _updateVisibleShops();
   }
 
   void _onShopMarkerTap(dynamic shop) {
@@ -477,6 +690,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget> {
     if (_currentZoom != _getCurrentZoomLevel()) {
       await _addShopMarkers();
     }
+    _updateVisibleShops();
   }
 
   double _getCurrentZoomLevel() {
