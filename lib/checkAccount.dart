@@ -6,6 +6,8 @@ import 'google_signin_service.dart';
 import 'login.dart';
 import 'drawer/vehicle/vehicleOptions.dart';
 import 'anim/dotLoading.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+
 class CheckAccountScreen extends StatefulWidget {
   const CheckAccountScreen({Key? key}) : super(key: key);
 
@@ -18,6 +20,7 @@ class _CheckAccountScreenState extends State<CheckAccountScreen> {
   bool _isLoading = true;
   bool _isBanned = false;
   bool _isSuspended = false;
+  bool _noInternet = false;
   String _banMessage = 'Your account has been banned due to violations of our terms of service';
   String _suspensionMessage = '';
   DateTime? _suspendedUntil;
@@ -25,17 +28,27 @@ class _CheckAccountScreenState extends State<CheckAccountScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAccountStatus();
+    _checkConnectivityAndAccountStatus();
+  }
+
+  Future<void> _checkConnectivityAndAccountStatus() async {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      setState(() {
+        _noInternet = true;
+        _isLoading = false;
+      });
+      return;
+    }
+    await _checkAccountStatus();
   }
 
   Future<void> _checkAccountStatus() async {
     try {
       final response = await _apiService.getUserData();
-
       if (response['success'] == true) {
         final reportAction = response['user']['reportAction'] ?? 0;
         final suspendedUntil = response['user']['suspendedUntil'];
-
         if (reportAction == 2) {
           setState(() {
             _isBanned = true;
@@ -44,7 +57,6 @@ class _CheckAccountScreenState extends State<CheckAccountScreen> {
         } else if (reportAction == 1 && suspendedUntil != null) {
           final now = DateTime.now();
           final suspensionEnd = DateTime.parse(suspendedUntil);
-
           if (now.isBefore(suspensionEnd)) {
             setState(() {
               _isSuspended = true;
@@ -66,12 +78,19 @@ class _CheckAccountScreenState extends State<CheckAccountScreen> {
         );
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: 'Error checking account status');
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
+      setState(() {
+        _noInternet = true;
+        _isLoading = false;
+      });
     }
+  }
+
+  Future<void> _retryConnection() async {
+    setState(() {
+      _isLoading = true;
+      _noInternet = false;
+    });
+    await _checkConnectivityAndAccountStatus();
   }
 
   Future<void> _proceedToDashboard() async {
@@ -93,13 +112,11 @@ class _CheckAccountScreenState extends State<CheckAccountScreen> {
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
-
     final month = monthNames[dateTime.month - 1];
     final day = dateTime.day;
     final year = dateTime.year;
     final hour = dateTime.hour.toString().padLeft(2, '0');
     final minute = dateTime.minute.toString().padLeft(2, '0');
-
     return '$month $day, $year $hour:$minute';
   }
 
@@ -139,6 +156,76 @@ class _CheckAccountScreenState extends State<CheckAccountScreen> {
               dotSize: 12.0,
             ),
           )
+              : _noInternet
+              ? Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.wifi_off_rounded,
+                  size: 100,
+                  color: Colors.white.withOpacity(0.8),
+                ),
+                const SizedBox(height: 30),
+                Text(
+                  'NO INTERNET CONNECTION',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(
+                        offset: const Offset(1.5, 1.5),
+                        blurRadius: 3.0,
+                        color: Colors.black.withOpacity(0.5),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                    ),
+                  ),
+                  child: const Text(
+                    'Please check your internet connection and try again',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                ElevatedButton(
+                  onPressed: _retryConnection,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 5,
+                  ),
+                  child: const Text(
+                    'TRY AGAIN',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )
               : Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
@@ -172,9 +259,10 @@ class _CheckAccountScreenState extends State<CheckAccountScreen> {
                     color: Colors.white.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(15),
                     border: Border.all(
-                        color: _isBanned
-                            ? Colors.red.withOpacity(0.5)
-                            : Colors.orange.withOpacity(0.5)),
+                      color: _isBanned
+                          ? Colors.red.withOpacity(0.5)
+                          : Colors.orange.withOpacity(0.5),
+                    ),
                   ),
                   child: Text(
                     _isBanned ? _banMessage : _suspensionMessage,

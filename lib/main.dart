@@ -9,13 +9,10 @@ import 'api_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   ApiService.setupHttpOverrides();
-
   final prefs = await SharedPreferences.getInstance();
   final isFirstOpen = prefs.getBool('isFirstOpen') ?? true;
-
   final apiService = ApiService();
   final authToken = await apiService.getAuthToken();
-
   runApp(MyApp(
     initialRoute: isFirstOpen
         ? '/splash'
@@ -27,7 +24,6 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   final String initialRoute;
-
   const MyApp({required this.initialRoute, Key? key}) : super(key: key);
 
   @override
