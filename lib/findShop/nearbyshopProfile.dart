@@ -24,11 +24,35 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
   int _totalReviews = 0;
   int _currentLimit = 5;
   Map<String, Uint8List> _profileImages = {};
+  int _unreadMessagesCount = 0;
 
   @override
   void initState() {
     super.initState();
     _loadReviews();
+    _loadUnreadMessagesCount();
+  }
+
+  Future<void> _loadUnreadMessagesCount() async {
+    try {
+      final response = await ApiService().getUnreadMessagesCount(
+        shopId: widget.shop['shopId'],
+      );
+
+      if (response['success']) {
+        setState(() {
+          _unreadMessagesCount = response['unreadCount'] ?? 0;
+        });
+      }
+    } catch (e) {
+    }
+  }
+
+  String _formatUnreadCount(int count) {
+    if (count >= 100) {
+      return '99+';
+    }
+    return count.toString();
   }
 
   Future<void> _loadReviews({int? limit}) async {
@@ -253,16 +277,52 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
               onPressed: () => Navigator.pop(context),
             ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.message_outlined, color: Colors.white),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ShopMessagingScreen(shop: widget.shop),
+              Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.message_outlined, color: Colors.white),
+                    onPressed: () async {
+                      await ApiService().markMessagesAsRead(
+                        shopId: widget.shop['shopId'],
+                      );
+                      setState(() {
+                        _unreadMessagesCount = 0;
+                      });
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ShopMessagingScreen(shop: widget.shop),
+                        ),
+                      );
+                    },
+                  ),
+                  if (_unreadMessagesCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          _formatUnreadCount(_unreadMessagesCount),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     ),
-                  );
-                },
+                ],
               ),
               IconButton(
                 icon: const Icon(Icons.report_outlined, color: Colors.white),
