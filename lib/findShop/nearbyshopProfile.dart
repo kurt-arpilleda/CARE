@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:care/api_service.dart';
 import 'reportDialog.dart';
@@ -15,7 +17,8 @@ class NearbyShopProfileScreen extends StatefulWidget {
   _NearbyShopProfileScreenState createState() => _NearbyShopProfileScreenState();
 }
 
-class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
+class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen>
+    with WidgetsBindingObserver {
   bool _showFullServices = false;
   int _selectedRating = 0;
   final TextEditingController _feedbackController = TextEditingController();
@@ -25,12 +28,17 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
   int _currentLimit = 5;
   Map<String, Uint8List> _profileImages = {};
   int _unreadMessagesCount = 0;
+  Timer? _messagePollingTimer;
+  bool _isAppInForeground = true;
+  DateTime? _lastMessageCountUpdate;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadReviews();
     _loadUnreadMessagesCount();
+    _startMessagePolling();
   }
 
   Future<void> _loadUnreadMessagesCount() async {
@@ -38,13 +46,13 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
       final response = await ApiService().getUnreadMessagesCount(
         shopId: widget.shop['shopId'],
       );
-
-      if (response['success']) {
+      if (response['success'] && mounted) {
         setState(() {
           _unreadMessagesCount = response['unreadCount'] ?? 0;
         });
       }
     } catch (e) {
+      // Handle error
     }
   }
 
@@ -141,10 +149,45 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _stopMessagePolling();
     _feedbackController.dispose();
     super.dispose();
   }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    setState(() {
+      _isAppInForeground = state == AppLifecycleState.resumed;
+    });
+    if (_isAppInForeground) {
+      _startMessagePolling();
+    } else {
+      _stopMessagePolling();
+    }
+  }
+  void _startMessagePolling() {
+    _stopMessagePolling();
+    _messagePollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (_isAppInForeground) {
+        _updateMessageCount();
+      }
+    });
+  }
 
+  void _stopMessagePolling() {
+    _messagePollingTimer?.cancel();
+    _messagePollingTimer = null;
+  }
+
+  Future<void> _updateMessageCount() async {
+    final now = DateTime.now();
+    if (_lastMessageCountUpdate != null &&
+        now.difference(_lastMessageCountUpdate!).inSeconds < 2) {
+      return;
+    }
+    _lastMessageCountUpdate = now;
+    await _loadUnreadMessagesCount();
+  }
   List<String> _getOperatingDays() {
     try {
       List<String> dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];

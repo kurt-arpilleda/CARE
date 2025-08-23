@@ -29,10 +29,8 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
   List<dynamic> _shops = [];
   double _currentZoom = 14.0;
   MapType _currentMapType = MapType.normal;
-  final CameraPosition _initialPosition = const CameraPosition(
-    target: LatLng(12.8797, 121.7740),
-    zoom: 5.5,
-  );
+  final CameraPosition _initialPosition =
+  const CameraPosition(target: LatLng(12.8797, 121.7740), zoom: 5.5);
 
   Set<Marker> _markers = {};
   Map<int, int> _shopMessageCounts = {};
@@ -149,10 +147,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
   }
 
   Future<void> _updateShopMarker(int shopId) async {
-    final shop = _shops.firstWhere(
-          (s) => s['shopId'] == shopId,
-      orElse: () => null,
-    );
+    final shop = _shops.firstWhere((s) => s['shopId'] == shopId, orElse: () => null);
 
     if (shop == null) return;
 
@@ -304,7 +299,8 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
     }
   }
 
-  Future<BitmapDescriptor> _createShopMarkerWithName(String? shopLogo, String shopName, bool isRightSide, bool isOpen, int messageCount) async {
+  Future<BitmapDescriptor> _createShopMarkerWithName(
+      String? shopLogo, String shopName, bool isRightSide, bool isOpen, int messageCount) async {
     try {
       Uint8List? imageBytes;
       if (shopLogo != null && shopLogo.isNotEmpty) {
@@ -324,8 +320,8 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
 
       final ui.Codec codec = await ui.instantiateImageCodec(
         imageBytes,
-        targetWidth: 120,
-        targetHeight: 120,
+        targetWidth: 140,
+        targetHeight: 140,
       );
 
       final ui.FrameInfo frameInfo = await codec.getNextFrame();
@@ -361,18 +357,18 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
         maxLines: 2,
       );
 
-      textPainter.layout(maxWidth: 160);
+      textPainter.layout(maxWidth: 180);
 
       final double pinSize = 150;
-      final double pinRadius = 55;
-      final double textPadding = 22;
-      final double canvasWidth = pinSize + textPainter.width + textPadding + 35;
-      final double canvasHeight = Math.max(pinSize + 35, textPainter.height + 55);
+      final double pinRadius = 50;
+      final double textPadding = 20;
+      final double canvasWidth = pinSize + textPainter.width + textPadding + 30;
+      final double canvasHeight = Math.max(pinSize + 30, textPainter.height + 50);
 
       final double pinCenterX = isRightSide ? pinSize / 2 : canvasWidth - pinSize / 2;
       final double pinCenterY = pinRadius + 15;
 
-      final double textX = isRightSide ? pinSize + textPadding : 16;
+      final double textX = isRightSide ? pinSize + textPadding : 15;
       final double textY = (canvasHeight - textPainter.height) / 2;
 
       final Paint shadowPaint = Paint()
@@ -385,18 +381,17 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
 
       final Paint whitePaint = Paint()..color = Colors.white..style = PaintingStyle.fill;
 
-      canvas.drawCircle(Offset(pinCenterX + 2, pinCenterY + 2), pinRadius + 7, shadowPaint);
-      canvas.drawCircle(Offset(pinCenterX, pinCenterY), pinRadius + 7, whitePaint);
-      canvas.drawCircle(Offset(pinCenterX, pinCenterY), pinRadius + 3.5, borderPaint);
+      canvas.drawCircle(Offset(pinCenterX + 2, pinCenterY + 2), pinRadius + 8, shadowPaint);
+      canvas.drawCircle(Offset(pinCenterX, pinCenterY), pinRadius + 8, whitePaint);
+      canvas.drawCircle(Offset(pinCenterX, pinCenterY), pinRadius + 4, borderPaint);
 
       final Path clipPath = Path()..addOval(Rect.fromCircle(center: Offset(pinCenterX, pinCenterY), radius: pinRadius));
-
       canvas.save();
       canvas.clipPath(clipPath);
 
       final Rect imageRect = Rect.fromCircle(center: Offset(pinCenterX, pinCenterY), radius: pinRadius);
-      canvas.drawImageRect(image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), imageRect, Paint());
-
+      canvas.drawImageRect(
+          image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), imageRect, Paint());
       canvas.restore();
 
       if (messageCount > 0) {
@@ -405,13 +400,13 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
         final double badgeY = pinCenterY - pinRadius + 8;
 
         final Paint badgeShadowPaint = Paint()
-          ..color = Colors.black.withOpacity(0.35)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 4);
+          ..color = Colors.black.withOpacity(0.3)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3);
 
-        canvas.drawCircle(Offset(badgeX + 1.5, badgeY + 1.5), badgeRadius, badgeShadowPaint);
+        canvas.drawCircle(Offset(badgeX + 1, badgeY + 1), badgeRadius, badgeShadowPaint);
 
         final Paint badgePaint = Paint()
-          ..color = const Color(0xFFFF2222)
+          ..color = Color(0xFFFF4444)
           ..style = PaintingStyle.fill;
 
         final Paint badgeBorderPaint = Paint()
@@ -427,7 +422,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
             text: countText,
             style: TextStyle(
               color: Colors.white,
-              fontSize: messageCount > 99 ? 13 : 15,
+              fontSize: messageCount > 99 ? 12 : 14,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -441,16 +436,16 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
       }
 
       final Path pinPath = Path();
-      pinPath.moveTo(pinCenterX - 8, pinRadius * 2 + 18);
-      pinPath.lineTo(pinCenterX + 8, pinRadius * 2 + 18);
-      pinPath.lineTo(pinCenterX, pinRadius * 2 + 35);
+      pinPath.moveTo(pinCenterX - 10, pinRadius * 2 + 20);
+      pinPath.lineTo(pinCenterX + 10, pinRadius * 2 + 20);
+      pinPath.lineTo(pinCenterX, pinRadius * 2 + 40);
       pinPath.close();
 
       canvas.drawPath(pinPath, borderPaint);
 
       final RRect textBackground = RRect.fromRectAndRadius(
-        Rect.fromLTWH(textX - 8, textY - 8, textPainter.width + 16, textPainter.height + 16),
-        Radius.circular(10),
+        Rect.fromLTWH(textX - 10, textY - 10, textPainter.width + 20, textPainter.height + 20),
+        Radius.circular(12),
       );
 
       final Paint backgroundPaint = Paint()
@@ -469,7 +464,8 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
       textPainter.paint(canvas, Offset(textX, textY));
 
       final ui.Picture picture = recorder.endRecording();
-      final ui.Image finalImage = await picture.toImage(canvasWidth.toInt(), canvasHeight.toInt());
+      final ui.Image finalImage =
+      await picture.toImage(canvasWidth.toInt(), canvasHeight.toInt());
 
       final ByteData? byteData = await finalImage.toByteData(format: ui.ImageByteFormat.png);
       final Uint8List finalImageBytes = byteData!.buffer.asUint8List();
@@ -481,11 +477,11 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
   }
 
   double _getFontSizeForZoom() {
-    if (_currentZoom < 10) return 14;
-    if (_currentZoom < 12) return 16;
-    if (_currentZoom < 14) return 18;
-    if (_currentZoom < 16) return 20;
-    return 22;
+    if (_currentZoom < 10) return 16;
+    if (_currentZoom < 12) return 18;
+    if (_currentZoom < 14) return 20;
+    if (_currentZoom < 16) return 22;
+    return 24;
   }
 
   bool _shouldShowTextOnRight(double shopLat, double shopLng) {
@@ -503,9 +499,8 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
       Uint8List? imageBytes;
 
       if (photoUrl != null && photoUrl.isNotEmpty) {
-        final String imageUrl = photoUrl.contains('http')
-            ? photoUrl
-            : '${ApiService.apiUrl}profilePicture/$photoUrl';
+        final String imageUrl =
+        photoUrl.contains('http') ? photoUrl : '${ApiService.apiUrl}profilePicture/$photoUrl';
 
         try {
           final response = await http.get(Uri.parse(imageUrl));
@@ -522,8 +517,8 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
 
       final ui.Codec codec = await ui.instantiateImageCodec(
         imageBytes,
-        targetWidth: 100,
-        targetHeight: 100,
+        targetWidth: 120,
+        targetHeight: 120,
       );
 
       final ui.FrameInfo frameInfo = await codec.getNextFrame();
@@ -532,42 +527,41 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final Canvas canvas = Canvas(recorder);
 
-      final double size = 130;
-      final double radius = 42;
-      final Offset center = Offset(size / 2, radius + 12);
+      final double size = 140;
+      final double radius = 45;
+      final Offset center = Offset(size / 2, radius + 15);
 
       final Paint shadowPaint = Paint()
         ..color = Colors.black.withOpacity(0.25)
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3.0);
 
-      canvas.drawCircle(Offset(center.dx + 3, center.dy + 3), radius + 8, shadowPaint);
+      canvas.drawCircle(Offset(center.dx + 3, center.dy + 3), radius + 9, shadowPaint);
 
       final Paint borderPaint = Paint()..color = Color(0xFF4285F4)..style = PaintingStyle.fill;
       final Paint whitePaint = Paint()..color = Colors.white..style = PaintingStyle.fill;
 
-      canvas.drawCircle(center, radius + 8, whitePaint);
-      canvas.drawCircle(center, radius + 4, borderPaint);
+      canvas.drawCircle(center, radius + 9, whitePaint);
+      canvas.drawCircle(center, radius + 5, borderPaint);
 
       final Path clipPath = Path()..addOval(Rect.fromCircle(center: center, radius: radius));
-
       canvas.save();
       canvas.clipPath(clipPath);
 
       final Rect imageRect = Rect.fromCircle(center: center, radius: radius);
-      canvas.drawImageRect(image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), imageRect, Paint());
-
+      canvas.drawImageRect(
+          image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), imageRect, Paint());
       canvas.restore();
 
       final Path pinPath = Path();
-      pinPath.moveTo(size / 2 - 12, radius * 2 + 18);
-      pinPath.lineTo(size / 2 + 12, radius * 2 + 18);
-      pinPath.lineTo(size / 2, radius * 2 + 38);
+      pinPath.moveTo(size / 2 - 12, radius * 2 + 20);
+      pinPath.lineTo(size / 2 + 12, radius * 2 + 20);
+      pinPath.lineTo(size / 2, radius * 2 + 40);
       pinPath.close();
 
       canvas.drawPath(pinPath, borderPaint);
 
       final ui.Picture picture = recorder.endRecording();
-      final ui.Image finalImage = await picture.toImage(size.toInt(), (radius * 2 + 45).toInt());
+      final ui.Image finalImage = await picture.toImage(size.toInt(), (radius * 2 + 50).toInt());
 
       final ByteData? byteData = await finalImage.toByteData(format: ui.ImageByteFormat.png);
       final Uint8List finalImageBytes = byteData!.buffer.asUint8List();
@@ -707,15 +701,12 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
           backgroundColor: Colors.white,
           onPressed: () {
             setState(() {
-              _currentMapType = _currentMapType == MapType.normal
-                  ? MapType.hybrid
-                  : MapType.normal;
+              _currentMapType =
+              _currentMapType == MapType.normal ? MapType.hybrid : MapType.normal;
             });
           },
           child: Icon(
-            _currentMapType == MapType.normal
-                ? Icons.satellite
-                : Icons.map,
+            _currentMapType == MapType.normal ? Icons.satellite : Icons.map,
             color: Colors.blue,
           ),
         ),
