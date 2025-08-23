@@ -79,7 +79,7 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen>
   }
 
   void _startStatusTimer() {
-    _statusTimer = Timer.periodic(const Duration(seconds: 15), (timer) {
+    _statusTimer = Timer.periodic(const Duration(seconds: 20), (timer) {
       if (mounted) {
         setState(() {
           _isOpen = _isShopOpen(widget.shop);

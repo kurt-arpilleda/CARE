@@ -72,7 +72,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
   }
   void _startStatusPolling() {
     _stopStatusPolling();
-    _statusPollingTimer = Timer.periodic(const Duration(seconds: 15), (timer) {
+    _statusPollingTimer = Timer.periodic(const Duration(seconds: 20), (timer) {
       if (_isAppInForeground && _shops.isNotEmpty) {
         _updateShopStatusMarkers();
       }
