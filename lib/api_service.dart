@@ -801,6 +801,34 @@ class ApiService {
       throw HttpException("HTTP ${response.statusCode}");
     });
   }
+  Future<Map<String, dynamic>> fileUserReport({
+    required int reportedId,
+    required String reportType,
+    String? reportDetails,
+  }) async {
+    return _executeWithRetry(() async {
+      final token = await getAuthToken();
+      if (token == null) {
+        throw Exception("No auth token found");
+      }
+
+      final uri = Uri.parse("${apiUrl}cares_fileUserReport.php");
+      final response = await httpClient.post(
+        uri,
+        body: {
+          'token': token,
+          'reportedId': reportedId.toString(),
+          'reportType': reportType,
+          'reportDetails': reportDetails ?? '',
+        },
+      ).timeout(requestTimeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
+  }
   Future<void> saveAuthToken(String token) async {
     await _secureStorage.write(key: 'authToken', value: token);
   }

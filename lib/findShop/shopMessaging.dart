@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import 'reportUserDialog.dart';
 
 class ShopMessagingScreen extends StatefulWidget {
   final dynamic shop;
@@ -479,32 +480,11 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
 
     if (_imageCache.containsKey(cacheKey)) {
       final imageBytes = _imageCache[cacheKey];
-      return CircleAvatar(
-        radius: 20,
-        backgroundImage: imageBytes != null ? MemoryImage(imageBytes) : null,
-        backgroundColor: const Color(0xFF1A3D63),
-        child: imageBytes == null
-            ? Text(
-          _getInitials(messageData['firstName'], messageData['surName']),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
-        )
-            : null,
-      );
-    }
-
-    return FutureBuilder<Uint8List?>(
-      future: _getProfileImage(photoUrl),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          _imageCache[cacheKey] = snapshot.data!;
-        }
-
-        final imageBytes = snapshot.data;
-        return CircleAvatar(
+      return GestureDetector(
+        onTap: () {
+          _showReportUserDialog(messageData);
+        },
+        child: CircleAvatar(
           radius: 20,
           backgroundImage: imageBytes != null ? MemoryImage(imageBytes) : null,
           backgroundColor: const Color(0xFF1A3D63),
@@ -518,9 +498,153 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
             ),
           )
               : null,
+        ),
+      );
+    }
+
+    return FutureBuilder<Uint8List?>(
+      future: _getProfileImage(photoUrl),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          _imageCache[cacheKey] = snapshot.data!;
+        }
+
+        final imageBytes = snapshot.data;
+        return GestureDetector(
+          onTap: () {
+            _showReportUserDialog(messageData);
+          },
+          child: CircleAvatar(
+            radius: 20,
+            backgroundImage: imageBytes != null ? MemoryImage(imageBytes) : null,
+            backgroundColor: const Color(0xFF1A3D63),
+            child: imageBytes == null
+                ? Text(
+              _getInitials(messageData['firstName'], messageData['surName']),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+                : null,
+          ),
         );
       },
     );
+  }
+
+  void _showReportUserDialog(Map<String, dynamic> messageData) {
+    final reportedId = int.tryParse(messageData['accountId'].toString()) ?? 0;
+    final userName = '${messageData['firstName']} ${messageData['surName']}';
+
+    if (reportedId > 0) {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        builder: (context) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 25,
+                    backgroundImage: _imageCache.containsKey(messageData['photoUrl'] ?? 'default')
+                        ? MemoryImage(_imageCache[messageData['photoUrl'] ?? 'default']!)
+                        : null,
+                    backgroundColor: const Color(0xFF1A3D63),
+                    child: _imageCache.containsKey(messageData['photoUrl'] ?? 'default')
+                        ? null
+                        : Text(
+                      _getInitials(messageData['firstName'], messageData['surName']),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          userName,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1A3D63),
+                          ),
+                        ),
+                        Text(
+                          'Shop Owner',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.report_outlined,
+                    color: Colors.red,
+                  ),
+                ),
+                title: const Text(
+                  'Report User',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: const Text('Report inappropriate behavior'),
+                onTap: () {
+                  Navigator.pop(context);
+                  showDialog(
+                    context: context,
+                    builder: (context) => ReportUserDialog(
+                      reportedId: reportedId,
+                      userName: userName,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        ),
+      );
+    }
   }
 
   Future<Uint8List?> _getProfileImage(String? photoUrl) async {
