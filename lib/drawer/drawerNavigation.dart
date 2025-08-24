@@ -8,6 +8,7 @@ import 'vehicle/activateVehicle.dart';
 import 'shop/registerShop_basicInfo.dart';
 import 'shopProfile/shopList.dart';
 import 'shopMessaging/shopOwnerMessageList.dart';
+import 'dart:async';
 
 class DashboardDrawer extends StatefulWidget {
   const DashboardDrawer({Key? key}) : super(key: key);
@@ -23,11 +24,15 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
   String? _userPhotoUrl;
   bool _isLoading = true;
   bool _isLoggingOut = false;
+  int _totalUnreadCount = 0;
+  Timer? _messageCountTimer;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadMessageCount();
+    _startMessageCountPolling();
   }
 
   Future<void> _loadUserData() async {
@@ -55,6 +60,48 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _loadMessageCount() async {
+    try {
+      final response = await _apiService.fetchShopOwnerMessageList();
+      if (response['success'] && response['messageList'] != null) {
+        final messageList = List<Map<String, dynamic>>.from(response['messageList']);
+        int totalCount = 0;
+        for (var message in messageList) {
+          totalCount += (message['unreadCount'] ?? 0) as int;
+        }
+        if (mounted) {
+          setState(() {
+            _totalUnreadCount = totalCount;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _totalUnreadCount = 0;
+        });
+      }
+    }
+  }
+
+  void _startMessageCountPolling() {
+    _messageCountTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      _loadMessageCount();
+    });
+  }
+
+  void _stopMessageCountPolling() {
+    _messageCountTimer?.cancel();
+    _messageCountTimer = null;
+  }
+
+  String _formatUnreadCount(int count) {
+    if (count >= 100) {
+      return '99+';
+    }
+    return count.toString();
   }
 
   Future<void> _handleLogout() async {
@@ -222,22 +269,42 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                             title: Row(
                               children: [
                                 const Text("Shop Messages"),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Text(
-                                    "99+",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
+                                if (_totalUnreadCount > 0) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [Color(0xFFFF4757), Color(0xFFFF3742)],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                      borderRadius: BorderRadius.circular(10),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFFFF4757).withOpacity(0.3),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 20,
+                                      minHeight: 20,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        _formatUnreadCount(_totalUnreadCount),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
                                     ),
                                   ),
-                                ),
+                                ],
                               ],
                             ),
                             onTap: () {
@@ -247,7 +314,7 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                                 MaterialPageRoute(
                                   builder: (context) => ShopOwnerMessageListScreen(),
                                 ),
-                              );
+                              ).then((_) => _loadMessageCount());
                             },
                           ),
                         ],
@@ -277,6 +344,7 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
 
   @override
   void dispose() {
+    _stopMessageCountPolling();
     _apiService.dispose();
     super.dispose();
   }
