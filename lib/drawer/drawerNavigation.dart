@@ -7,6 +7,7 @@ import 'package:care/anim/shimmer_profile.dart';
 import 'vehicle/activateVehicle.dart';
 import 'shop/registerShop_basicInfo.dart';
 import 'shopProfile/shopList.dart';
+import 'shopMessaging/shopOwnerMessageList.dart';
 
 class DashboardDrawer extends StatefulWidget {
   const DashboardDrawer({Key? key}) : super(key: key);
@@ -241,7 +242,12 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                             ),
                             onTap: () {
                               Navigator.pop(context);
-                              // Add navigation logic here later
+                              // Navigator.push(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //     builder: (context) => ShopOwnerMessageListScreen(),
+                              //   ),
+                              // );
                             },
                           ),
                         ],
