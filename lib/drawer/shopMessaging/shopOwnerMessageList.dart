@@ -262,17 +262,17 @@ class _ShopOwnerMessageListScreenState extends State<ShopOwnerMessageListScreen>
                     _buildCachedProfileImage(messageData),
                     if (unreadCount > 0)
                       Positioned(
-                        right: -2,
-                        top: -2,
+                        right: 0, // moved inside so not cut
+                        top: 0,
                         child: Container(
-                          padding: const EdgeInsets.all(4),
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [Color(0xFFFF4757), Color(0xFFFF3742)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            borderRadius: BorderRadius.circular(12),
+                            shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
                                 color: const Color(0xFFFF4757).withOpacity(0.3),
@@ -285,14 +285,16 @@ class _ShopOwnerMessageListScreenState extends State<ShopOwnerMessageListScreen>
                             minWidth: 20,
                             minHeight: 20,
                           ),
-                          child: Text(
-                            _formatUnreadCount(unreadCount),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
+                          child: Center(
+                            child: Text(
+                              _formatUnreadCount(unreadCount),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
@@ -367,13 +369,12 @@ class _ShopOwnerMessageListScreenState extends State<ShopOwnerMessageListScreen>
     final photoUrl = messageData['photoUrl'];
     final cacheKey = photoUrl ?? 'default_${messageData['accountId']}';
 
-    if (_imageCache.containsKey(cacheKey)) {
-      final imageBytes = _imageCache[cacheKey];
+    Widget buildImage(Uint8List? imageBytes) {
       return Container(
         width: 56,
         height: 56,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF1A3D63).withOpacity(0.1),
@@ -382,21 +383,20 @@ class _ShopOwnerMessageListScreenState extends State<ShopOwnerMessageListScreen>
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+        child: ClipOval(
           child: imageBytes != null
               ? Image.memory(
             imageBytes,
             fit: BoxFit.cover,
           )
               : Container(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
                 colors: [Color(0xFF1A3D63), Color(0xFF2A5A8A)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(16),
+              shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
@@ -413,59 +413,21 @@ class _ShopOwnerMessageListScreenState extends State<ShopOwnerMessageListScreen>
       );
     }
 
+    if (_imageCache.containsKey(cacheKey)) {
+      return buildImage(_imageCache[cacheKey]);
+    }
+
     return FutureBuilder<Uint8List?>(
       future: _getProfileImage(photoUrl),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
           _imageCache[cacheKey] = snapshot.data!;
         }
-
-        final imageBytes = snapshot.data;
-        return Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF1A3D63).withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: imageBytes != null
-                ? Image.memory(
-              imageBytes,
-              fit: BoxFit.cover,
-            )
-                : Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1A3D63), Color(0xFF2A5A8A)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Center(
-                child: Text(
-                  _getInitials(messageData['firstName'], messageData['surName']),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
+        return buildImage(snapshot.data);
       },
     );
   }
+
 
   Future<Uint8List?> _getProfileImage(String? photoUrl) async {
     if (photoUrl == null || photoUrl.isEmpty) {
