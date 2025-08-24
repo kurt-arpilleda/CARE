@@ -242,12 +242,12 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                             ),
                             onTap: () {
                               Navigator.pop(context);
-                              // Navigator.push(
-                              //   context,
-                              //   MaterialPageRoute(
-                              //     builder: (context) => ShopOwnerMessageListScreen(),
-                              //   ),
-                              // );
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ShopOwnerMessageListScreen(),
+                                ),
+                              );
                             },
                           ),
                         ],
