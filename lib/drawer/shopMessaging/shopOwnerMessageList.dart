@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import 'shopOwnerMessaging.dart';
 
 class ShopOwnerMessageListScreen extends StatefulWidget {
   const ShopOwnerMessageListScreen({Key? key}) : super(key: key);
@@ -252,6 +253,14 @@ class _ShopOwnerMessageListScreenState extends State<ShopOwnerMessageListScreen>
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ShopOwnerMessagingScreen(
+                  customer: messageData,
+                ),
+              ),
+            ).then((_) => _loadMessageList());
           },
           child: Padding(
             padding: const EdgeInsets.all(16),
