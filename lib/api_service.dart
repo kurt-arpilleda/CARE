@@ -829,60 +829,6 @@ class ApiService {
       throw HttpException("HTTP ${response.statusCode}");
     });
   }
-  Future<Map<String, dynamic>> getShopOwnerConversations() async {
-    try {
-      final token = await getAuthToken();
-      final response = await http.post(
-        Uri.parse('${apiUrl}cares_getShopOwnerConversations.php'),
-        body: {'token': token},
-      );
-      return json.decode(response.body);
-    } catch (e) {
-      return {'success': false, 'message': 'Network error: $e'};
-    }
-  }
-
-  Future<Map<String, dynamic>> fetchShopOwnerMessages({
-    required int shopId,
-    required int userId,
-  }) async {
-    try {
-      final token = await getAuthToken();
-      final response = await http.post(
-        Uri.parse('${apiUrl}cares_fetchShopOwnerMessages.php'),
-        body: {
-          'token': token,
-          'shopId': shopId.toString(),
-          'userId': userId.toString(),
-        },
-      );
-      return json.decode(response.body);
-    } catch (e) {
-      return {'success': false, 'message': 'Network error: $e'};
-    }
-  }
-
-  Future<Map<String, dynamic>> sendMessageAsShopOwner({
-    required int shopId,
-    required int userId,
-    required String message,
-  }) async {
-    try {
-      final token = await getAuthToken();
-      final response = await http.post(
-        Uri.parse('${apiUrl}cares_sendShopOwnerMessage.php'),
-        body: {
-          'token': token,
-          'shopId': shopId.toString(),
-          'userId': userId.toString(),
-          'message': message,
-        },
-      );
-      return json.decode(response.body);
-    } catch (e) {
-      return {'success': false, 'message': 'Network error: $e'};
-    }
-  }
   Future<void> saveAuthToken(String token) async {
     await _secureStorage.write(key: 'authToken', value: token);
   }
