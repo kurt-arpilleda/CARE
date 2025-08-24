@@ -135,6 +135,13 @@ class _ShopOwnerMessageListScreenState extends State<ShopOwnerMessageListScreen>
     }
   }
 
+  String _formatUnreadCount(int count) {
+    if (count >= 100) {
+      return '99+';
+    }
+    return count.toString();
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -191,13 +198,18 @@ class _ShopOwnerMessageListScreenState extends State<ShopOwnerMessageListScreen>
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Messages',
-          style: TextStyle(color: Colors.white),
+        title: const Center(
+          child: Text(
+            'Messages',
+            style: TextStyle(color: Colors.white),
+          ),
         ),
         backgroundColor: const Color(0xFF1A3D63),
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
+        actions: [
+          Container(width: 48),
+        ],
       ),
       body: _loading
           ? const Center(
@@ -219,55 +231,134 @@ class _ShopOwnerMessageListScreenState extends State<ShopOwnerMessageListScreen>
   }
 
   Widget _buildMessageItem(Map<String, dynamic> messageData) {
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    final unreadCount = messageData['unreadCount'] ?? 0;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+            spreadRadius: 1,
+          ),
+        ],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: _buildCachedProfileImage(messageData),
-        title: Text(
-          '${messageData['firstName']} ${messageData['surName']}',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1A3D63),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Stack(
+                  children: [
+                    _buildCachedProfileImage(messageData),
+                    if (unreadCount > 0)
+                      Positioned(
+                        right: -2,
+                        top: -2,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFF4757), Color(0xFFFF3742)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFF4757).withOpacity(0.3),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 20,
+                            minHeight: 20,
+                          ),
+                          child: Text(
+                            _formatUnreadCount(unreadCount),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${messageData['firstName']} ${messageData['surName']}',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.w600,
+                                color: const Color(0xFF1A3D63),
+                              ),
+                            ),
+                          ),
+                          Text(
+                            _formatMessageTime(messageData['stamp']),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A3D63).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          messageData['shopName'],
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF1A3D63),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        messageData['message'],
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: unreadCount > 0 ? Colors.grey[800] : Colors.grey[600],
+                          fontWeight: unreadCount > 0 ? FontWeight.w500 : FontWeight.normal,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              messageData['shopName'],
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              messageData['message'],
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[700],
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-        trailing: Text(
-          _formatMessageTime(messageData['stamp']),
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
-        onTap: () {
-        },
       ),
     );
   }
@@ -278,20 +369,47 @@ class _ShopOwnerMessageListScreenState extends State<ShopOwnerMessageListScreen>
 
     if (_imageCache.containsKey(cacheKey)) {
       final imageBytes = _imageCache[cacheKey];
-      return CircleAvatar(
-        radius: 25,
-        backgroundImage: imageBytes != null ? MemoryImage(imageBytes) : null,
-        backgroundColor: const Color(0xFF1A3D63),
-        child: imageBytes == null
-            ? Text(
-          _getInitials(messageData['firstName'], messageData['surName']),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+      return Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF1A3D63).withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: imageBytes != null
+              ? Image.memory(
+            imageBytes,
+            fit: BoxFit.cover,
+          )
+              : Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1A3D63), Color(0xFF2A5A8A)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Text(
+                _getInitials(messageData['firstName'], messageData['surName']),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           ),
-        )
-            : null,
+        ),
       );
     }
 
@@ -303,20 +421,47 @@ class _ShopOwnerMessageListScreenState extends State<ShopOwnerMessageListScreen>
         }
 
         final imageBytes = snapshot.data;
-        return CircleAvatar(
-          radius: 25,
-          backgroundImage: imageBytes != null ? MemoryImage(imageBytes) : null,
-          backgroundColor: const Color(0xFF1A3D63),
-          child: imageBytes == null
-              ? Text(
-            _getInitials(messageData['firstName'], messageData['surName']),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+        return Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1A3D63).withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: imageBytes != null
+                ? Image.memory(
+              imageBytes,
+              fit: BoxFit.cover,
+            )
+                : Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF1A3D63), Color(0xFF2A5A8A)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Center(
+                child: Text(
+                  _getInitials(messageData['firstName'], messageData['surName']),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ),
-          )
-              : null,
+          ),
         );
       },
     );
