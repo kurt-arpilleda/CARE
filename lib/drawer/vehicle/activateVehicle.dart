@@ -4,6 +4,7 @@ import 'package:care/api_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:care/anim/dotLoading.dart';
 import 'vehicleBrandSelectionScreen.dart';
+import 'vehicleRegister.dart';
 import 'package:care/dashboard.dart';
 
 class ActivateVehicleScreen extends StatefulWidget {
@@ -113,12 +114,32 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
     });
   }
 
-  Future<void> _toggleVehicle(int vehicleId, bool isActive) async {
+  Future<void> _toggleVehicle(int vehicleId, bool isActive, int currentIndex) async {
+    if (isActive) {
+      // Deactivate all other vehicles first
+      for (int i = 0; i < _vehicles.length; i++) {
+        if (i != currentIndex && _vehicles[i]['isActivate'] == 1) {
+          setState(() {
+            _vehicles[i]['isActivate'] = 0;
+          });
+        }
+      }
+    }
+
     try {
       final response = await _apiService.toggleVehicle(vehicleId: vehicleId, isActive: isActive);
       if (response['success'] != true) {
         Fluttertoast.showToast(msg: response['message'] ?? 'Failed to update vehicle status');
         _loadVehicles();
+      } else {
+        // If successful and activating, deactivate all others via API
+        if (isActive) {
+          for (int i = 0; i < _vehicles.length; i++) {
+            if (i != currentIndex && _vehicles[i]['id'] != vehicleId) {
+              await _apiService.toggleVehicle(vehicleId: _vehicles[i]['id'], isActive: false);
+            }
+          }
+        }
       }
     } catch (e) {
       Fluttertoast.showToast(msg: 'Error updating vehicle: ${e.toString()}');
@@ -187,6 +208,36 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
       setState(() {
         _brands[index] = selectedBrand;
       });
+    }
+  }
+
+  Future<void> _showVehicleTypeSelection() async {
+    final selectedType = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Vehicle Type'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _vehicleTypeMap.entries.map((entry) {
+              return ListTile(
+                leading: Icon(_getVehicleIcon(entry.key)),
+                title: Text(entry.value),
+                onTap: () => Navigator.pop(context, entry.value),
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+
+    if (selectedType != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VehicleRegisterScreen(vehicleType: selectedType),
+        ),
+      );
     }
   }
 
@@ -326,7 +377,7 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
                       setState(() {
                         vehicle['isActivate'] = value ? 1 : 0;
                       });
-                      _toggleVehicle(vehicle['id'], value);
+                      _toggleVehicle(vehicle['id'], value, index);
                     },
                     activeColor: Colors.green,
                   ),
@@ -554,7 +605,11 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
             : const Text('Save', style: TextStyle(color: Colors.white)),
         icon: const Icon(Icons.save, color: Colors.white),
       )
-          : null,
+          : FloatingActionButton(
+        onPressed: _showVehicleTypeSelection,
+        backgroundColor: const Color(0xFF1A3D63),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
       body: Column(
         children: [
           Container(
