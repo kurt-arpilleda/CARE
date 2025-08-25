@@ -40,6 +40,8 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
   Set<int> _visibleShopIds = {};
   Timer? _statusPollingTimer;
   List<String> _userVehicleTypes = [];
+  Map<String, Uint8List> _imageCache = {};
+
   @override
   void initState() {
     super.initState();
@@ -71,6 +73,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
       _stopStatusPolling();
     }
   }
+
   void _startStatusPolling() {
     _stopStatusPolling();
     _statusPollingTimer = Timer.periodic(const Duration(seconds: 20), (timer) {
@@ -93,6 +96,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
       }
     }
   }
+
   void _startMessagePolling() {
     _stopMessagePolling();
     _messagePollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
@@ -225,6 +229,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
     await _addShopMarkers();
     _startMessagePolling();
   }
+
   Future<void> _loadUserData() async {
     try {
       final response = await _apiService.getUserData();
@@ -428,7 +433,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
       if (messageCount > 0) {
         final double badgeRadius = 26;
         final double badgeX = pinCenterX + pinRadius - 6;
-        final double badgeY = pinCenterY - pinRadius + 20; // shifted down to avoid cut
+        final double badgeY = pinCenterY - pinRadius + 20;
 
         final Paint badgeShadowPaint = Paint()
           ..color = Colors.black.withOpacity(0.3)
@@ -453,7 +458,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
             text: countText,
             style: TextStyle(
               color: Colors.white,
-              fontSize: messageCount > 99 ? 18 : 20, // balanced font size
+              fontSize: messageCount > 99 ? 18 : 20,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -465,6 +470,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
         final double badgeTextY = badgeY - badgeTextPainter.height / 2;
         badgeTextPainter.paint(canvas, Offset(badgeTextX, badgeTextY));
       }
+
       final Path pinPath = Path();
       pinPath.moveTo(pinCenterX - 10, pinRadius * 2 + 20);
       pinPath.lineTo(pinCenterX + 10, pinRadius * 2 + 20);
@@ -685,12 +691,247 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
   }
 
   void _onShopMarkerTap(dynamic shop) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => NearbyShopProfileScreen(shop: shop),
+    _showShopDialog(shop);
+  }
+
+  void _showShopDialog(dynamic shop) {
+    final int messageCount = _shopMessageCounts[shop['shopId']] ?? 0;
+    final bool isOpen = _isShopOpen(shop);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Stack(
+                  alignment: Alignment.topRight,
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xFF1A3D63),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: shop['shopLogo'] != null
+                            ? Image.network(
+                          '${ApiService.apiUrl}shopLogo/${shop['shopLogo']}',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const Icon(
+                            Icons.car_repair,
+                            color: Colors.white,
+                            size: 30,
+                          ),
+                        )
+                            : const Icon(
+                          Icons.car_repair,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      ),
+                    ),
+                    if (messageCount > 0)
+                      Transform.translate(
+                        offset: const Offset(5, -5),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 20,
+                            minHeight: 20,
+                          ),
+                          child: Text(
+                            messageCount > 99 ? '99+' : messageCount.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        shop['shop_name'] ?? 'Unknown Shop',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A3D63),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on,
+                            color: Colors.grey,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              shop['location'] ?? 'Location not specified',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          FutureBuilder<double>(
+                            future: _getShopAverageRating(shop['shopId']),
+                            builder: (context, snapshot) {
+                              final rating = snapshot.data ?? 0.0;
+                              return Row(
+                                children: [
+                                  Row(
+                                    children: List.generate(5, (index) {
+                                      return Icon(
+                                        index < rating.round() ? Icons.star : Icons.star_border,
+                                        color: const Color(0xFFFFB300),
+                                        size: 16,
+                                      );
+                                    }),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    rating.toStringAsFixed(1),
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: isOpen
+                                  ? Colors.green.withOpacity(0.1)
+                                  : Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              isOpen ? 'OPEN' : 'CLOSED',
+                              style: TextStyle(
+                                color: isOpen ? Colors.green : Colors.red,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NearbyShopProfileScreen(shop: shop),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1A3D63),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'View Profile',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
       ),
     );
+  }
+
+  Future<double> _getShopAverageRating(int shopId) async {
+    try {
+      final response = await _apiService.fetchShopReviews(shopId: shopId, limit: 1000);
+      if (response['success']) {
+        List<dynamic> reviews = response['reviews'];
+        if (reviews.isEmpty) return 0.0;
+
+        double totalRating = 0.0;
+        for (var review in reviews) {
+          totalRating += (review['rating'] ?? 0).toDouble();
+        }
+        return totalRating / reviews.length;
+      }
+      return 0.0;
+    } catch (e) {
+      return 0.0;
+    }
   }
 
   void _moveToCurrentLocation() {
@@ -720,6 +961,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
   double _getCurrentZoomLevel() {
     return _currentZoom;
   }
+
   Future<void> _loadUserVehicleTypes() async {
     try {
       final response = await _apiService.getUserActiveVehicleTypes();
@@ -732,12 +974,14 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
       print('Error loading user vehicle types: $e');
     }
   }
+
   bool _shopSupportsUserVehicleType(dynamic shop) {
     if (_userVehicleTypes.isEmpty) return false;
     String expertise = shop['expertise'] ?? '';
     List<String> shopVehicleTypes = expertise.split(',').map((e) => e.trim()).toList();
     return _userVehicleTypes.any((userType) => shopVehicleTypes.contains(userType));
   }
+
   Widget _mapTypeToggle() {
     return Align(
       alignment: Alignment.bottomRight,
