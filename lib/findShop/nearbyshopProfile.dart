@@ -6,6 +6,7 @@ import 'shopMessaging.dart';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'googleMapDialog.dart';
 
 class NearbyShopProfileScreen extends StatefulWidget {
   final dynamic shop;
@@ -460,6 +461,37 @@ class _NearbyShopProfileScreenState extends State<NearbyShopProfileScreen>
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => GoogleMapDialog(shop: widget.shop),
+                          );
+                        },
+                        icon: const Icon(
+                          Icons.map,
+                          color: Color(0xFF1A3D63),
+                          size: 18,
+                        ),
+                        label: const Text(
+                          'View on Map',
+                          style: TextStyle(
+                            color: Color(0xFF1A3D63),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF1A3D63)),
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Row(
