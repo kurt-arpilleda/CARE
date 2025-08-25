@@ -39,6 +39,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
   DateTime? _lastMessageCountUpdate;
   Set<int> _visibleShopIds = {};
   Timer? _statusPollingTimer;
+  List<String> _userVehicleTypes = [];
   @override
   void initState() {
     super.initState();
@@ -217,13 +218,13 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
   Future<void> _initMap() async {
     await _getCurrentLocation();
     await _loadUserData();
+    await _loadUserVehicleTypes();
     await _createCustomMarkerIcon();
     _moveToCurrentLocation();
     await _loadNearbyShops();
     await _addShopMarkers();
     _startMessagePolling();
   }
-
   Future<void> _loadUserData() async {
     try {
       final response = await _apiService.getUserData();
@@ -257,31 +258,36 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
       final response = await _apiService.getAllShops();
       if (response['success']) {
         List<dynamic> allShops = response['shops'];
-
         if (_currentLocation != null) {
           const double maxDistance = 10000;
           List<dynamic> nearbyShops = allShops.where((shop) {
             bool isValidated = shop['isValidated'] == 1;
             bool isBanned = _isShopBanned(shop);
             bool isSuspended = _isShopSuspended(shop);
-
+            bool supportsVehicleType = _shopSupportsUserVehicleType(shop);
             double distance = Geolocator.distanceBetween(
               _currentLocation!.latitude!,
               _currentLocation!.longitude!,
               shop['latitude'],
               shop['longitude'],
             );
-
-            return distance <= maxDistance && isValidated && !isBanned && !isSuspended;
+            return distance <= maxDistance &&
+                isValidated &&
+                !isBanned &&
+                !isSuspended &&
+                supportsVehicleType;
           }).toList();
-
           _shops = nearbyShops;
         } else {
           _shops = allShops.where((shop) {
             bool isValidated = shop['isValidated'] == 1;
             bool isBanned = _isShopBanned(shop);
             bool isSuspended = _isShopSuspended(shop);
-            return isValidated && !isBanned && !isSuspended;
+            bool supportsVehicleType = _shopSupportsUserVehicleType(shop);
+            return isValidated &&
+                !isBanned &&
+                !isSuspended &&
+                supportsVehicleType;
           }).toList();
         }
       }
@@ -714,7 +720,24 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
   double _getCurrentZoomLevel() {
     return _currentZoom;
   }
-
+  Future<void> _loadUserVehicleTypes() async {
+    try {
+      final response = await _apiService.getUserActiveVehicleTypes();
+      if (response['success']) {
+        setState(() {
+          _userVehicleTypes = List<String>.from(response['vehicleTypes']);
+        });
+      }
+    } catch (e) {
+      print('Error loading user vehicle types: $e');
+    }
+  }
+  bool _shopSupportsUserVehicleType(dynamic shop) {
+    if (_userVehicleTypes.isEmpty) return false;
+    String expertise = shop['expertise'] ?? '';
+    List<String> shopVehicleTypes = expertise.split(',').map((e) => e.trim()).toList();
+    return _userVehicleTypes.any((userType) => shopVehicleTypes.contains(userType));
+  }
   Widget _mapTypeToggle() {
     return Align(
       alignment: Alignment.bottomRight,
