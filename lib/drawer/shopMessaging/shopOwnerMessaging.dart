@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:care/findShop/reportUserDialog.dart';
+import 'userVehicleDialog.dart';
 
 class ShopOwnerMessagingScreen extends StatefulWidget {
   final Map<String, dynamic> customer;
@@ -631,6 +632,37 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
                 ],
               ),
               const SizedBox(height: 20),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A3D63).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.directions_car_outlined,
+                    color: Color(0xFF1A3D63),
+                  ),
+                ),
+                title: const Text(
+                  'View Vehicles',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: const Text('View customer\'s active vehicles'),
+                onTap: () {
+                  Navigator.pop(context);
+                  showDialog(
+                    context: context,
+                    builder: (context) => UserVehicleDialog(
+                      userId: reportedId,
+                      userName: userName,
+                    ),
+                  );
+                },
+              ),
               ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(8),
