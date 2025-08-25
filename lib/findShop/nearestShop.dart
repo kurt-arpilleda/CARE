@@ -18,6 +18,7 @@ class _NearestShopScreenState extends State<NearestShopScreen> {
   List<dynamic> _shops = [];
   bool _isLoading = true;
   Position? _currentPosition;
+  List<String> _userVehicleTypes = [];
 
   @override
   void initState() {
@@ -44,9 +45,23 @@ class _NearestShopScreenState extends State<NearestShopScreen> {
 
       Position position = await Geolocator.getCurrentPosition();
       setState(() => _currentPosition = position);
+      await _loadUserVehicleTypes();
       _loadNearbyShops();
     } catch (e) {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadUserVehicleTypes() async {
+    try {
+      final response = await _apiService.getUserActiveVehicleTypes();
+      if (response['success']) {
+        setState(() {
+          _userVehicleTypes = List<String>.from(response['vehicleTypes']);
+        });
+      }
+    } catch (e) {
+      print('Error loading user vehicle types: $e');
     }
   }
 
@@ -69,6 +84,15 @@ class _NearestShopScreenState extends State<NearestShopScreen> {
     return shop['reportAction'] == 2;
   }
 
+  bool _shopSupportsUserVehicleType(dynamic shop) {
+    if (_userVehicleTypes.isEmpty) return false;
+
+    String expertise = shop['expertise'] ?? '';
+    List<String> shopVehicleTypes = expertise.split(',').map((e) => e.trim()).toList();
+
+    return _userVehicleTypes.any((userType) => shopVehicleTypes.contains(userType));
+  }
+
   Future<void> _loadNearbyShops() async {
     try {
       final response = await _apiService.getAllShops();
@@ -86,6 +110,7 @@ class _NearestShopScreenState extends State<NearestShopScreen> {
           bool isOpenToday = shop['day_index'].contains(currentDay.toString());
           bool isBanned = _isShopBanned(shop);
           bool isSuspended = _isShopSuspended(shop);
+          bool supportsUserVehicleType = _shopSupportsUserVehicleType(shop);
 
           if (_currentPosition != null) {
             double distance = Geolocator.distanceBetween(
@@ -95,10 +120,10 @@ class _NearestShopScreenState extends State<NearestShopScreen> {
               shop['longitude'],
             );
             bool isWithinDistance = distance <= maxDistance;
-            return isValidated && hasSelectedServices && isWithinDistance && !isBanned && !isSuspended;
+            return isValidated && hasSelectedServices && isWithinDistance && !isBanned && !isSuspended && supportsUserVehicleType;
           }
 
-          return isValidated && hasSelectedServices && !isBanned && !isSuspended;
+          return isValidated && hasSelectedServices && !isBanned && !isSuspended && supportsUserVehicleType;
         }).toList();
 
         if (_currentPosition != null) {
