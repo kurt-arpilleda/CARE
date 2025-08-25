@@ -21,7 +21,9 @@ class _ShopOwnerMessageListScreenState extends State<ShopOwnerMessageListScreen>
   bool _isAppInForeground = true;
   Timer? _pollingTimer;
   Map<String, Uint8List> _imageCache = {};
-
+  bool _isLocationMessage(String message) {
+    return message.startsWith('LOCATION:') && message.contains(',');
+  }
   @override
   void initState() {
     super.initState();
@@ -354,7 +356,9 @@ class _ShopOwnerMessageListScreenState extends State<ShopOwnerMessageListScreen>
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        messageData['message'],
+                        _isLocationMessage(messageData['message'])
+                            ? 'User Shared Location'
+                            : messageData['message'],
                         style: TextStyle(
                           fontSize: 14,
                           color: unreadCount > 0 ? Colors.grey[800] : Colors.grey[600],
