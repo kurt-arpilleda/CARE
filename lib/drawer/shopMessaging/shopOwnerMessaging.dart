@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:care/findShop/reportUserDialog.dart';
 import 'userVehicleDialog.dart';
+import 'googleMapUserDialog.dart';
 
 class ShopOwnerMessagingScreen extends StatefulWidget {
   final Map<String, dynamic> customer;
@@ -80,7 +81,14 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
       _stopPolling();
     }
   }
+  bool _isLocationMessage(String message) {
+    return message.startsWith('LOCATION:') && message.contains(',');
+  }
 
+  List<double> _extractCoordinates(String message) {
+    final coords = message.replaceFirst('LOCATION:', '').split(',');
+    return [double.parse(coords[0].trim()), double.parse(coords[1].trim())];
+  }
   void _startPolling() {
     _stopPolling();
     _pollingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -472,8 +480,47 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
                       ),
                     ],
                   ),
-                  child: Text(
-                    text,
+                  child: _isLocationMessage(text) && !isMe
+                      ? GestureDetector(
+                    onTap: () {
+                      final coords = _extractCoordinates(text);
+                      showDialog(
+                        context: context,
+                        builder: (context) => GoogleMapUserDialog(
+                          latitude: coords[0],
+                          longitude: coords[1],
+                          userName: '${messageData['firstName']} ${messageData['surName']}',
+                          photoUrl: messageData['photoUrl'],
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            color: isMe ? Colors.white : const Color(0xFF1A3D63),
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'User Current Location',
+                            style: TextStyle(
+                              color: isMe ? Colors.white : const Color(0xFF1A3D63),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                      : Text(
+                    _isLocationMessage(text) && isMe
+                        ? 'Location Shared'
+                        : text,
                     style: TextStyle(
                       color: isMe ? Colors.white : Colors.black,
                       fontSize: 16,
