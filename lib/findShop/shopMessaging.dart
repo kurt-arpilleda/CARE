@@ -5,11 +5,11 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'reportUserDialog.dart';
+import 'package:geolocator/geolocator.dart';
 
 class ShopMessagingScreen extends StatefulWidget {
   final dynamic shop;
   const ShopMessagingScreen({Key? key, required this.shop}) : super(key: key);
-
   @override
   _ShopMessagingScreenState createState() => _ShopMessagingScreenState();
 }
@@ -19,13 +19,13 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
-
   List<Map<String, dynamic>> _messages = [];
   bool _loading = true;
   bool _isAppInForeground = true;
   Map<String, dynamic> _shopOwnerData = {};
   Timer? _pollingTimer;
   Map<String, Uint8List> _imageCache = {};
+  bool _sharingLocation = false;
 
   @override
   void initState() {
@@ -33,7 +33,6 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
     WidgetsBinding.instance.addObserver(this);
     _loadMessages();
     _startPolling();
-
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
         _scrollToBottom();
@@ -73,7 +72,6 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
     setState(() {
       _isAppInForeground = state == AppLifecycleState.resumed;
     });
-
     if (_isAppInForeground) {
       _startPolling();
     } else {
@@ -97,16 +95,13 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
 
   Future<void> _pollMessages() async {
     if (!_isAppInForeground || _loading) return;
-
     try {
       final response = await ApiService().fetchShopMessages(
         shopId: widget.shop['shopId'],
       );
-
       if (response['success']) {
         final newMessages = List<Map<String, dynamic>>.from(response['messages']);
         final newShopOwnerData = Map<String, dynamic>.from(response['shopOwnerData'] ?? {});
-
         if (mounted) {
           _updateMessages(newMessages, newShopOwnerData);
         }
@@ -117,21 +112,17 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
   void _updateMessages(List<Map<String, dynamic>> newMessages, Map<String, dynamic> newShopOwnerData) {
     final oldMessageIds = _messages.map((m) => m['id']?.toString() ?? '').toSet();
     final newMessageIds = newMessages.map((m) => m['id']?.toString() ?? '').toSet();
-
     final addedMessages = newMessages.where((m) {
       final id = m['id']?.toString() ?? '';
       return id.isNotEmpty && !oldMessageIds.contains(id);
     }).toList();
-
     if (addedMessages.isNotEmpty) {
       final wasAtBottom = _scrollController.hasClients &&
           (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100);
-
       setState(() {
         _messages = newMessages;
         _shopOwnerData = newShopOwnerData;
       });
-
       if (wasAtBottom) {
         _scrollToBottom();
       }
@@ -148,18 +139,15 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
       setState(() {
         _loading = true;
       });
-
       final response = await ApiService().fetchShopMessages(
         shopId: widget.shop['shopId'],
       );
-
       if (response['success']) {
         setState(() {
           _messages = List<Map<String, dynamic>>.from(response['messages']);
           _shopOwnerData = Map<String, dynamic>.from(response['shopOwnerData'] ?? {});
           _loading = false;
         });
-
         _scrollToBottom(animate: false);
       } else {
         setState(() {
@@ -191,16 +179,14 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
 
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
-
     final String messageText = _messageController.text.trim();
     _messageController.clear();
-
+    _sharingLocation = false;
     try {
       final response = await ApiService().sendMessageToShop(
         shopId: widget.shop['shopId'],
         message: messageText,
       );
-
       if (response['success']) {
         await _pollMessages();
         _scrollToBottom();
@@ -228,11 +214,33 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
     }
   }
 
+  Future<void> _shareLocation() async {
+    try {
+      setState(() {
+        _sharingLocation = true;
+      });
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high
+      );
+      final locationMessage = "LOCATION:${position.latitude},${position.longitude}";
+      _messageController.text = locationMessage;
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error getting location: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      setState(() {
+        _sharingLocation = false;
+      });
+    }
+  }
+
   String _formatMessageTime(String dateString) {
     try {
       DateTime messageDate = DateTime.parse(dateString);
       Duration diff = DateTime.now().difference(messageDate);
-
       if (diff.inSeconds < 60) {
         return "just now";
       } else if (diff.inMinutes < 60) {
@@ -400,12 +408,21 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
     required bool isShopOwner,
     required Map<String, dynamic> messageData,
   }) {
+    if (text.startsWith("LOCATION:")) {
+      return _buildLocationBubble(
+        isMe: isMe,
+        time: time,
+        isShopOwner: isShopOwner,
+        messageData: messageData,
+        locationString: text.substring(9),
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment:
-        isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
           if (!isMe && isShopOwner)
             Padding(
@@ -415,8 +432,7 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
           if (!isMe && isShopOwner) const SizedBox(width: 8),
           Flexible(
             child: Column(
-              crossAxisAlignment:
-              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 if (!isMe && isShopOwner)
                   Padding(
@@ -474,10 +490,120 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
     );
   }
 
+  Widget _buildLocationBubble({
+    required bool isMe,
+    required String time,
+    required bool isShopOwner,
+    required Map<String, dynamic> messageData,
+    required String locationString,
+  }) {
+    final parts = locationString.split(',');
+    final latitude = parts.isNotEmpty ? parts[0] : '';
+    final longitude = parts.length > 1 ? parts[1] : '';
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          if (!isMe && isShopOwner)
+            Padding(
+              padding: const EdgeInsets.only(top: 20),
+              child: _buildCachedProfileImage(messageData),
+            ),
+          if (!isMe && isShopOwner) const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                if (!isMe && isShopOwner)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Text(
+                      '${messageData['firstName']} ${messageData['surName']}',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                GestureDetector(
+                  onTap: () {
+                    _openLocation(latitude, longitude);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isMe ? const Color(0xFF1A3D63) : Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(16),
+                        topRight: const Radius.circular(16),
+                        bottomLeft: isMe ? const Radius.circular(16) : Radius.zero,
+                        bottomRight: isMe ? Radius.zero : const Radius.circular(16),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          color: isMe ? Colors.white : const Color(0xFF1A3D63),
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Shared Location',
+                          style: TextStyle(
+                            color: isMe ? Colors.white : Colors.black,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    time,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openLocation(String latitude, String longitude) {
+    final url = 'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
+    // You can use url_launcher package to open the URL
+    // launchUrl(Uri.parse(url));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Location: $latitude, $longitude'),
+      ),
+    );
+  }
+
   Widget _buildCachedProfileImage(Map<String, dynamic> messageData) {
     final photoUrl = messageData['photoUrl'];
     final cacheKey = photoUrl ?? 'default';
-
     if (_imageCache.containsKey(cacheKey)) {
       final imageBytes = _imageCache[cacheKey];
       return GestureDetector(
@@ -501,14 +627,12 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
         ),
       );
     }
-
     return FutureBuilder<Uint8List?>(
       future: _getProfileImage(photoUrl),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
           _imageCache[cacheKey] = snapshot.data!;
         }
-
         final imageBytes = snapshot.data;
         return GestureDetector(
           onTap: () {
@@ -537,7 +661,6 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
   void _showReportUserDialog(Map<String, dynamic> messageData) {
     final reportedId = int.tryParse(messageData['accountId'].toString()) ?? 0;
     final userName = '${messageData['firstName']} ${messageData['surName']}';
-
     if (reportedId > 0) {
       showModalBottomSheet(
         context: context,
@@ -696,6 +819,14 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
       ),
       child: Row(
         children: [
+          IconButton(
+            icon: Icon(
+              Icons.location_on,
+              color: _sharingLocation ? Colors.blue : const Color(0xFF1A3D63),
+            ),
+            onPressed: _shareLocation,
+          ),
+          const SizedBox(width: 4),
           Expanded(
             child: TextField(
               controller: _messageController,
@@ -703,7 +834,7 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
               maxLines: null,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
-                hintText: 'Type your message...',
+                hintText: _sharingLocation ? 'Your Location' : 'Type your message...',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
