@@ -201,7 +201,7 @@ class _ShopOwnerMessageListScreenState extends State<ShopOwnerMessageListScreen>
         ),
         title: const Center(
           child: Text(
-            'Messages',
+            'Shop Messages',
             style: TextStyle(color: Colors.white),
           ),
         ),
