@@ -465,17 +465,17 @@ class _ShopListScreenState extends State<ShopListScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(12),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     if (isBanned)
-                      Icon(Icons.block, color: Colors.red, size: 24)
+                      Icon(Icons.block, color: Colors.red, size: 20)
                     else if (isSuspended)
-                      Icon(Icons.pause_circle, color: Colors.orange, size: 24)
+                      Icon(Icons.pause_circle, color: Colors.orange, size: 20)
                     else
-                      _getValidationIcon(isValidated),
-                    SizedBox(width: 8),
+                      Icon(_getValidationIcon(isValidated).icon, color: _getValidationIcon(isValidated).color, size: 20),
+                    SizedBox(width: 6),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -489,7 +489,7 @@ class _ShopListScreenState extends State<ShopListScreen> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 15,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
                                   ),
@@ -497,22 +497,22 @@ class _ShopListScreenState extends State<ShopListScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
                           Text(
                             shop['location'] ?? 'No Location',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 14,
+                              fontSize: 13,
                               color: Colors.white70,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
                           if (isBanned)
                             Text(
                               'Banned',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11,
                                 color: Colors.red,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -521,16 +521,18 @@ class _ShopListScreenState extends State<ShopListScreen> {
                             Text(
                               'Suspended until ${_formatSuspendedDate(shop['suspendedUntil'].toString())}',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11,
                                 color: Colors.orange,
                                 fontWeight: FontWeight.bold,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             )
                           else
                             Text(
                               _getValidationText(isValidated),
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11,
                                 color: borderColor,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -538,7 +540,8 @@ class _ShopListScreenState extends State<ShopListScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
+
                     if (_isEditMode)
                       Checkbox(
                         value: isSelected,
@@ -547,12 +550,14 @@ class _ShopListScreenState extends State<ShopListScreen> {
                         },
                         activeColor: Colors.white,
                         checkColor: Colors.blue,
-                        side: BorderSide(color: Colors.white, width: 2),
+                        side: BorderSide(color: Colors.white, width: 1.5),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       )
                     else
                       const Icon(
                         Icons.chevron_right,
                         color: Colors.white,
+                        size: 20,
                       ),
                   ],
                 ),
