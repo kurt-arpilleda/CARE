@@ -321,26 +321,30 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
         ),
         title: Row(
           children: [
-            widget.shop['shopLogo'] != null
-                ? CircleAvatar(
-              backgroundImage: NetworkImage(
-                '${ApiService.apiUrl}shopLogo/${widget.shop['shopLogo']}',
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
               ),
-              radius: 20,
-              onBackgroundImageError: (_, __) {},
-            )
-                : CircleAvatar(
-              backgroundColor: const Color(0xFF1A3D63),
-              radius: 20,
-              child: Text(
-                widget.shop['shop_name'] != null &&
-                    widget.shop['shop_name'].isNotEmpty
-                    ? widget.shop['shop_name'][0].toUpperCase()
-                    : 'S',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+              child: widget.shop['shopLogo'] != null
+                  ? ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.network(
+                  '${ApiService.apiUrl}shopLogo/${widget.shop['shopLogo']}',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Icon(
+                    Icons.car_repair,
+                    color: Color(0xFF1A3D63),
+                    size: 24,
+                  ),
                 ),
+              )
+                  : Icon(
+                Icons.car_repair,
+                color: Color(0xFF1A3D63),
+                size: 24,
               ),
             ),
             const SizedBox(width: 12),
