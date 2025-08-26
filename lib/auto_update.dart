@@ -114,10 +114,6 @@ class AutoUpdate {
           ),
           actions: [
             TextButton(
-              child: const Text("Later"),
-              onPressed: () => Navigator.of(context).pop(false),
-            ),
-            TextButton(
               child: const Text("Update Now"),
               onPressed: () => Navigator.of(context).pop(true),
             ),
