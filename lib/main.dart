@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase/firebase_service.dart';
 import 'splashScreen.dart';
 import 'login.dart';
 import 'dashboard.dart';
 import 'checkAccount.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
 
 void main() async {
