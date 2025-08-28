@@ -120,6 +120,7 @@ class ApiService {
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
+    String? fcmToken,
   }) async {
     return _executeWithRetry(() async {
       final deviceId = await _getOrCreateDeviceId();
@@ -130,6 +131,7 @@ class ApiService {
           'email': email,
           'password': password,
           'deviceId': deviceId,
+          if (fcmToken != null) 'fcmToken': fcmToken,
         },
       ).timeout(requestTimeout);
 
@@ -143,6 +145,7 @@ class ApiService {
   Future<Map<String, dynamic>> loginWithGoogle({
     required String email,
     required String googleId,
+    String? fcmToken,
   }) async {
     return _executeWithRetry(() async {
       final deviceId = await _getOrCreateDeviceId();
@@ -154,6 +157,7 @@ class ApiService {
           'googleId': googleId,
           'deviceId': deviceId,
           'isGoogleLogin': '1',
+          if (fcmToken != null) 'fcmToken': fcmToken,
         },
       ).timeout(requestTimeout);
 

@@ -5,6 +5,7 @@ import 'api_service.dart';
 import 'google_signin_service.dart';
 import 'dialog/forgot_password_dialog.dart';
 import 'checkAccount.dart';
+import 'firebase/firebase_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -57,9 +58,11 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = true);
 
       try {
+        final fcmToken = await FirebaseService.getFCMToken();
         final response = await _apiService.login(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
+          fcmToken: fcmToken,
         );
 
         if (response['success'] == true) {
@@ -98,9 +101,11 @@ class _LoginScreenState extends State<LoginScreen> {
       final googleUser = await GoogleSignInService.signIn();
       if (googleUser != null) {
         try {
+          final fcmToken = await FirebaseService.getFCMToken();
           final loginResponse = await _apiService.loginWithGoogle(
             email: googleUser.email,
             googleId: googleUser.id,
+            fcmToken: fcmToken,
           );
 
           if (loginResponse['success'] == true) {
@@ -133,6 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
               final newLoginResponse = await _apiService.loginWithGoogle(
                 email: googleUser.email,
                 googleId: googleUser.id,
+                fcmToken: fcmToken,
               );
 
               if (newLoginResponse['success'] == true) {
@@ -173,7 +179,6 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
