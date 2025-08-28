@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'api_service.dart';
-import 'firebase/firebase_service.dart';
 import 'google_signin_service.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -122,13 +121,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
+    // Check if passwords match
     if (_passwordController.text != _confirmPasswordController.text) {
       Fluttertoast.showToast(msg: 'Passwords do not match');
       return;
     }
 
     try {
-      final fcmToken = await FirebaseService.getFCMToken();
       final response = await _apiService.signUp(
         firstName: _firstNameController.text,
         surName: _surNameController.text,
@@ -136,8 +135,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         email: _emailController.text,
         phoneNum: _phoneController.text,
         password: _passwordController.text,
-        signupType: 0,
-        fcmToken: fcmToken,
+        signupType: 0, // Manual signup
       );
 
       if (response['success'] == true) {
@@ -154,6 +152,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       Fluttertoast.showToast(msg: 'Error: ${e.toString()}');
     }
   }
+
   @override
   void dispose() {
     _firstNameController.dispose();
@@ -511,14 +510,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 surName = names.length > 1 ? names.sublist(1).join(' ') : '';
                               }
 
-                              final fcmToken = await FirebaseService.getFCMToken();
                               final response = await _apiService.signUpWithGoogle(
                                 firstName: firstName,
                                 surName: surName,
                                 email: googleUser.email,
                                 googleId: googleUser.id,
                                 photoUrl: googleUser.photoUrl ?? '',
-                                fcmToken: fcmToken,
                               );
 
                               if (response['success'] == true) {

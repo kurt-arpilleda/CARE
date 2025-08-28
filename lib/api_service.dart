@@ -63,7 +63,6 @@ class ApiService {
     required String phoneNum,
     required String password,
     required int signupType,
-    String? fcmToken,
   }) async {
     return _executeWithRetry(() async {
       final uri = Uri.parse("${apiUrl}cares_signup.php");
@@ -77,7 +76,6 @@ class ApiService {
           'phoneNum': phoneNum,
           'password': password,
           'signupType': signupType.toString(),
-          if (fcmToken != null) 'fcmToken': fcmToken,
         },
       ).timeout(requestTimeout);
 
@@ -94,7 +92,6 @@ class ApiService {
     required String email,
     required String googleId,
     required String photoUrl,
-    String? fcmToken,
   }) async {
     return _executeWithRetry(() async {
       final uri = Uri.parse("${apiUrl}cares_signup.php");
@@ -110,7 +107,6 @@ class ApiService {
           'signupType': '1',
           'googleId': googleId,
           'photoUrl': photoUrl,
-          if (fcmToken != null) 'fcmToken': fcmToken,
         },
       ).timeout(requestTimeout);
 
@@ -124,7 +120,6 @@ class ApiService {
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
-    String? fcmToken,
   }) async {
     return _executeWithRetry(() async {
       final deviceId = await _getOrCreateDeviceId();
@@ -135,7 +130,6 @@ class ApiService {
           'email': email,
           'password': password,
           'deviceId': deviceId,
-          if (fcmToken != null) 'fcmToken': fcmToken,
         },
       ).timeout(requestTimeout);
 
@@ -149,7 +143,6 @@ class ApiService {
   Future<Map<String, dynamic>> loginWithGoogle({
     required String email,
     required String googleId,
-    String? fcmToken,
   }) async {
     return _executeWithRetry(() async {
       final deviceId = await _getOrCreateDeviceId();
@@ -161,7 +154,6 @@ class ApiService {
           'googleId': googleId,
           'deviceId': deviceId,
           'isGoogleLogin': '1',
-          if (fcmToken != null) 'fcmToken': fcmToken,
         },
       ).timeout(requestTimeout);
 
@@ -171,6 +163,7 @@ class ApiService {
       throw HttpException("HTTP ${response.statusCode}");
     });
   }
+
   Future<Map<String, dynamic>> sendPasswordResetEmail({
     required String emailOrPhone,
   }) async {
