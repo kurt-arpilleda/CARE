@@ -7,6 +7,7 @@ import 'dart:async';
 import '../firebase/firebase_service.dart';
 import 'reportUserDialog.dart';
 import 'package:geolocator/geolocator.dart';
+import 'googleMapShopOwnerDialog.dart';
 
 class ShopMessagingScreen extends StatefulWidget {
   final dynamic shop;
@@ -525,6 +526,13 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
       );
     }
 
+    if (text == "Shop Owner Accept" && !isMe) {
+      return _buildShopOwnerAcceptBubble(
+        time: time,
+        messageData: messageData,
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -596,7 +604,106 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
       ),
     );
   }
-
+  Widget _buildShopOwnerAcceptBubble({
+    required String time,
+    required Map<String, dynamic> messageData,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 20),
+            child: _buildCachedProfileImage(messageData),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: Text(
+                    '${messageData['firstName']} ${messageData['surName']}',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => GoogleMapShopOwnerDialog(
+                        shop: {
+                          'accountId': messageData['accountId'],
+                          'firstName': messageData['firstName'],
+                          'surName': messageData['surName'],
+                          'photoUrl': messageData['photoUrl'],
+                        },
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(16),
+                        topRight: const Radius.circular(16),
+                        bottomLeft: Radius.zero,
+                        bottomRight: const Radius.circular(16),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          color: Colors.green,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Shop Owner Accept',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    time,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
   Widget _buildLocationBubble({
     required bool isMe,
     required String time,

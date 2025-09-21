@@ -387,6 +387,23 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
                     });
                     Navigator.of(context).pop();
 
+                    // Send acceptance message
+                    final userResponse = await ApiService().getUserData();
+                    if (userResponse['success']) {
+                      final user = userResponse['user'];
+                      final acceptMessage = 'Shop Owner Accept';
+
+                      final sendResponse = await ApiService().sendShopOwnerMessage(
+                        shopId: int.parse(widget.customer['shopId'].toString()),
+                        customerId: int.parse(widget.customer['accountId'].toString()),
+                        message: acceptMessage,
+                      );
+
+                      if (sendResponse['success']) {
+                        await _pollMessages();
+                      }
+                    }
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Service request accepted!'),
