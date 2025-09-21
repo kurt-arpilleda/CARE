@@ -83,13 +83,20 @@ class VehicleOptionsScreen extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              image: DecorationImage(
-                image: AssetImage(imagePath),
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-                colorFilter: ColorFilter.mode(
-                  Colors.black.withOpacity(0.35),
-                  BlendMode.darken,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center,
+                  filterQuality: FilterQuality.high,
+                  isAntiAlias: true,
+                  colorBlendMode: BlendMode.darken,
+                  color: Colors.black.withOpacity(0.35),
                 ),
               ),
             ),
