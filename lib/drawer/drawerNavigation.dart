@@ -9,6 +9,7 @@ import 'shop/registerShop_basicInfo.dart';
 import 'shopProfile/shopList.dart';
 import 'shopMessaging/shopOwnerMessageList.dart';
 import 'dart:async';
+import 'termsAndCondition.dart';
 
 class DashboardDrawer extends StatefulWidget {
   const DashboardDrawer({Key? key}) : super(key: key);
@@ -315,6 +316,17 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                                   builder: (context) => ShopOwnerMessageListScreen(),
                                 ),
                               ).then((_) => _loadMessageCount());
+                            },
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.article),
+                            title: const Text("Terms and Conditions"),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const TermsAndConditionScreen()),
+                              );
                             },
                           ),
                         ],

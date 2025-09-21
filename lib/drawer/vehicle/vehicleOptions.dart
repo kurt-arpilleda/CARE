@@ -46,25 +46,21 @@ class VehicleOptionsScreen extends StatelessWidget {
             ],
           ),
         ),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: GridView.count(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.85,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _buildVehicleCard(context, 'Car', 'assets/images/car.jpg'),
-                _buildVehicleCard(context, 'Motorcycle', 'assets/images/motorcycle.jpg'),
-                _buildVehicleCard(context, 'Van', 'assets/images/van.jpg'),
-                _buildVehicleCard(context, 'Truck', 'assets/images/truck.jpg'),
-                _buildVehicleCard(context, 'Bus', 'assets/images/bus.jpg'),
-                _buildVehicleCard(context, 'Jeep', 'assets/images/jeep.jpg'),
-              ],
-            ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: GridView.count(
+            crossAxisCount: 2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 0.85,
+            children: [
+              _buildVehicleCard(context, 'Car', 'assets/images/car.jpg'),
+              _buildVehicleCard(context, 'Motorcycle', 'assets/images/motorcycle.jpg'),
+              _buildVehicleCard(context, 'Van', 'assets/images/van.jpg'),
+              _buildVehicleCard(context, 'Truck', 'assets/images/truck.jpg'),
+              _buildVehicleCard(context, 'Bus', 'assets/images/bus.jpg'),
+              _buildVehicleCard(context, 'Jeep', 'assets/images/jeep.jpg'),
+            ],
           ),
         ),
       ),

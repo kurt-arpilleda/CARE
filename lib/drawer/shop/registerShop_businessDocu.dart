@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:care/api_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../shopProfile/shopList.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'dart:typed_data';
 
 class RegisterShopBusinessDocu extends StatefulWidget {
   final String shopName;
@@ -44,6 +46,29 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
   final ApiService _apiService = ApiService();
   bool _isLoading = false;
 
+  Future<File?> compressImage(File file) async {
+    try {
+      final dir = Directory.systemTemp;
+      final targetPath = '${dir.absolute.path}/temp_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      var result = await FlutterImageCompress.compressAndGetFile(
+        file.absolute.path,
+        targetPath,
+        quality: 70,
+        minWidth: 800,
+        minHeight: 600,
+        format: CompressFormat.jpeg,
+      );
+
+      if (result != null) {
+        return File(result.path);
+      }
+    } catch (e) {
+      print('Compression failed: $e');
+    }
+    return file;
+  }
+
   Future<void> _showUploadOptions(String type) async {
     return showDialog(
       context: context,
@@ -79,13 +104,22 @@ class _RegisterShopBusinessDocuState extends State<RegisterShopBusinessDocu> {
 
   Future<void> _pickImage(String type, ImageSource source) async {
     try {
-      final pickedFile = await _picker.pickImage(source: source);
+      final pickedFile = await _picker.pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      );
+
       if (pickedFile != null) {
+        File originalFile = File(pickedFile.path);
+        File? compressedFile = await compressImage(originalFile);
+
         setState(() {
           if (type == 'business') {
-            _businessPermitFile = File(pickedFile.path);
+            _businessPermitFile = compressedFile;
           } else {
-            _governmentIdFile = File(pickedFile.path);
+            _governmentIdFile = compressedFile;
           }
         });
       }

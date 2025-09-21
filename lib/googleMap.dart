@@ -31,7 +31,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
   MapType _currentMapType = MapType.normal;
   final CameraPosition _initialPosition =
   const CameraPosition(target: LatLng(12.8797, 121.7740), zoom: 5.5);
-
+  Map<int, int> _previousShopMessageCounts = {};
   Set<Marker> _markers = {};
   Map<int, int> _shopMessageCounts = {};
   Timer? _messagePollingTimer;
@@ -41,6 +41,8 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
   Timer? _statusPollingTimer;
   List<String> _userVehicleTypes = [];
   Map<String, Uint8List> _imageCache = {};
+  bool _isAdjustingZoom = false;
+  Set<int> _previousMessageShops = {};
 
   @override
   void initState() {
@@ -100,7 +102,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
   void _startMessagePolling() {
     _stopMessagePolling();
     _messagePollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      if (_isAppInForeground && _visibleShopIds.isNotEmpty) {
+      if (_isAppInForeground && _shops.isNotEmpty) {
         _updateMessageCounts();
       }
     });
@@ -123,12 +125,13 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
     _lastMessageCountUpdate = now;
 
     List<Future<void>> futures = [];
-    for (final shopId in _visibleShopIds.take(10)) {
-      futures.add(_getShopMessageCount(shopId));
+    for (final shop in _shops.take(15)) {
+      futures.add(_getShopMessageCount(shop['shopId']));
     }
 
     try {
       await Future.wait(futures);
+      _checkAndAdjustZoomForMessages();
     } catch (e) {}
   }
 
@@ -143,10 +146,97 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
           setState(() {
             _shopMessageCounts[shopId] = newCount;
           });
-          _updateShopMarker(shopId);
+
+          // Only update marker if the count actually changed
+          if (_visibleShopIds.contains(shopId)) {
+            await _updateShopMarker(shopId);
+          }
         }
       }
     } catch (e) {}
+  }
+
+  void _checkAndAdjustZoomForMessages() {
+    if (_isAdjustingZoom || _controller == null || _currentLocation == null) return;
+
+    bool hasNewMessages = false;
+    Set<int> shopsWithIncreasedMessages = {};
+
+    for (var entry in _shopMessageCounts.entries) {
+      int shopId = entry.key;
+      int currentCount = entry.value;
+      int previousCount = _previousShopMessageCounts[shopId] ?? 0;
+
+      if (currentCount > 0 && currentCount > previousCount) {
+        hasNewMessages = true;
+        shopsWithIncreasedMessages.add(shopId);
+      }
+    }
+    if (hasNewMessages && shopsWithIncreasedMessages.isNotEmpty) {
+      _adjustZoomForMessageShops(shopsWithIncreasedMessages);
+    }
+    _previousShopMessageCounts = Map.from(_shopMessageCounts);
+  }
+  Future<void> _adjustZoomForMessageShops(Set<int> messageShopIds) async {
+    if (_isAdjustingZoom) return;
+
+    _isAdjustingZoom = true;
+
+    try {
+      List<LatLng> positions = [
+        LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!)
+      ];
+
+      for (int shopId in messageShopIds) {
+        final shop = _shops.firstWhere(
+              (s) => s['shopId'] == shopId,
+          orElse: () => null,
+        );
+        if (shop != null) {
+          positions.add(LatLng(
+            double.parse(shop['latitude'].toString()),
+            double.parse(shop['longitude'].toString()),
+          ));
+        }
+      }
+
+      if (positions.length > 1) {
+        await _addShopMarkers();
+
+        LatLngBounds bounds = _calculateBounds(positions);
+
+        await _controller!.animateCamera(
+          CameraUpdate.newLatLngBounds(bounds, 100.0),
+        );
+      }
+    } catch (e) {
+      print('Error adjusting zoom: $e');
+    } finally {
+      await Future.delayed(Duration(milliseconds: 800));
+      _isAdjustingZoom = false;
+    }
+  }
+
+  LatLngBounds _calculateBounds(List<LatLng> positions) {
+    double minLat = positions.first.latitude;
+    double maxLat = positions.first.latitude;
+    double minLng = positions.first.longitude;
+    double maxLng = positions.first.longitude;
+
+    for (LatLng position in positions) {
+      minLat = Math.min(minLat, position.latitude);
+      maxLat = Math.max(maxLat, position.latitude);
+      minLng = Math.min(minLng, position.longitude);
+      maxLng = Math.max(maxLng, position.longitude);
+    }
+
+    double latPadding = (maxLat - minLat) * 0.2;
+    double lngPadding = (maxLng - minLng) * 0.2;
+
+    return LatLngBounds(
+      southwest: LatLng(minLat - latPadding, minLng - lngPadding),
+      northeast: LatLng(maxLat + latPadding, maxLng + lngPadding),
+    );
   }
 
   void _updateVisibleShops() {

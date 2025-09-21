@@ -1,7 +1,7 @@
 name: care
 description: "CARES (Comprehensive Auto Repair & Emergency Services)"
 publish_to: 'none'
-version: 1.0.7+8
+version: 1.0.12+13
 
 environment:
   sdk: ^3.7.2
@@ -30,6 +30,9 @@ dependencies:
   url_launcher: ^6.3.2
   firebase_core: ^4.0.0
   firebase_messaging: ^16.0.0
+  googleapis_auth: ^2.0.0
+  flutter_local_notifications: ^19.4.1
+  flutter_image_compress: ^2.4.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -44,6 +47,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/service_account.json
   fonts:
     - family: Lato-Black
       fonts:

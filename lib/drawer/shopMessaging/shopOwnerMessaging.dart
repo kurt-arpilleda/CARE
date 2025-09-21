@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:care/findShop/reportUserDialog.dart';
+import '../../firebase/firebase_service.dart';
 import 'userVehicleDialog.dart';
 import 'googleMapUserDialog.dart';
 
@@ -27,14 +28,16 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
   bool _isAppInForeground = true;
   Timer? _pollingTimer;
   Map<String, Uint8List> _imageCache = {};
+  List<String> _receiverFcmTokens = [];
+  Map<String, bool> _acceptedRequests = {};
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadMessages();
+    _loadReceiverFcmTokens();
     _startPolling();
-
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
         _scrollToBottom();
@@ -81,6 +84,7 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
       _stopPolling();
     }
   }
+
   bool _isLocationMessage(String message) {
     return message.startsWith('LOCATION:') && message.contains(',');
   }
@@ -89,6 +93,22 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
     final coords = message.replaceFirst('LOCATION:', '').split(',');
     return [double.parse(coords[0].trim()), double.parse(coords[1].trim())];
   }
+
+  bool _isLocationRequestExpired(String timestamp) {
+    try {
+      DateTime messageTime = DateTime.parse(timestamp);
+      DateTime currentTime = DateTime.now();
+      Duration difference = currentTime.difference(messageTime);
+      return difference.inHours >= 2;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  String _getMessageId(Map<String, dynamic> message) {
+    return message['id']?.toString() ?? '';
+  }
+
   void _startPolling() {
     _stopPolling();
     _pollingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -113,7 +133,8 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
       );
 
       if (response['success']) {
-        final newMessages = List<Map<String, dynamic>>.from(response['messages']);
+        final newMessages = List<Map<String, dynamic>>.from(
+            response['messages']);
 
         if (mounted) {
           _updateMessages(newMessages);
@@ -123,8 +144,12 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
   }
 
   void _updateMessages(List<Map<String, dynamic>> newMessages) {
-    final oldMessageIds = _messages.map((m) => m['id']?.toString() ?? '').toSet();
-    final newMessageIds = newMessages.map((m) => m['id']?.toString() ?? '').toSet();
+    final oldMessageIds = _messages
+        .map((m) => m['id']?.toString() ?? '')
+        .toSet();
+    final newMessageIds = newMessages
+        .map((m) => m['id']?.toString() ?? '')
+        .toSet();
 
     final addedMessages = newMessages.where((m) {
       final id = m['id']?.toString() ?? '';
@@ -133,7 +158,8 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
 
     if (addedMessages.isNotEmpty) {
       final wasAtBottom = _scrollController.hasClients &&
-          (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100);
+          (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 100);
 
       setState(() {
         _messages = newMessages;
@@ -195,22 +221,55 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
     }
   }
 
-  Future<void> _sendMessage() async {
-    if (_messageController.text.trim().isEmpty) return;
+  Future<void> _loadReceiverFcmTokens() async {
+    try {
+      final accountId = int.tryParse(widget.customer['accountId'].toString());
+      if (accountId == null) {
+        print('Invalid account ID: ${widget.customer['accountId']}');
+        return;
+      }
 
+      final response = await ApiService().getFcmTokensByAccountId(accountId);
+      if (response['success']) {
+        setState(() {
+          _receiverFcmTokens = List<String>.from(response['fcmTokens']);
+        });
+        print('Loaded FCM tokens for receiver: $_receiverFcmTokens');
+      }
+    } catch (e) {
+      print('Error loading FCM tokens: $e');
+    }
+  }
+
+  Future<void> _sendMessage() async {
+    if (_messageController.text
+        .trim()
+        .isEmpty) return;
     final String messageText = _messageController.text.trim();
     _messageController.clear();
-
     try {
       final response = await ApiService().sendShopOwnerMessage(
         shopId: int.parse(widget.customer['shopId'].toString()),
         customerId: int.parse(widget.customer['accountId'].toString()),
         message: messageText,
       );
-
       if (response['success']) {
         await _pollMessages();
         _scrollToBottom();
+
+        final userResponse = await ApiService().getUserData();
+        if (userResponse['success']) {
+          final user = userResponse['user'];
+          final shopOwnerName = '${user['firstName']} ${user['surName']}';
+
+          for (String token in _receiverFcmTokens) {
+            await FirebaseService.sendPushNotification(
+              receiverToken: token,
+              title: 'Shop Owner: $shopOwnerName',
+              body: messageText,
+            );
+          }
+        }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -233,6 +292,248 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
       }
       _messageController.text = messageText;
     }
+  }
+
+  void _showServiceRequestDialog(Map<String, dynamic> messageData) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.location_on,
+                color: const Color(0xFF1A3D63),
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Service Request',
+                style: TextStyle(
+                  color: Color(0xFF1A3D63),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Are you accepting ${messageData['firstName']} ${messageData['surName']}\'s request for your service?',
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.blue.shade700,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Once accepted, you\'ll be able to view the customer\'s location.',
+                        style: TextStyle(
+                          color: Colors.blue.shade700,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Decline',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  final response = await ApiService().acceptLocationRequest(
+                    messageId: int.parse(messageData['id'].toString()),
+                  );
+
+                  if (response['success']) {
+                    setState(() {
+                      _acceptedRequests[_getMessageId(messageData)] = true;
+                    });
+                    Navigator.of(context).pop();
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Service request accepted!'),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(response['message'] ?? 'Failed to accept request'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error accepting request: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1A3D63),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Accept',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildMessageContent(String text, bool isMe,
+      Map<String, dynamic> messageData, bool isLocationMsg, bool isExpired,
+      bool isAccepted) {
+    if (isLocationMsg && !isMe) {
+      if (isExpired) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.schedule,
+                color: Colors.grey[600],
+                size: 18,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Request Expired',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        );
+      } else if (isAccepted || messageData['isAccept'] == 1) {
+        return GestureDetector(
+          onTap: () {
+            final coords = _extractCoordinates(text);
+            showDialog(
+              context: context,
+              builder: (context) =>
+                  GoogleMapUserDialog(
+                    latitude: coords[0],
+                    longitude: coords[1],
+                    userName: '${messageData['firstName']} ${messageData['surName']}',
+                    photoUrl: messageData['photoUrl'],
+                  ),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.location_on,
+                  color: isMe ? Colors.white : const Color(0xFF1A3D63),
+                  size: 18,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Location Shared',
+                  style: TextStyle(
+                    color: isMe ? Colors.white : const Color(0xFF1A3D63),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        return GestureDetector(
+          onTap: () {
+            _showServiceRequestDialog(messageData);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.handyman,
+                  color: isMe ? Colors.white : const Color(0xFF1A3D63),
+                  size: 18,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'User sent formal request',
+                  style: TextStyle(
+                    color: isMe ? Colors.white : const Color(0xFF1A3D63),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    }
+
+    return Text(
+      isLocationMsg && isMe ? 'Location Shared' : text,
+      style: TextStyle(
+        color: isMe ? Colors.white : Colors.black,
+        fontSize: 16,
+      ),
+    );
   }
 
   String _formatMessageTime(String dateString) {
@@ -296,7 +597,8 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'Start a conversation with ${widget.customer['firstName'] ?? ''} ${widget.customer['surName'] ?? ''}',
+            'Start a conversation with ${widget.customer['firstName'] ??
+                ''} ${widget.customer['surName'] ?? ''}',
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[500],
@@ -327,13 +629,15 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${widget.customer['firstName'] ?? ''} ${widget.customer['surName'] ?? ''}',
+                    '${widget.customer['firstName'] ?? ''} ${widget
+                        .customer['surName'] ?? ''}',
                     style: const TextStyle(color: Colors.white, fontSize: 16),
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     widget.customer['shopName'] ?? '',
-                    style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12),
+                    style: TextStyle(
+                        color: Colors.white.withOpacity(0.8), fontSize: 12),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -367,7 +671,10 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
                   left: 16,
                   right: 16,
                   top: 16,
-                  bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? 16 : 16,
+                  bottom: MediaQuery
+                      .of(context)
+                      .viewInsets
+                      .bottom > 0 ? 16 : 16,
                 ),
                 itemCount: _messages.length,
                 itemBuilder: (context, index) {
@@ -400,7 +707,8 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
         backgroundColor: const Color(0xFF1A3D63),
         child: imageBytes == null
             ? Text(
-          _getInitials(widget.customer['firstName'], widget.customer['surName']),
+          _getInitials(
+              widget.customer['firstName'], widget.customer['surName']),
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -432,6 +740,11 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
     required bool isCustomer,
     required Map<String, dynamic> messageData,
   }) {
+    final messageId = _getMessageId(messageData);
+    final isLocationMsg = _isLocationMessage(text);
+    final isExpired = _isLocationRequestExpired(messageData['stamp']);
+    final isAccepted = _acceptedRequests[messageId] == true;
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -463,14 +776,17 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
                     ),
                   ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: isMe ? const Color(0xFF1A3D63) : Colors.white,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
-                      bottomLeft: isMe ? const Radius.circular(16) : Radius.zero,
-                      bottomRight: isMe ? Radius.zero : const Radius.circular(16),
+                      bottomLeft: isMe ? const Radius.circular(16) : Radius
+                          .zero,
+                      bottomRight: isMe ? Radius.zero : const Radius.circular(
+                          16),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -480,52 +796,9 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
                       ),
                     ],
                   ),
-                  child: _isLocationMessage(text) && !isMe
-                      ? GestureDetector(
-                    onTap: () {
-                      final coords = _extractCoordinates(text);
-                      showDialog(
-                        context: context,
-                        builder: (context) => GoogleMapUserDialog(
-                          latitude: coords[0],
-                          longitude: coords[1],
-                          userName: '${messageData['firstName']} ${messageData['surName']}',
-                          photoUrl: messageData['photoUrl'],
-                        ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.location_on,
-                            color: isMe ? Colors.white : const Color(0xFF1A3D63),
-                            size: 18,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'User Current Location',
-                            style: TextStyle(
-                              color: isMe ? Colors.white : const Color(0xFF1A3D63),
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                      : Text(
-                    _isLocationMessage(text) && isMe
-                        ? 'Location Shared'
-                        : text,
-                    style: TextStyle(
-                      color: isMe ? Colors.white : Colors.black,
-                      fontSize: 16,
-                    ),
-                  ),
+                  child: _buildMessageContent(
+                      text, isMe, messageData, isLocationMsg, isExpired,
+                      isAccepted),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
@@ -587,7 +860,9 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
           },
           child: CircleAvatar(
             radius: 20,
-            backgroundImage: imageBytes != null ? MemoryImage(imageBytes) : null,
+            backgroundImage: imageBytes != null
+                ? MemoryImage(imageBytes)
+                : null,
             backgroundColor: const Color(0xFF1A3D63),
             child: imageBytes == null
                 ? Text(
@@ -613,138 +888,145 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
       showModalBottomSheet(
         context: context,
         backgroundColor: Colors.transparent,
-        builder: (context) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
+        builder: (context) =>
+            Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
               ),
-              const SizedBox(height: 20),
-              Row(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircleAvatar(
-                    radius: 25,
-                    backgroundImage: _imageCache.containsKey(messageData['photoUrl'] ?? 'default')
-                        ? MemoryImage(_imageCache[messageData['photoUrl'] ?? 'default']!)
-                        : null,
-                    backgroundColor: const Color(0xFF1A3D63),
-                    child: _imageCache.containsKey(messageData['photoUrl'] ?? 'default')
-                        ? null
-                        : Text(
-                      _getInitials(messageData['firstName'], messageData['surName']),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 25,
+                        backgroundImage: _imageCache.containsKey(
+                            messageData['photoUrl'] ?? 'default')
+                            ? MemoryImage(
+                            _imageCache[messageData['photoUrl'] ?? 'default']!)
+                            : null,
+                        backgroundColor: const Color(0xFF1A3D63),
+                        child: _imageCache.containsKey(
+                            messageData['photoUrl'] ?? 'default')
+                            ? null
+                            : Text(
+                          _getInitials(
+                              messageData['firstName'], messageData['surName']),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              userName,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1A3D63),
+                              ),
+                            ),
+                            Text(
+                              'Customer',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A3D63).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.directions_car_outlined,
+                        color: Color(0xFF1A3D63),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          userName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A3D63),
-                          ),
-                        ),
-                        Text(
-                          'Customer',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
+                    title: const Text(
+                      'View Vehicles',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
+                    subtitle: const Text('View customer\'s active vehicles'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      showDialog(
+                        context: context,
+                        builder: (context) =>
+                            UserVehicleDialog(
+                              userId: reportedId,
+                              userName: userName,
+                            ),
+                      );
+                    },
                   ),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.report_outlined,
+                        color: Colors.red,
+                      ),
+                    ),
+                    title: const Text(
+                      'Report User',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: const Text('Report inappropriate behavior'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      showDialog(
+                        context: context,
+                        builder: (context) =>
+                            ReportUserDialog(
+                              reportedId: reportedId,
+                              userName: userName,
+                            ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 10),
                 ],
               ),
-              const SizedBox(height: 20),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A3D63).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.directions_car_outlined,
-                    color: Color(0xFF1A3D63),
-                  ),
-                ),
-                title: const Text(
-                  'View Vehicles',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                subtitle: const Text('View customer\'s active vehicles'),
-                onTap: () {
-                  Navigator.pop(context);
-                  showDialog(
-                    context: context,
-                    builder: (context) => UserVehicleDialog(
-                      userId: reportedId,
-                      userName: userName,
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.report_outlined,
-                    color: Colors.red,
-                  ),
-                ),
-                title: const Text(
-                  'Report User',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                subtitle: const Text('Report inappropriate behavior'),
-                onTap: () {
-                  Navigator.pop(context);
-                  showDialog(
-                    context: context,
-                    builder: (context) => ReportUserDialog(
-                      reportedId: reportedId,
-                      userName: userName,
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
-            ],
-          ),
-        ),
+            ),
       );
     }
   }
@@ -784,7 +1066,10 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
         left: 16,
         right: 16,
         top: 8,
-        bottom: MediaQuery.of(context).padding.bottom + 8,
+        bottom: MediaQuery
+            .of(context)
+            .padding
+            .bottom + 8,
       ),
       decoration: BoxDecoration(
         color: Colors.white,

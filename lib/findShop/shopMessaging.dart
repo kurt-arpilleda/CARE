@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import '../firebase/firebase_service.dart';
 import 'reportUserDialog.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -25,13 +26,15 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
   Map<String, dynamic> _shopOwnerData = {};
   Timer? _pollingTimer;
   Map<String, Uint8List> _imageCache = {};
-  bool _sharingLocation = false;
+  bool _requestingService = false;
+  List<String> _receiverFcmTokens = [];
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadMessages();
+    _loadReceiverFcmTokens();
     _startPolling();
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
@@ -116,21 +119,19 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
       final id = m['id']?.toString() ?? '';
       return id.isNotEmpty && !oldMessageIds.contains(id);
     }).toList();
-    if (addedMessages.isNotEmpty) {
-      final wasAtBottom = _scrollController.hasClients &&
-          (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100);
+
+    final wasAtBottom = _scrollController.hasClients &&
+        (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100);
+
+    if (addedMessages.isNotEmpty || newMessages.length != _messages.length) {
       setState(() {
         _messages = newMessages;
         _shopOwnerData = newShopOwnerData;
       });
+
       if (wasAtBottom) {
         _scrollToBottom();
       }
-    } else if (newMessages.length != _messages.length) {
-      setState(() {
-        _messages = newMessages;
-        _shopOwnerData = newShopOwnerData;
-      });
     }
   }
 
@@ -177,11 +178,28 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
     }
   }
 
+  Future<void> _loadReceiverFcmTokens() async {
+    try {
+      final shopOwnerId = widget.shop['accountId'];
+      if (shopOwnerId == null) return;
+
+      final response = await ApiService().getFcmTokensByAccountId(int.parse(shopOwnerId.toString()));
+      if (response['success']) {
+        setState(() {
+          _receiverFcmTokens = List<String>.from(response['fcmTokens']);
+        });
+        print('Loaded FCM tokens for receiver: $_receiverFcmTokens');
+      }
+    } catch (e) {
+      print('Error loading FCM tokens: $e');
+    }
+  }
+
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
     final String messageText = _messageController.text.trim();
     _messageController.clear();
-    _sharingLocation = false;
+    _requestingService = false;
     try {
       final response = await ApiService().sendMessageToShop(
         shopId: widget.shop['shopId'],
@@ -190,6 +208,20 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
       if (response['success']) {
         await _pollMessages();
         _scrollToBottom();
+
+        final userResponse = await ApiService().getUserData();
+        if (userResponse['success']) {
+          final user = userResponse['user'];
+          final customerName = '${user['firstName']} ${user['surName']}';
+
+          for (String token in _receiverFcmTokens) {
+            await FirebaseService.sendPushNotification(
+              receiverToken: token,
+              title: 'Customer: $customerName',
+              body: messageText,
+            );
+          }
+        }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -214,16 +246,87 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
     }
   }
 
-  Future<void> _shareLocation() async {
+  void _showServiceRequestDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.build_circle,
+                color: const Color(0xFF1A3D63),
+                size: 28,
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Request Service',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A3D63),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'Are you sure you want to request shop service and share your location with ${widget.shop['shop_name'] ?? 'the shop'}?',
+            style: const TextStyle(fontSize: 16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'No',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _requestServiceAndShareLocation();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1A3D63),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
+              child: const Text(
+                'Yes',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _requestServiceAndShareLocation() async {
     try {
       setState(() {
-        _sharingLocation = true;
+        _requestingService = true;
       });
       Position position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high
       );
       final locationMessage = "LOCATION:${position.latitude},${position.longitude}";
       _messageController.text = locationMessage;
+      await _sendMessage();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -232,7 +335,7 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
         ),
       );
       setState(() {
-        _sharingLocation = false;
+        _requestingService = false;
       });
     }
   }
@@ -565,7 +668,7 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Shared Location',
+                          'Service Request Location',
                           style: TextStyle(
                             color: isMe ? Colors.white : Colors.black,
                             fontSize: 16,
@@ -596,8 +699,6 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
 
   void _openLocation(String latitude, String longitude) {
     final url = 'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
-    // You can use url_launcher package to open the URL
-    // launchUrl(Uri.parse(url));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Location: $latitude, $longitude'),
@@ -825,10 +926,10 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
         children: [
           IconButton(
             icon: Icon(
-              Icons.location_on,
-              color: _sharingLocation ? Colors.blue : const Color(0xFF1A3D63),
+              Icons.build_circle,
+              color: _requestingService ? Colors.blue : const Color(0xFF1A3D63),
             ),
-            onPressed: _shareLocation,
+            onPressed: _showServiceRequestDialog,
           ),
           const SizedBox(width: 4),
           Expanded(
@@ -838,7 +939,7 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
               maxLines: null,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
-                hintText: _sharingLocation ? 'Your Location' : 'Type your message...',
+                hintText: _requestingService ? 'Requesting service...' : 'Type your message...',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,

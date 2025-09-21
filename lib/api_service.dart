@@ -938,6 +938,74 @@ class ApiService {
       throw HttpException("HTTP ${response.statusCode}");
     });
   }
+  Future<Map<String, dynamic>> getFcmTokensByAccountId(int accountId) async {
+    return _executeWithRetry(() async {
+      final token = await getAuthToken();
+      if (token == null) {
+        throw Exception("No auth token found");
+      }
+
+      final uri = Uri.parse("${apiUrl}cares_getFcmTokens.php");
+      final response = await httpClient.post(
+        uri,
+        body: {
+          'token': token,
+          'accountId': accountId.toString(),
+        },
+      ).timeout(requestTimeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
+  }
+  Future<Map<String, dynamic>> acceptLocationRequest({
+    required int messageId,
+  }) async {
+    return _executeWithRetry(() async {
+      final token = await getAuthToken();
+      if (token == null) {
+        throw Exception("No auth token found");
+      }
+
+      final uri = Uri.parse("${apiUrl}cares_acceptLocationRequest.php");
+      final response = await httpClient.post(
+        uri,
+        body: {
+          'token': token,
+          'messageId': messageId.toString(),
+        },
+      ).timeout(requestTimeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
+  }
+  Future<Map<String, dynamic>> updateCurrentLocation({
+    required String token,
+    required double latitude,
+    required double longitude,
+  }) async {
+    return _executeWithRetry(() async {
+      final uri = Uri.parse("${apiUrl}cares_insertCurrentLocation.php");
+      final response = await httpClient.post(
+        uri,
+        body: {
+          'token': token,
+          'latitude': latitude.toString(),
+          'longitude': longitude.toString(),
+        },
+      ).timeout(requestTimeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw HttpException("HTTP ${response.statusCode}");
+    });
+  }
   Future<void> saveAuthToken(String token) async {
     await _secureStorage.write(key: 'authToken', value: token);
   }

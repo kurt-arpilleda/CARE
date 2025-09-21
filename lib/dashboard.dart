@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'drawer/drawerNavigation.dart';
 import 'auto_update.dart';
+import 'firebase/firebase_service.dart';
 import 'googleMap.dart';
 import 'options.dart';
 import 'notification/notifList.dart';
@@ -32,6 +33,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     WidgetsBinding.instance.addObserver(this);
     _loadNotificationCount();
     _startNotificationPolling();
+    FirebaseService.setAppReady();
   }
 
   Future<void> _loadNotificationCount() async {
