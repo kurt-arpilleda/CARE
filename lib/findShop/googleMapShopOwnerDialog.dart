@@ -284,7 +284,7 @@ class _GoogleMapShopOwnerDialogState extends State<GoogleMapShopOwnerDialog> {
           position: LatLng(_shopOwnerLat!, _shopOwnerLng!),
           infoWindow: InfoWindow(
             title: '${widget.shop['firstName']} ${widget.shop['surName']}',
-            snippet: 'Shop Owner Location Tracker',
+            snippet: 'Shop Owner Location',
           ),
           icon: _shopOwnerMarkerIcon!,
           anchor: Offset(0.5, 1.0),
@@ -417,7 +417,7 @@ class _GoogleMapShopOwnerDialogState extends State<GoogleMapShopOwnerDialog> {
                           ),
                         ),
                         Text(
-                          'Shop Owner Location',
+                          'Shop Owner Location Tracker',
                           style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 14,
