@@ -25,7 +25,6 @@ class _NotificationListState extends State<NotificationList> {
     try {
       await _apiService.markNotificationsAsRead();
     } catch (e) {
-      // Handle error silently
     }
   }
   Future<void> _loadNotifications() async {
@@ -164,6 +163,17 @@ class _NotificationListState extends State<NotificationList> {
                       color: Colors.grey[600],
                     ),
                   ),
+                  if (notification['notifType'] == 0 && notification['remarks'] != null && notification['remarks'].isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Remarks: ${notification['remarks']}',
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 8),
                   Text(
                     _formatTimeAgo(notification['stamp']),
