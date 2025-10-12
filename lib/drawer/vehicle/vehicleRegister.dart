@@ -59,26 +59,40 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
     }
 
     bool hasEmptyFields = false;
+    bool hasInvalidPlate = false;
     List<Map<String, dynamic>> validVehicles = [];
 
     for (int i = 0; i < vehicles.length; i++) {
       final vehicle = vehicles[i];
+      final plateNumber = vehicle['plateNumber'].toString().trim();
+
       if (vehicle['brand'].toString().trim().isEmpty ||
           vehicle['model'].toString().trim().isEmpty ||
-          vehicle['plateNumber'].toString().trim().isEmpty) {
+          plateNumber.isEmpty) {
         setState(() {
           vehicles[i]['hasError'] = true;
           vehicles[i]['errorMessage'] = 'Please fill all fields';
         });
         hasEmptyFields = true;
+      } else if (!_isValidPlateNumber(plateNumber)) {
+        setState(() {
+          vehicles[i]['hasError'] = true;
+          vehicles[i]['errorMessage'] = 'Invalid plate number format';
+        });
+        hasInvalidPlate = true;
       } else {
         validVehicles.add({
           'vehicleType': widget.vehicleType,
           'brand': vehicle['brand'],
           'model': vehicle['model'],
-          'plateNumber': vehicle['plateNumber']
+          'plateNumber': plateNumber
         });
       }
+    }
+
+    if (hasInvalidPlate) {
+      Fluttertoast.showToast(msg: 'Please check plate number format');
+      return;
     }
 
     if (hasEmptyFields || validVehicles.isEmpty) {
@@ -168,7 +182,10 @@ class _VehicleRegisterScreenState extends State<VehicleRegisterScreen> {
       });
     }
   }
-
+  bool _isValidPlateNumber(String plate) {
+    final plateRegex = RegExp(r'^[A-Z0-9\-]+$');
+    return plateRegex.hasMatch(plate.toUpperCase().replaceAll(' ', ''));
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(

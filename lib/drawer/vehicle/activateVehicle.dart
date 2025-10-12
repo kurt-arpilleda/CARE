@@ -35,6 +35,7 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
   List<String> _originalBrands = [];
   List<String> _originalModels = [];
   List<String> _originalPlates = [];
+  List<bool> _plateErrorStates = [];
 
   IconData _getVehicleIcon(String vehicleType) {
     switch (vehicleType) {
@@ -90,6 +91,7 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
           _originalBrands = List.from(_brands);
           _originalModels = _vehicles.map((v) => v['vehicle_model'].toString()).toList();
           _originalPlates = _vehicles.map((v) => v['plate_number'].toString()).toList();
+          _plateErrorStates = List<bool>.filled(_vehicles.length, false);
           _isLoading = false;
         });
       } else {
@@ -111,12 +113,12 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
       for (int i = 0; i < _plateControllers.length; i++) {
         _plateControllers[i].text = _originalPlates[i];
       }
+      _plateErrorStates = List<bool>.filled(_vehicles.length, false);
     });
   }
 
   Future<void> _toggleVehicle(int vehicleId, bool isActive, int currentIndex) async {
     if (isActive) {
-      // Deactivate all other vehicles first
       for (int i = 0; i < _vehicles.length; i++) {
         if (i != currentIndex && _vehicles[i]['isActivate'] == 1) {
           setState(() {
@@ -132,7 +134,6 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
         Fluttertoast.showToast(msg: response['message'] ?? 'Failed to update vehicle status');
         _loadVehicles();
       } else {
-        // If successful and activating, deactivate all others via API
         if (isActive) {
           for (int i = 0; i < _vehicles.length; i++) {
             if (i != currentIndex && _vehicles[i]['id'] != vehicleId) {
@@ -165,6 +166,26 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
   }
 
   Future<void> _saveChanges() async {
+    bool hasInvalidPlate = false;
+    List<bool> newErrorStates = List<bool>.filled(_vehicles.length, false);
+
+    for (int i = 0; i < _plateControllers.length; i++) {
+      final plateNumber = _plateControllers[i].text.trim();
+      if (!_isValidPlateNumber(plateNumber)) {
+        hasInvalidPlate = true;
+        newErrorStates[i] = true;
+      }
+    }
+
+    setState(() {
+      _plateErrorStates = newErrorStates;
+    });
+
+    if (hasInvalidPlate) {
+      Fluttertoast.showToast(msg: 'Please check plate number format');
+      return;
+    }
+
     setState(() => _isSaving = true);
     try {
       final token = await _apiService.getAuthToken();
@@ -239,6 +260,18 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
         ),
       );
     }
+  }
+
+  bool _isValidPlateNumber(String plate) {
+    final plateRegex = RegExp(r'^[A-Z0-9\-]+$');
+    return plateRegex.hasMatch(plate.toUpperCase().replaceAll(' ', ''));
+  }
+
+  void _validatePlateNumber(int index) {
+    final plateNumber = _plateControllers[index].text.trim();
+    setState(() {
+      _plateErrorStates[index] = !_isValidPlateNumber(plateNumber);
+    });
   }
 
   Widget _buildNoDataView() {
@@ -452,11 +485,31 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
                   const SizedBox(height: 8),
                   TextField(
                     controller: _plateControllers[index],
+                    onChanged: (value) => _validatePlateNumber(index),
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey[300]!),
+                        borderSide: BorderSide(
+                          color: _plateErrorStates[index] ? Colors.red : Colors.grey[300]!,
+                          width: _plateErrorStates[index] ? 2.0 : 1.0,
+                        ),
                       ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: _plateErrorStates[index] ? Colors.red : Colors.grey[300]!,
+                          width: _plateErrorStates[index] ? 2.0 : 1.0,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: _plateErrorStates[index] ? Colors.red : const Color(0xFF1A3D63),
+                          width: _plateErrorStates[index] ? 2.0 : 1.0,
+                        ),
+                      ),
+                      errorText: _plateErrorStates[index] ? 'Invalid plate number format' : null,
+                      errorStyle: const TextStyle(color: Colors.red),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),
@@ -566,17 +619,18 @@ class _ActivateVehicleScreenState extends State<ActivateVehicleScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           decoration: BoxDecoration(
-                            color: Colors.grey[50],
+                            color: _plateErrorStates[index] ? Colors.red.withOpacity(0.1) : Colors.grey[50],
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: Colors.grey[300]!,
-                              width: 1,
+                              color: _plateErrorStates[index] ? Colors.red : Colors.grey[300]!,
+                              width: _plateErrorStates[index] ? 2 : 1,
                             ),
                           ),
                           child: Text(
                             vehicle['plate_number'] ?? '',
-                            style: const TextStyle(
-                              color: Colors.black87,
+                            style: TextStyle(
+                              color: _plateErrorStates[index] ? Colors.red : Colors.black87,
+                              fontWeight: _plateErrorStates[index] ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
                         ),
