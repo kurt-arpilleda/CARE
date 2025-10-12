@@ -69,7 +69,7 @@
         <!-- Specific domain exceptions -->
         <key>NSExceptionDomains</key>
         <dict>
-            <key>126.209.7.246</key>
+            <key>cares-webapp.online</key>
             <dict>
                 <key>NSExceptionAllowsInsecureHTTPLoads</key>
                 <true/>
