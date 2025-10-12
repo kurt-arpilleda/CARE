@@ -47,12 +47,18 @@ class _CheckAccountScreenState extends State<CheckAccountScreen> {
     try {
       final response = await _apiService.getUserData();
       if (response['success'] == true) {
-        final reportAction = response['user']['reportAction'] ?? 0;
-        final suspendedUntil = response['user']['suspendedUntil'];
+        final user = response['user'];
+        final reportAction = user['reportAction'] ?? 0;
+        final suspendedUntil = user['suspendedUntil'];
+        final reportReason = user['reportReason'];
+
         if (reportAction == 2) {
           setState(() {
             _isBanned = true;
             _isLoading = false;
+            if (reportReason != null && reportReason.isNotEmpty) {
+              _banMessage = 'Reason: $reportReason';
+            }
           });
         } else if (reportAction == 1 && suspendedUntil != null) {
           final now = DateTime.now();
@@ -63,6 +69,9 @@ class _CheckAccountScreenState extends State<CheckAccountScreen> {
               _isLoading = false;
               _suspendedUntil = suspensionEnd;
               _suspensionMessage = 'Your account is suspended until ${_formatDateTime(suspensionEnd)}';
+              if (reportReason != null && reportReason.isNotEmpty) {
+                _suspensionMessage += '\n\nReason: $reportReason';
+              }
             });
           } else {
             await _proceedToDashboard();
