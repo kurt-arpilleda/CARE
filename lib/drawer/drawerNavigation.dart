@@ -26,16 +26,15 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
   bool _isLoading = true;
   bool _isLoggingOut = false;
   int _totalUnreadCount = 0;
-  Timer? _messageCountTimer;
   bool _hasShop = false;
   bool _hasShopMessage = false;
+  Timer? _messageCountTimer;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
-    _loadShopStatus();
-    _loadMessageCount();
+    _checkShopAndMessages();
     _startMessageCountPolling();
   }
 
@@ -66,15 +65,15 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
     }
   }
 
-  Future<void> _loadShopStatus() async {
+  Future<void> _checkShopAndMessages() async {
     try {
-      final shopResponse = await _apiService.hasShop();
-      final messageResponse = await _apiService.hasShopMessage();
+      final shopResponse = await _apiService.checkHasShop();
+      final messageResponse = await _apiService.checkHasShopMessage();
 
       if (mounted) {
         setState(() {
-          _hasShop = shopResponse['hasShop'] == true;
-          _hasShopMessage = messageResponse['hasMessage'] == true;
+          _hasShop = shopResponse['hasShop'] ?? false;
+          _hasShopMessage = messageResponse['hasMessage'] ?? false;
         });
       }
     } catch (e) {
@@ -113,7 +112,10 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
 
   void _startMessageCountPolling() {
     _messageCountTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      _loadMessageCount();
+      _checkShopAndMessages();
+      if (_hasShop && _hasShopMessage) {
+        _loadMessageCount();
+      }
     });
   }
 
@@ -257,7 +259,7 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                               );
                             },
                           ),
-                          if (_hasShop && _hasShopMessage) ...[
+                          if (_hasShop)
                             ListTile(
                               leading: const Icon(Icons.car_repair),
                               title: const Text("Shop Profile"),
@@ -269,6 +271,28 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                                 );
                               },
                             ),
+                          ListTile(
+                            leading: const Icon(Icons.store),
+                            title: const Text("Register Shop"),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const RegisterShopBasicInfo(),
+                                ),
+                              );
+                            },
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.directions_car_filled),
+                            title: const Text("Register Vehicle"),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => const VehicleOptionsScreen()));
+                            },
+                          ),
+                          if (_hasShop && _hasShopMessage)
                             ListTile(
                               leading: const Icon(Icons.message),
                               title: Row(
@@ -319,31 +343,14 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                                   MaterialPageRoute(
                                     builder: (context) => ShopOwnerMessageListScreen(),
                                   ),
-                                ).then((_) => _loadMessageCount());
+                                ).then((_) {
+                                  _checkShopAndMessages();
+                                  if (_hasShop && _hasShopMessage) {
+                                    _loadMessageCount();
+                                  }
+                                });
                               },
                             ),
-                          ],
-                          ListTile(
-                            leading: const Icon(Icons.store),
-                            title: const Text("Register Shop"),
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const RegisterShopBasicInfo(),
-                                ),
-                              );
-                            },
-                          ),
-                          ListTile(
-                            leading: const Icon(Icons.directions_car_filled),
-                            title: const Text("Register Vehicle"),
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => const VehicleOptionsScreen()));
-                            },
-                          ),
                           ListTile(
                             leading: const Icon(Icons.article),
                             title: const Text("Terms and Conditions"),

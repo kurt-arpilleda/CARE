@@ -1030,7 +1030,7 @@ class ApiService {
       throw HttpException("HTTP ${response.statusCode}");
     });
   }
-  Future<Map<String, dynamic>> hasShop() async {
+  Future<Map<String, dynamic>> checkHasShop() async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
@@ -1050,7 +1050,7 @@ class ApiService {
     });
   }
 
-  Future<Map<String, dynamic>> hasShopMessage() async {
+  Future<Map<String, dynamic>> checkHasShopMessage() async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
