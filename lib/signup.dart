@@ -24,6 +24,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String? _gender;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _submitted = false;
 
   final Set<String> _touchedFields = {};
 
@@ -93,6 +94,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Future<void> _submitForm() async {
     setState(() {
+      _submitted = true; // mark that user attempted submit so confirm error shows
       _touchedFields.addAll([
         'firstName',
         'surName',
@@ -240,7 +242,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   ),
                                   decoration: InputDecoration(
                                     filled: true,
-                                    fillColor: Colors.white.withOpacity(0.9),
+                                    fillColor: Colors.white.withAlpha(230),
                                     hintText: 'First Name',
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
@@ -249,6 +251,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     errorText: _touchedFields.contains('firstName')
                                         ? _validateName(_firstNameController.text, 'First name')
                                         : null,
+                                    errorMaxLines: 3,
+                                    errorStyle: const TextStyle(
+                                      fontSize: 12,
+                                    ),
                                   ),
                                   onChanged: (value) {
                                     setState(() {
@@ -272,7 +278,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   ),
                                   decoration: InputDecoration(
                                     filled: true,
-                                    fillColor: Colors.white.withOpacity(0.9),
+                                    fillColor: Colors.white.withAlpha(230),
                                     hintText: 'Surname',
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
@@ -281,6 +287,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     errorText: _touchedFields.contains('surName')
                                         ? _validateName(_surNameController.text, 'Surname')
                                         : null,
+                                    errorMaxLines: 3,
+                                    errorStyle: const TextStyle(
+                                      fontSize: 12,
+                                    ),
                                   ),
                                   onChanged: (value) {
                                     setState(() {
@@ -298,7 +308,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     DropdownButtonFormField<String>(
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: Colors.white.withOpacity(0.9),
+                        fillColor: Colors.white.withAlpha(230),
                         hintText: 'Gender',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -307,8 +317,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         errorText: _touchedFields.contains('gender') && _gender == null
                             ? 'Gender is required'
                             : null,
+                        errorMaxLines: 2,
+                        errorStyle: const TextStyle(
+                          fontSize: 12,
+                        ),
                       ),
-                      value: _gender,
+                      initialValue: _gender,
                       style: const TextStyle(
                         fontFamily: 'Lato-Italic',
                         fontWeight: FontWeight.w500,
@@ -337,7 +351,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: Colors.white.withOpacity(0.9),
+                        fillColor: Colors.white.withAlpha(230),
                         hintText: 'Email',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -346,6 +360,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         errorText: _touchedFields.contains('email')
                             ? _validateEmail(_emailController.text)
                             : null,
+                        errorMaxLines: 3,
+                        errorStyle: const TextStyle(
+                          fontSize: 12,
+                        ),
                       ),
                       keyboardType: TextInputType.emailAddress,
                       onChanged: (value) {
@@ -363,7 +381,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: Colors.white.withOpacity(0.9),
+                        fillColor: Colors.white.withAlpha(230),
                         hintText: 'Mobile Number',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -372,6 +390,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         errorText: _touchedFields.contains('phone')
                             ? _validatePhone(_phoneController.text)
                             : null,
+                        errorMaxLines: 3,
+                        errorStyle: const TextStyle(
+                          fontSize: 12,
+                        ),
                       ),
                       keyboardType: TextInputType.phone,
                       onChanged: (value) {
@@ -390,7 +412,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: Colors.white.withOpacity(0.9),
+                        fillColor: Colors.white.withAlpha(230),
                         hintText: 'Password',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -412,12 +434,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         errorText: (_touchedFields.contains('password') || _passwordController.text.isNotEmpty)
                             ? _validatePassword(_passwordController.text)
                             : null,
+                        errorMaxLines: 3,
+                        errorStyle: const TextStyle(
+                          fontSize: 12,
+                        ),
                       ),
                       onChanged: (value) {
                         setState(() {
                           _touchedFields.add('password');
-                          // Also validate confirm password when password changes
-                          _touchedFields.add('confirmPassword');
+                          // don't mark confirmPassword as touched here to avoid showing its error
+                          // until the user explicitly submits the form
                         });
                       },
                     ),
@@ -431,7 +457,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: Colors.white.withOpacity(0.9),
+                        fillColor: Colors.white.withAlpha(230),
                         hintText: 'Confirm Password',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -450,9 +476,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           },
                         )
                             : null,
-                        errorText: (_touchedFields.contains('confirmPassword') || _confirmPasswordController.text.isNotEmpty)
+                        // only show confirm-password error after submit, when password is not empty and password is valid
+                        errorText: (_submitted &&
+                                    _passwordController.text.isNotEmpty &&
+                                    _validatePassword(_passwordController.text) == null)
                             ? _validateConfirmPassword(_confirmPasswordController.text)
                             : null,
+                        errorMaxLines: 3,
+                        errorStyle: const TextStyle(
+                          fontSize: 12,
+                        ),
                       ),
                       onChanged: (value) {
                         setState(() {

@@ -27,11 +27,14 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
   bool _isLoggingOut = false;
   int _totalUnreadCount = 0;
   Timer? _messageCountTimer;
+  bool _hasShop = false;
+  bool _hasShopMessage = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadShopStatus();
     _loadMessageCount();
     _startMessageCountPolling();
   }
@@ -60,6 +63,27 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
         _userEmail = "Error loading";
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _loadShopStatus() async {
+    try {
+      final shopResponse = await _apiService.hasShop();
+      final messageResponse = await _apiService.hasShopMessage();
+
+      if (mounted) {
+        setState(() {
+          _hasShop = shopResponse['hasShop'] == true;
+          _hasShopMessage = messageResponse['hasMessage'] == true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _hasShop = false;
+          _hasShopMessage = false;
+        });
+      }
     }
   }
 
@@ -233,17 +257,72 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                               );
                             },
                           ),
-                          ListTile(
-                            leading: const Icon(Icons.car_repair),
-                            title: const Text("Shop Profile"),
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const ShopListScreen()),
-                              );
-                            },
-                          ),
+                          if (_hasShop && _hasShopMessage) ...[
+                            ListTile(
+                              leading: const Icon(Icons.car_repair),
+                              title: const Text("Shop Profile"),
+                              onTap: () {
+                                Navigator.pop(context);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const ShopListScreen()),
+                                );
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.message),
+                              title: Row(
+                                children: [
+                                  const Text("Shop Messages"),
+                                  if (_totalUnreadCount > 0) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          colors: [Color(0xFFFF4757), Color(0xFFFF3742)],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(10),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFFFF4757).withOpacity(0.3),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 1),
+                                          ),
+                                        ],
+                                      ),
+                                      constraints: const BoxConstraints(
+                                        minWidth: 20,
+                                        minHeight: 20,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          _formatUnreadCount(_totalUnreadCount),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              onTap: () {
+                                Navigator.pop(context);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ShopOwnerMessageListScreen(),
+                                  ),
+                                ).then((_) => _loadMessageCount());
+                              },
+                            ),
+                          ],
                           ListTile(
                             leading: const Icon(Icons.store),
                             title: const Text("Register Shop"),
@@ -263,59 +342,6 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                             onTap: () {
                               Navigator.pop(context);
                               Navigator.push(context, MaterialPageRoute(builder: (context) => const VehicleOptionsScreen()));
-                            },
-                          ),
-                          ListTile(
-                            leading: const Icon(Icons.message),
-                            title: Row(
-                              children: [
-                                const Text("Shop Messages"),
-                                if (_totalUnreadCount > 0) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [Color(0xFFFF4757), Color(0xFFFF3742)],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ),
-                                      borderRadius: BorderRadius.circular(10),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color(0xFFFF4757).withOpacity(0.3),
-                                          blurRadius: 4,
-                                          offset: const Offset(0, 1),
-                                        ),
-                                      ],
-                                    ),
-                                    constraints: const BoxConstraints(
-                                      minWidth: 20,
-                                      minHeight: 20,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        _formatUnreadCount(_totalUnreadCount),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ShopOwnerMessageListScreen(),
-                                ),
-                              ).then((_) => _loadMessageCount());
                             },
                           ),
                           ListTile(
