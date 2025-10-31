@@ -12,6 +12,7 @@ import 'dart:async';
 import 'termsAndCondition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'privacyPolicy.dart';
+import 'transactionHistory.dart';
 
 class DashboardDrawer extends StatefulWidget {
   const DashboardDrawer({Key? key}) : super(key: key);
@@ -394,7 +395,7 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                               Navigator.pop(context);
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => const TermsAndConditionScreen()),
+                                MaterialPageRoute(builder: (context) => const TransactionHistoryScreen()),
                               );
                             },
                           ),

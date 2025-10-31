@@ -1014,7 +1014,22 @@ class ApiService {
       return _handleResponse(response);
     });
   }
+  Future<Map<String, dynamic>> fetchTransactionHistory() async {
+    return _executeWithRetry(() async {
+      final token = await getAuthToken();
+      if (token == null) {
+        return {"success": false, "message": "Waiting for Network"};
+      }
 
+      final uri = Uri.parse("${apiUrl}cares_fetchHistory.php");
+      final response = await httpClient.post(
+        uri,
+        body: {'token': token},
+      ).timeout(requestTimeout);
+
+      return _handleResponse(response);
+    });
+  }
   Future<void> saveAuthToken(String token) async {
     await _secureStorage.write(key: 'authToken', value: token);
   }
