@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:care/dashboard.dart';
 
-class TermsAndConditionScreen extends StatelessWidget {
-  const TermsAndConditionScreen({Key? key}) : super(key: key);
+class PrivacyPolicyScreen extends StatelessWidget {
+  const PrivacyPolicyScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +35,7 @@ class TermsAndConditionScreen extends StatelessWidget {
                         ),
                       ),
                       const Text(
-                        'Terms and Conditions',
+                        'Privacy Policy',
                         style: TextStyle(
                           color: Color(0xFFF6FAFD),
                           fontSize: 25,
@@ -80,7 +80,7 @@ class TermsAndConditionScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
-                                Icons.description,
+                                Icons.privacy_tip,
                                 color: Color(0xFF1A3D63),
                                 size: 24,
                               ),
@@ -88,7 +88,7 @@ class TermsAndConditionScreen extends StatelessWidget {
                             const SizedBox(width: 16),
                             const Expanded(
                               child: Text(
-                                'CARES Terms and Conditions',
+                                'Privacy Policy',
                                 style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
@@ -100,7 +100,7 @@ class TermsAndConditionScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 24),
                         const Text(
-                          'Welcome to CARES. By downloading, accessing, or using our application, you agree to comply with and be bound by the following Terms and Conditions. Please read them carefully before using the application.',
+                          'Welcome to CARES. This Privacy Policy explains how we collect, use, disclose, and protect your personal information when you use the CARES mobile application (the "App") and its related services.',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.black87,
@@ -109,52 +109,44 @@ class TermsAndConditionScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 32),
                         _buildSection(
-                          '1. Acceptance of Terms',
-                          'By using CARES, you confirm that you are at least 18 years old or have parental/guardian consent, and that you agree to these Terms and Conditions and our Privacy Policy. If you do not agree, please discontinue use of the app.',
+                          '1. Introduction',
+                          'Welcome to CARES.\nThis Privacy Policy explains how we collect, use, disclose, and protect your personal information when you use the CARES mobile application (the "App") and its related services.\n\nBy using the CARES App, you agree to the terms outlined in this Privacy Policy. If you do not agree, please stop using the App.',
                         ),
                         _buildSection(
-                          '2. Services Provided',
-                          'CARES provides:\n• Access to verified auto repair shops and mechanics within CALABARZON.\n• Emergency roadside assistance.\n• Real-time updates and service tracking (where available).',
+                          '2. Information We Collect',
+                          'We collect information to provide and improve our services. This may include:\n\na. Personal Information\n• Full name, email address, and contact number\n• Account login credentials\n• Vehicle details (plate number, model, brand, etc.)\n• Shop details (name, business permit, contact info, service types) for repair shop users\n\nb. Location Information\n• Real-time GPS location for service requests, tracking, and navigation\n• Approximate location for nearby shop listings and emergency assistance\n\nc. Usage Data\n• In-app interactions such as messages, ratings, and reports\n• Error logs and crash reports to improve system performance\n\nd. Uploaded Media\n• Photos or documents uploaded for verification, service requests, or reporting issues',
                         ),
                         _buildSection(
-                          '3. User Responsibilities',
-                          'You agree to:\n• Provide accurate, complete, and updated information when registering.\n• Use the app for lawful and respectful purposes only.\n• Take responsibility for your own vehicle and safety during service engagements.\n• Pay any service charges, fees, or costs as agreed with the service provider.',
+                          '3. How We Use Your Information',
+                          'Your information helps us provide a secure and efficient platform. Specifically, we use it to:\n• Create and manage your user or repair shop account\n• Match customers with nearby repair shops or service providers\n• Provide location-based emergency services (e.g., roadside assistance)\n• Improve app performance and user experience\n• Enforce community guidelines and penalties for misconduct\n• Send important notices or policy updates',
                         ),
                         _buildSection(
-                          '4. Account Suspension and Ban Policy',
-                          'To ensure the safety, fairness, and integrity of the CARES community, all users are subject to the following rules and disciplinary actions:\n\n4.1. Authority of the Administrator\n• The CARES Administrator reserves the exclusive right to suspend or ban any user account, whether belonging to a vehicle owner or repair shop, for violations of the app\'s rules, misuse of services, or misconduct.\n• The Administrator will set the specific time and date when the suspension or ban begins and ends.\n• Once the penalty period expires, the account will be automatically reactivated without requiring user intervention.\n\n4.2. Duration of Penalties\n• Suspension: May last for a maximum of one (1) week, depending on the severity of the violation.\n• Ban: May last for a maximum of three (3) weeks for serious or repeated offenses.\n• CARES administrators have full discretion to determine the penalty length within these limits.\n\n4.3. Automatic Defeasibility\n• When the set duration of a penalty (suspension or ban) ends, the user\'s access to CARES features and services will be automatically restored.',
+                          '4. How We Share Information',
+                          'We respect your privacy and only share data when necessary:\n• With service providers: To connect vehicle owners and repair shops for repair or emergency assistance\n• With administrators: For monitoring reports, complaints, and enforcing app policies\n• With law enforcement: When required by law, court order, or to protect user safety\n\nWe do not sell, rent, or trade your personal information to any third party.',
                         ),
                         _buildSection(
-                          '5. Service Provider Disclaimer',
-                          '• CARES does not guarantee the availability, quality of the shop services offered.\n• All repairs, emergency responses, and transactions are the responsibility of the respective service providers.\n• CARES is not liable for damages, losses, delays, or disputes arising from services rendered by third parties.',
+                          '5. Data Retention',
+                          '• CARES retains personal data only as long as necessary to provide services or comply with legal obligations.',
                         ),
                         _buildSection(
-                          '6. Payments and Fees',
-                          '• Certain services may require fees or charges.\n• Payments may be handled via in-app methods, cash, or directly with service providers.\n• CARES is not responsible for disputes regarding service charges between users and providers.',
+                          '6. Data Security',
+                          'We take data protection seriously. CARES implements:\n• Encryption of sensitive information during transmission\n• Secure authentication for account access\n• Regular monitoring to prevent unauthorized access or misuse\n\nHowever, no system is 100% secure. You use the app at your own risk, and we encourage you to protect your account credentials.',
                         ),
                         _buildSection(
-                          '7. Limitation of Liability',
-                          'To the maximum extent permitted by law:\n• CARES is not liable for any direct, indirect, incidental, or consequential damages arising from the use of the app or services.\n• CARES does not provide warranties regarding service outcomes, provider conduct, or emergency response times.',
+                          '7. User Rights',
+                          'You have the right to:\n• Access and review your personal data\n• Request correction or deletion of your data\n• File a complaint if you believe your data has been misused',
                         ),
                         _buildSection(
-                          '8. Account Termination',
-                          'We reserve the right to suspend or terminate any account (user or provider) if:\n• These Terms and Conditions are violated.\n• Fraudulent, abusive, or illegal activity is detected.\n• The account receives multiple verified reports of misconduct.',
+                          '8. Account Suspension and Ban Policy',
+                          'As part of maintaining safety and fairness:\n• The Administrator may suspend or ban any account (vehicle owner or repair shop) that violates the app\'s rules.\n• Suspension lasts up to 1 week; bans last up to 3 weeks.\n• The Administrator sets the duration and automatic reactivation date of penalties.',
                         ),
                         _buildSection(
-                          '9. Intellectual Property',
-                          'All content, logos, trademarks, and materials in the CARES app remain the property of CARES and may not be used without prior written permission.',
+                          '9. Children\'s Privacy',
+                          'CARES does not knowingly collect information from users under 18 years old. If we become aware that we have collected such data, we will delete it immediately.',
                         ),
                         _buildSection(
-                          '10. Privacy Policy',
-                          'Your personal information will be collected, stored, and processed in accordance with our Privacy Policy, which forms part of these Terms and Conditions.',
-                        ),
-                        _buildSection(
-                          '11. Modifications to Terms',
-                          'CARES reserves the right to update or revise these Terms at any time. Users will be notified of changes through the app or official communication channels. Continued use of the app means you accept the updated Terms.',
-                        ),
-                        _buildSection(
-                          '12. Governing Law',
-                          'These Terms and Conditions shall be governed by and construed under the laws of the Republic of the Philippines.',
+                          '10. Changes to This Privacy Policy',
+                          'CARES may update this Privacy Policy from time to time. Continued use of the app means you accept the updated policy.',
                         ),
                         _buildContactSection(),
                         const SizedBox(height: 32),
@@ -179,7 +171,7 @@ class TermsAndConditionScreen extends StatelessWidget {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  'By continuing to use CARES, you acknowledge that you have read, understood, and agree to these Terms and Conditions.',
+                                  'By continuing to use CARES, you acknowledge that you have read, understood, and agree to this Privacy Policy.',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: const Color(0xFF1A3D63),
@@ -238,7 +230,7 @@ class TermsAndConditionScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            '13. Contact Us',
+            '11. Contact Us',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -247,7 +239,7 @@ class TermsAndConditionScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const Text(
-            'For questions, feedback, or support, you may contact us at:',
+            'If you have questions, concerns, or complaints about this Privacy Policy, contact us at:',
             style: TextStyle(
               fontSize: 15,
               color: Colors.black87,

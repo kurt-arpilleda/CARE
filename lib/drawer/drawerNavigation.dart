@@ -11,6 +11,7 @@ import 'shopMessaging/shopOwnerMessageList.dart';
 import 'dart:async';
 import 'termsAndCondition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'privacyPolicy.dart';
 
 class DashboardDrawer extends StatefulWidget {
   const DashboardDrawer({Key? key}) : super(key: key);
@@ -391,6 +392,17 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(builder: (context) => const TermsAndConditionScreen()),
+                              );
+                            },
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.security),
+                            title: const Text("Privacy Policy"),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
                               );
                             },
                           ),
