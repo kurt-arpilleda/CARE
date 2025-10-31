@@ -29,6 +29,16 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
   Map<String, Uint8List> _imageCache = {};
   bool _requestingService = false;
   List<String> _receiverFcmTokens = [];
+  bool _isLocationRequestExpired(String timestamp) {
+    try {
+      DateTime messageTime = DateTime.parse(timestamp);
+      DateTime currentTime = DateTime.now();
+      Duration difference = currentTime.difference(messageTime);
+      return difference.inHours >= 6;
+    } catch (e) {
+      return true;
+    }
+  }
 
   @override
   void initState() {
@@ -608,6 +618,8 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
     required String time,
     required Map<String, dynamic> messageData,
   }) {
+    final isExpired = _isLocationRequestExpired(messageData['stamp']);
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -635,7 +647,7 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
+                  onTap: isExpired ? null : () {
                     showDialog(
                       context: context,
                       builder: (context) => GoogleMapShopOwnerDialog(
@@ -670,15 +682,15 @@ class _ShopMessagingScreenState extends State<ShopMessagingScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.location_on,
-                          color: Colors.green,
+                          isExpired ? Icons.schedule : Icons.location_on,
+                          color: isExpired ? Colors.grey[600] : Colors.green,
                           size: 24,
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Shop Owner Accept',
+                          isExpired ? 'Shop Owner Accept (Expired)' : 'Shop Owner Accept',
                           style: TextStyle(
-                            color: Colors.green,
+                            color: isExpired ? Colors.grey[600] : Colors.green,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
