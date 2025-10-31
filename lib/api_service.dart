@@ -48,7 +48,7 @@ class ApiService {
       } catch (e) {
         attempt++;
         if (attempt >= maxRetries) {
-          return {"success": false, "message": "Waiting for Network"};
+          return {"success": false, "message": "Slow Internet"};
         }
         await Future.delayed(retryDelay * attempt);
       }

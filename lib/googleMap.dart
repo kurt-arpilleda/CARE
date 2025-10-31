@@ -354,7 +354,7 @@ class _GoogleMapWidgetState extends State<GoogleMapWidget>
       if (response['success']) {
         List<dynamic> allShops = response['shops'];
         if (_currentLocation != null) {
-          const double maxDistance = 10000;
+          const double maxDistance = 30000;
           List<dynamic> nearbyShops = allShops.where((shop) {
             bool isValidated = shop['isValidated'] == 1;
             bool isBanned = _isShopBanned(shop);
