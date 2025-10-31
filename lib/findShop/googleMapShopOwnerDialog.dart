@@ -57,7 +57,7 @@ class _GoogleMapShopOwnerDialogState extends State<GoogleMapShopOwnerDialog> {
 
   Future<void> _fetchShopOwnerLocation() async {
     try {
-      final response = await _apiService.fetchShopOwnerLocation(
+      final response = await _apiService.fetchCurrentLocation(
         accountId: int.parse(widget.shop['accountId'].toString()),
       );
 

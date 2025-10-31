@@ -43,6 +43,9 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
     _prefs = await SharedPreferences.getInstance();
     _loadLocalShopAndMessageStatus();
     _loadUserData();
+    if (_hasShop && _hasShopMessage) {
+      _loadMessageCount();
+    }
     _checkShopAndMessages();
     _startMessageCountPolling();
   }

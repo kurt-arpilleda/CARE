@@ -959,7 +959,7 @@ class ApiService {
     });
   }
 
-  Future<Map<String, dynamic>> fetchShopOwnerLocation({
+  Future<Map<String, dynamic>> fetchCurrentLocation({
     required int accountId,
   }) async {
     return _executeWithRetry(() async {
@@ -968,7 +968,7 @@ class ApiService {
         return {"success": false, "message": "Waiting for Network"};
       }
 
-      final uri = Uri.parse("${apiUrl}cares_fetchShopOwnerLocation.php");
+      final uri = Uri.parse("${apiUrl}cares_fetchCurrentLocation.php");
       final response = await httpClient.post(
         uri,
         body: {

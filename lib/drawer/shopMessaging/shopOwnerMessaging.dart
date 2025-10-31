@@ -487,6 +487,7 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
                     longitude: coords[1],
                     userName: '${messageData['firstName']} ${messageData['surName']}',
                     photoUrl: messageData['photoUrl'],
+                    accountId: int.parse(messageData['accountId'].toString()),
                   ),
             );
           },

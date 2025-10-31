@@ -6,18 +6,21 @@ import 'dart:ui' as ui;
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'dart:async';
 
 class GoogleMapUserDialog extends StatefulWidget {
   final double latitude;
   final double longitude;
   final String userName;
   final String? photoUrl;
+  final int accountId;
 
   const GoogleMapUserDialog({
     Key? key,
     required this.latitude,
     required this.longitude,
     required this.userName,
+    required this.accountId,
     this.photoUrl,
   }) : super(key: key);
 
@@ -34,17 +37,63 @@ class _GoogleMapUserDialogState extends State<GoogleMapUserDialog> {
   BitmapDescriptor? _customMarkerIcon;
   BitmapDescriptor? _userMarkerIcon;
   Set<Marker> _markers = {};
+  Timer? _locationPollingTimer;
+  double? _userLat;
+  double? _userLng;
 
   @override
   void initState() {
     super.initState();
+    _userLat = widget.latitude;
+    _userLng = widget.longitude;
     _initMap();
+    _startLocationPolling();
   }
 
   @override
   void dispose() {
+    _stopLocationPolling();
     _apiService.dispose();
     super.dispose();
+  }
+
+  void _startLocationPolling() {
+    _locationPollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _fetchUserLocation();
+    });
+  }
+
+  void _stopLocationPolling() {
+    _locationPollingTimer?.cancel();
+    _locationPollingTimer = null;
+  }
+
+  Future<void> _fetchUserLocation() async {
+    try {
+      final response = await _apiService.fetchCurrentLocation(
+        accountId: widget.accountId,
+      );
+
+      if (response['success'] && response['location'] != null) {
+        final locationString = response['location'];
+        final coords = locationString.split(',');
+        if (coords.length == 2) {
+          final newLat = double.parse(coords[0].trim());
+          final newLng = double.parse(coords[1].trim());
+
+          if (_userLat != newLat || _userLng != newLng) {
+            setState(() {
+              _userLat = newLat;
+              _userLng = newLng;
+            });
+            await _updateUserMarker();
+            await _addMarkers();
+          }
+        }
+      }
+    } catch (e) {
+      print('Error fetching user location: $e');
+    }
   }
 
   Future<void> _initMap() async {
@@ -239,14 +288,91 @@ class _GoogleMapUserDialogState extends State<GoogleMapUserDialog> {
     }
   }
 
+  Future<void> _updateUserMarker() async {
+    try {
+      Uint8List? imageBytes;
+      if (widget.photoUrl != null && widget.photoUrl!.isNotEmpty) {
+        final String imageUrl = widget.photoUrl!.contains('http')
+            ? widget.photoUrl!
+            : '${ApiService.apiUrl}profilePicture/${widget.photoUrl}';
+        try {
+          final response = await http.get(Uri.parse(imageUrl));
+          if (response.statusCode == 200) {
+            imageBytes = response.bodyBytes;
+          }
+        } catch (_) {}
+      }
+
+      if (imageBytes == null) {
+        final ByteData data = await rootBundle.load('assets/images/profilePlaceHolder.png');
+        imageBytes = data.buffer.asUint8List();
+      }
+
+      final ui.Codec codec = await ui.instantiateImageCodec(
+        imageBytes,
+        targetWidth: 120,
+        targetHeight: 120,
+      );
+
+      final ui.FrameInfo frameInfo = await codec.getNextFrame();
+      final ui.Image image = frameInfo.image;
+
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+
+      final double size = 140;
+      final double radius = 45;
+      final Offset center = Offset(size / 2, radius + 15);
+
+      final Paint shadowPaint = Paint()
+        ..color = Colors.black.withOpacity(0.25)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3.0);
+
+      canvas.drawCircle(Offset(center.dx + 3, center.dy + 3), radius + 9, shadowPaint);
+
+      final Paint borderPaint = Paint()..color = Color(0xFF1A3D63)..style = PaintingStyle.fill;
+      final Paint whitePaint = Paint()..color = Colors.white..style = PaintingStyle.fill;
+
+      canvas.drawCircle(center, radius + 9, whitePaint);
+      canvas.drawCircle(center, radius + 5, borderPaint);
+
+      final Path clipPath = Path()..addOval(Rect.fromCircle(center: center, radius: radius));
+      canvas.save();
+      canvas.clipPath(clipPath);
+
+      final Rect imageRect = Rect.fromCircle(center: center, radius: radius);
+      canvas.drawImageRect(
+          image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), imageRect, Paint());
+      canvas.restore();
+
+      final Path pinPath = Path();
+      pinPath.moveTo(size / 2 - 12, radius * 2 + 20);
+      pinPath.lineTo(size / 2 + 12, radius * 2 + 20);
+      pinPath.lineTo(size / 2, radius * 2 + 40);
+      pinPath.close();
+
+      canvas.drawPath(pinPath, borderPaint);
+
+      final ui.Picture picture = recorder.endRecording();
+      final ui.Image finalImage = await picture.toImage(size.toInt(), (radius * 2 + 50).toInt());
+
+      final ByteData? byteData = await finalImage.toByteData(format: ui.ImageByteFormat.png);
+      final Uint8List finalImageBytes = byteData!.buffer.asUint8List();
+
+      _userMarkerIcon = BitmapDescriptor.fromBytes(finalImageBytes);
+    } catch (_) {
+      _userMarkerIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
+    }
+  }
+
   Future<void> _addMarkers() async {
     Set<Marker> newMarkers = {};
 
-    if (_userMarkerIcon != null) {
+    if (_userLat != null && _userLng != null && _userMarkerIcon != null) {
       newMarkers.add(
         Marker(
           markerId: MarkerId('user_location'),
-          position: LatLng(widget.latitude, widget.longitude),
+          position: LatLng(_userLat!, _userLng!),
           infoWindow: InfoWindow(
             title: widget.userName,
             snippet: 'User Location',
@@ -278,30 +404,33 @@ class _GoogleMapUserDialogState extends State<GoogleMapUserDialog> {
       _markers = newMarkers;
     });
 
-    if (_controller != null) {
-      _controller!.animateCamera(
-        CameraUpdate.newLatLngBounds(
-          LatLngBounds(
-            southwest: LatLng(
-              _currentLocation != null
-                  ? (_currentLocation!.latitude! < widget.latitude ? _currentLocation!.latitude! : widget.latitude) - 0.001
-                  : widget.latitude - 0.001,
-              _currentLocation != null
-                  ? (_currentLocation!.longitude! < widget.longitude ? _currentLocation!.longitude! : widget.longitude) - 0.001
-                  : widget.longitude - 0.001,
+    if (_controller != null && _userLat != null && _userLng != null) {
+      if (_currentLocation != null) {
+        _controller!.animateCamera(
+          CameraUpdate.newLatLngBounds(
+            LatLngBounds(
+              southwest: LatLng(
+                (_currentLocation!.latitude! < _userLat! ? _currentLocation!.latitude! : _userLat!) - 0.001,
+                (_currentLocation!.longitude! < _userLng! ? _currentLocation!.longitude! : _userLng!) - 0.001,
+              ),
+              northeast: LatLng(
+                (_currentLocation!.latitude! > _userLat! ? _currentLocation!.latitude! : _userLat!) + 0.001,
+                (_currentLocation!.longitude! > _userLng! ? _currentLocation!.longitude! : _userLng!) + 0.001,
+              ),
             ),
-            northeast: LatLng(
-              _currentLocation != null
-                  ? (_currentLocation!.latitude! > widget.latitude ? _currentLocation!.latitude! : widget.latitude) + 0.001
-                  : widget.latitude + 0.001,
-              _currentLocation != null
-                  ? (_currentLocation!.longitude! > widget.longitude ? _currentLocation!.longitude! : widget.longitude) + 0.001
-                  : widget.longitude + 0.001,
+            100.0,
+          ),
+        );
+      } else {
+        _controller!.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: LatLng(_userLat!, _userLng!),
+              zoom: 15.0,
             ),
           ),
-          100.0,
-        ),
-      );
+        );
+      }
     }
   }
 
@@ -379,7 +508,7 @@ class _GoogleMapUserDialogState extends State<GoogleMapUserDialog> {
                           ),
                         ),
                         Text(
-                          'User Location',
+                          'User Location Tracker',
                           style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 14,
@@ -411,7 +540,9 @@ class _GoogleMapUserDialogState extends State<GoogleMapUserDialog> {
                     }
                   },
                   initialCameraPosition: CameraPosition(
-                    target: LatLng(widget.latitude, widget.longitude),
+                    target: _userLat != null && _userLng != null
+                        ? LatLng(_userLat!, _userLng!)
+                        : LatLng(widget.latitude, widget.longitude),
                     zoom: 15.0,
                   ),
                   markers: _markers,
