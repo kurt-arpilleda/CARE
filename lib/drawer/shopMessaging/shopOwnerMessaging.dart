@@ -99,7 +99,7 @@ class _ShopOwnerMessagingScreenState extends State<ShopOwnerMessagingScreen>
       DateTime messageTime = DateTime.parse(timestamp);
       DateTime currentTime = DateTime.now();
       Duration difference = currentTime.difference(messageTime);
-      return difference.inHours >= 2;
+      return difference.inHours >= 6;
     } catch (e) {
       return true;
     }
