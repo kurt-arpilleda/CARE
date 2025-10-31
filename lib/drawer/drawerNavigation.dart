@@ -386,6 +386,17 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                             ),
                           ListTile(
                             leading: const Icon(Icons.article),
+                            title: const Text("Transaction History"),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const TermsAndConditionScreen()),
+                              );
+                            },
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.article),
                             title: const Text("Terms and Conditions"),
                             onTap: () {
                               Navigator.pop(context);
