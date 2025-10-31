@@ -48,11 +48,33 @@ class ApiService {
       } catch (e) {
         attempt++;
         if (attempt >= maxRetries) {
-          rethrow;
+          return {"success": false, "message": "Waiting for Network"};
         }
         await Future.delayed(retryDelay * attempt);
       }
     }
+  }
+
+  Map<String, dynamic> _handleResponse(http.Response response) {
+    if (response.statusCode == 200) {
+      try {
+        return jsonDecode(response.body);
+      } catch (e) {
+        return {"success": false, "message": "Waiting for Network"};
+      }
+    }
+    return {"success": false, "message": "Waiting for Network"};
+  }
+
+  Map<String, dynamic> _handleStreamResponse(http.StreamedResponse response, String responseBody) {
+    if (response.statusCode == 200) {
+      try {
+        return jsonDecode(responseBody);
+      } catch (e) {
+        return {"success": false, "message": "Waiting for Network"};
+      }
+    }
+    return {"success": false, "message": "Waiting for Network"};
   }
 
   Future<Map<String, dynamic>> signUp({
@@ -79,10 +101,7 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
 
@@ -110,10 +129,7 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
 
@@ -135,10 +151,7 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
 
@@ -161,10 +174,7 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
 
@@ -176,12 +186,9 @@ class ApiService {
       final response = await httpClient.post(
         uri,
         body: {'emailOrPhone': emailOrPhone},
-      ).timeout(requestTimeout);
+      ).timeout(const Duration(seconds: 30));
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
 
@@ -189,7 +196,7 @@ class ApiService {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_get_user.php");
@@ -198,10 +205,7 @@ class ApiService {
         body: {'token': token},
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
 
@@ -215,7 +219,7 @@ class ApiService {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_updateProfile.php");
@@ -231,10 +235,7 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
 
@@ -242,7 +243,7 @@ class ApiService {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_logout.php");
@@ -251,10 +252,7 @@ class ApiService {
         body: {'token': token},
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
 
@@ -262,7 +260,7 @@ class ApiService {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_uploadImageProfile.php");
@@ -276,12 +274,10 @@ class ApiService {
       final response = await request.send().timeout(requestTimeoutUploadImage);
       final responseBody = await response.stream.bytesToString();
 
-      if (response.statusCode == 200) {
-        return jsonDecode(responseBody);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleStreamResponse(response, responseBody);
     });
   }
+
   Future<Map<String, dynamic>> addVehicles({
     required String token,
     required List<Map<String, dynamic>> vehicles,
@@ -296,17 +292,15 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> getVehicles() async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_getVehicles.php");
@@ -315,10 +309,7 @@ class ApiService {
         body: {'token': token},
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
 
@@ -329,7 +320,7 @@ class ApiService {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_toggleVehicle.php");
@@ -342,12 +333,10 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> updateVehicles({
     required String token,
     required List<Map<String, dynamic>> vehicles,
@@ -362,10 +351,7 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
 
@@ -383,12 +369,10 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> registerShop({
     required String shopName,
     required String location,
@@ -407,7 +391,7 @@ class ApiService {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_registerShop.php");
@@ -438,17 +422,15 @@ class ApiService {
       final response = await request.send().timeout(requestTimeoutUploadImage);
       final responseBody = await response.stream.bytesToString();
 
-      if (response.statusCode == 200) {
-        return jsonDecode(responseBody);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleStreamResponse(response, responseBody);
     });
   }
+
   Future<Map<String, dynamic>> getShops() async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_getShops.php");
@@ -457,17 +439,15 @@ class ApiService {
         body: {'token': token},
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> getAllShops() async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_getAllShops.php");
@@ -476,12 +456,10 @@ class ApiService {
         body: {'token': token},
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> updateShop({
     required int shopId,
     required String shopName,
@@ -503,7 +481,7 @@ class ApiService {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_updateShop.php");
@@ -548,19 +526,17 @@ class ApiService {
       final response = await request.send().timeout(requestTimeoutUploadImage);
       final responseBody = await response.stream.bytesToString();
 
-      if (response.statusCode == 200) {
-        return jsonDecode(responseBody);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleStreamResponse(response, responseBody);
     });
   }
+
   Future<Map<String, dynamic>> deleteShops({
     required List<int> shopIds,
   }) async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_deleteShops.php");
@@ -572,17 +548,15 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> checkVehicleStatus() async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_checkVehicle.php");
@@ -591,17 +565,15 @@ class ApiService {
         body: {'token': token},
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> getNotifications() async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_getNotifications.php");
@@ -610,12 +582,10 @@ class ApiService {
         body: {'token': token},
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> fileShopReport({
     required int shopId,
     required String reportType,
@@ -624,7 +594,7 @@ class ApiService {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_fileShopReport.php");
@@ -638,12 +608,10 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> submitShopReview({
     required int shopId,
     required int rating,
@@ -652,7 +620,7 @@ class ApiService {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_shopReview.php");
@@ -666,12 +634,10 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> fetchShopReviews({
     required int shopId,
     int limit = 5,
@@ -679,7 +645,7 @@ class ApiService {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_fetchReview.php");
@@ -692,19 +658,21 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> sendMessageToShop({
     required int shopId,
     required String message,
   }) async {
-    try {
+    return _executeWithRetry(() async {
       final token = await getAuthToken();
-      final response = await http.post(
+      if (token == null) {
+        return {"success": false, "message": "Waiting for Network"};
+      }
+
+      final response = await httpClient.post(
         Uri.parse('${apiUrl}cares_addMessage.php'),
         body: {
           'token': token,
@@ -713,18 +681,20 @@ class ApiService {
         },
       );
 
-      return json.decode(response.body);
-    } catch (e) {
-      return {'success': false, 'message': 'Network error: $e'};
-    }
+      return _handleResponse(response);
+    });
   }
 
   Future<Map<String, dynamic>> fetchShopMessages({
     required int shopId,
   }) async {
-    try {
+    return _executeWithRetry(() async {
       final token = await getAuthToken();
-      final response = await http.post(
+      if (token == null) {
+        return {"success": false, "message": "Waiting for Network"};
+      }
+
+      final response = await httpClient.post(
         Uri.parse('${apiUrl}cares_fetchMessages.php'),
         body: {
           'token': token,
@@ -732,16 +702,15 @@ class ApiService {
         },
       );
 
-      return json.decode(response.body);
-    } catch (e) {
-      return {'success': false, 'message': 'Network error: $e'};
-    }
+      return _handleResponse(response);
+    });
   }
+
   Future<Map<String, dynamic>> markNotificationsAsRead() async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_markNotificationsRead.php");
@@ -750,19 +719,17 @@ class ApiService {
         body: {'token': token},
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> getUnreadMessagesCount({
     required int shopId,
   }) async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_getUnreadMessages.php");
@@ -774,10 +741,7 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
 
@@ -787,7 +751,7 @@ class ApiService {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_markMessagesRead.php");
@@ -799,12 +763,10 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> fileUserReport({
     required int reportedId,
     required String reportType,
@@ -813,7 +775,7 @@ class ApiService {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_fileUserReport.php");
@@ -827,17 +789,15 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> fetchShopOwnerMessageList() async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_fetchShopOwnerMessageList.php");
@@ -846,20 +806,22 @@ class ApiService {
         body: {'token': token},
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> sendShopOwnerMessage({
     required int shopId,
     required int customerId,
     required String message,
   }) async {
-    try {
+    return _executeWithRetry(() async {
       final token = await getAuthToken();
-      final response = await http.post(
+      if (token == null) {
+        return {"success": false, "message": "Waiting for Network"};
+      }
+
+      final response = await httpClient.post(
         Uri.parse('${apiUrl}cares_sendShopOwnerMessage.php'),
         body: {
           'token': token,
@@ -869,19 +831,21 @@ class ApiService {
         },
       );
 
-      return json.decode(response.body);
-    } catch (e) {
-      return {'success': false, 'message': 'Network error: $e'};
-    }
+      return _handleResponse(response);
+    });
   }
 
   Future<Map<String, dynamic>> fetchShopOwnerMessages({
     required int shopId,
     required int customerId,
   }) async {
-    try {
+    return _executeWithRetry(() async {
       final token = await getAuthToken();
-      final response = await http.post(
+      if (token == null) {
+        return {"success": false, "message": "Waiting for Network"};
+      }
+
+      final response = await httpClient.post(
         Uri.parse('${apiUrl}cares_fetchShopOwnerMessages.php'),
         body: {
           'token': token,
@@ -890,18 +854,17 @@ class ApiService {
         },
       );
 
-      return json.decode(response.body);
-    } catch (e) {
-      return {'success': false, 'message': 'Network error: $e'};
-    }
+      return _handleResponse(response);
+    });
   }
+
   Future<Map<String, dynamic>> getUserVehicles({
     required int userId,
   }) async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_getUserVehicles.php");
@@ -913,17 +876,15 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> getUserActiveVehicleTypes() async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_getUserActiveVehicleTypes.php");
@@ -932,17 +893,15 @@ class ApiService {
         body: {'token': token},
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> getFcmTokensByAccountId(int accountId) async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_getFcmTokens.php");
@@ -954,19 +913,17 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> acceptLocationRequest({
     required int messageId,
   }) async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_acceptLocationRequest.php");
@@ -978,12 +935,10 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> updateCurrentLocation({
     required String token,
     required double latitude,
@@ -1000,19 +955,17 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> fetchShopOwnerLocation({
     required int accountId,
   }) async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_fetchShopOwnerLocation.php");
@@ -1024,17 +977,15 @@ class ApiService {
         },
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<Map<String, dynamic>> checkHasShop() async {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_hasShop.php");
@@ -1043,10 +994,7 @@ class ApiService {
         body: {'token': token},
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
 
@@ -1054,7 +1002,7 @@ class ApiService {
     return _executeWithRetry(() async {
       final token = await getAuthToken();
       if (token == null) {
-        throw Exception("No auth token found");
+        return {"success": false, "message": "Waiting for Network"};
       }
 
       final uri = Uri.parse("${apiUrl}cares_hasShopMessage.php");
@@ -1063,12 +1011,10 @@ class ApiService {
         body: {'token': token},
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw HttpException("HTTP ${response.statusCode}");
+      return _handleResponse(response);
     });
   }
+
   Future<void> saveAuthToken(String token) async {
     await _secureStorage.write(key: 'authToken', value: token);
   }

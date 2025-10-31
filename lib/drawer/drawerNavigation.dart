@@ -10,6 +10,7 @@ import 'shopProfile/shopList.dart';
 import 'shopMessaging/shopOwnerMessageList.dart';
 import 'dart:async';
 import 'termsAndCondition.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardDrawer extends StatefulWidget {
   const DashboardDrawer({Key? key}) : super(key: key);
@@ -29,13 +30,32 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
   bool _hasShop = false;
   bool _hasShopMessage = false;
   Timer? _messageCountTimer;
+  late SharedPreferences _prefs;
 
   @override
   void initState() {
     super.initState();
+    _initSharedPreferences();
+  }
+
+  Future<void> _initSharedPreferences() async {
+    _prefs = await SharedPreferences.getInstance();
+    _loadLocalShopAndMessageStatus();
     _loadUserData();
     _checkShopAndMessages();
     _startMessageCountPolling();
+  }
+
+  void _loadLocalShopAndMessageStatus() {
+    setState(() {
+      _hasShop = _prefs.getBool('hasShop') ?? false;
+      _hasShopMessage = _prefs.getBool('hasMessage') ?? false;
+    });
+  }
+
+  Future<void> _saveShopAndMessageStatus(bool hasShop, bool hasMessage) async {
+    await _prefs.setBool('hasShop', hasShop);
+    await _prefs.setBool('hasMessage', hasMessage);
   }
 
   Future<void> _loadUserData() async {
@@ -71,18 +91,21 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
       final messageResponse = await _apiService.checkHasShopMessage();
 
       if (mounted) {
-        setState(() {
-          _hasShop = shopResponse['hasShop'] ?? false;
-          _hasShopMessage = messageResponse['hasMessage'] ?? false;
-        });
+        final newHasShop = shopResponse['hasShop'] ?? false;
+        final newHasMessage = messageResponse['hasMessage'] ?? false;
+
+        // Only update if values changed
+        if (newHasShop != _hasShop || newHasMessage != _hasShopMessage) {
+          setState(() {
+            _hasShop = newHasShop;
+            _hasShopMessage = newHasMessage;
+          });
+          await _saveShopAndMessageStatus(newHasShop, newHasMessage);
+        }
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _hasShop = false;
-          _hasShopMessage = false;
-        });
-      }
+      // If API fails, keep using local values
+      print('Error checking shop and messages: $e');
     }
   }
 
@@ -111,10 +134,13 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
   }
 
   void _startMessageCountPolling() {
-    _messageCountTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      _checkShopAndMessages();
+    _messageCountTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
       if (_hasShop && _hasShopMessage) {
         _loadMessageCount();
+      }
+      // Check shop status less frequently - every 30 seconds
+      if (timer.tick % 3 == 0) {
+        _checkShopAndMessages();
       }
     });
   }
@@ -169,12 +195,18 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
       await _apiService.logout();
       await _apiService.clearAuthToken();
       await GoogleSignInService.signOut();
+      // Clear local preferences on logout
+      await _prefs.remove('hasShop');
+      await _prefs.remove('hasMessage');
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } catch (e) {
       await _apiService.clearAuthToken();
       await GoogleSignInService.signOut();
+      // Clear local preferences on logout even if API fails
+      await _prefs.remove('hasShop');
+      await _prefs.remove('hasMessage');
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
