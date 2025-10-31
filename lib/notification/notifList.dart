@@ -21,12 +21,14 @@ class _NotificationListState extends State<NotificationList> {
     _loadNotifications();
     _markNotificationsAsRead();
   }
+
   Future<void> _markNotificationsAsRead() async {
     try {
       await _apiService.markNotificationsAsRead();
     } catch (e) {
     }
   }
+
   Future<void> _loadNotifications() async {
     try {
       final response = await _apiService.getNotifications();
@@ -59,26 +61,19 @@ class _NotificationListState extends State<NotificationList> {
     }
   }
 
-  Color _getRemarksColor(String remarks) {
-    final lowerRemarks = remarks.toLowerCase();
-    if (lowerRemarks.contains('approved') ||
-        lowerRemarks.contains('verified') ||
-        lowerRemarks.contains('success') ||
-        lowerRemarks.contains('good') ||
-        lowerRemarks.contains('excellent') ||
-        lowerRemarks.contains('complete') ||
-        lowerRemarks.contains('accepted')) {
+  Color _getRemarksColor(int? notifMessage) {
+    if (notifMessage == null) {
+      return Colors.grey;
+    }
+
+    if (notifMessage == 1) {
       return Colors.green;
-    } else if (lowerRemarks.contains('rejected') ||
-        lowerRemarks.contains('denied') ||
-        lowerRemarks.contains('failed') ||
-        lowerRemarks.contains('error') ||
-        lowerRemarks.contains('invalid') ||
-        lowerRemarks.contains('suspended') ||
-        lowerRemarks.contains('banned')) {
+    } else if (notifMessage == 0 || notifMessage == 2 || notifMessage == 3 || notifMessage == 5) {
       return Colors.red;
-    } else {
+    } else if (notifMessage == 4) {
       return Colors.orange;
+    } else {
+      return Colors.grey;
     }
   }
 
@@ -192,7 +187,7 @@ class _NotificationListState extends State<NotificationList> {
                       child: Text(
                         'Remarks: ${notification['remarks']}',
                         style: TextStyle(
-                          color: _getRemarksColor(notification['remarks']),
+                          color: _getRemarksColor(notification['notifMessage']),
                           fontStyle: FontStyle.italic,
                         ),
                       ),
