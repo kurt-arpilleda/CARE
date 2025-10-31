@@ -102,7 +102,7 @@ class _NearestShopScreenState extends State<NearestShopScreen> {
         int currentDay = now.weekday - 1;
         String currentTime = "${now.hour}:${now.minute}";
 
-        const double maxDistance = 10000;
+        const double maxDistance = 30000;
 
         List<dynamic> filteredShops = allShops.where((shop) {
           bool isValidated = shop['isValidated'] == 1;

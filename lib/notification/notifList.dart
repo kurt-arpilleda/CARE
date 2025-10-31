@@ -59,6 +59,29 @@ class _NotificationListState extends State<NotificationList> {
     }
   }
 
+  Color _getRemarksColor(String remarks) {
+    final lowerRemarks = remarks.toLowerCase();
+    if (lowerRemarks.contains('approved') ||
+        lowerRemarks.contains('verified') ||
+        lowerRemarks.contains('success') ||
+        lowerRemarks.contains('good') ||
+        lowerRemarks.contains('excellent') ||
+        lowerRemarks.contains('complete') ||
+        lowerRemarks.contains('accepted')) {
+      return Colors.green;
+    } else if (lowerRemarks.contains('rejected') ||
+        lowerRemarks.contains('denied') ||
+        lowerRemarks.contains('failed') ||
+        lowerRemarks.contains('error') ||
+        lowerRemarks.contains('invalid') ||
+        lowerRemarks.contains('suspended') ||
+        lowerRemarks.contains('banned')) {
+      return Colors.red;
+    } else {
+      return Colors.orange;
+    }
+  }
+
   void _handleNotificationTap(dynamic notification) {
     if (notification['title'] == "Shop Notification") {
       Navigator.push(
@@ -168,8 +191,8 @@ class _NotificationListState extends State<NotificationList> {
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         'Remarks: ${notification['remarks']}',
-                        style: const TextStyle(
-                          color: Colors.red,
+                        style: TextStyle(
+                          color: _getRemarksColor(notification['remarks']),
                           fontStyle: FontStyle.italic,
                         ),
                       ),
