@@ -95,8 +95,6 @@ class VehicleOptionsScreen extends StatelessWidget {
                   alignment: Alignment.center,
                   filterQuality: FilterQuality.high,
                   isAntiAlias: true,
-                  colorBlendMode: BlendMode.darken,
-                  color: Colors.black.withOpacity(0.35),
                 ),
               ),
             ),
@@ -107,11 +105,11 @@ class VehicleOptionsScreen extends StatelessWidget {
               border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
               gradient: LinearGradient(
                 colors: [
-                  Colors.white.withOpacity(0.15),
-                  Colors.white.withOpacity(0.05),
+                  Colors.black.withOpacity(0.4),
+                  Colors.transparent,
                 ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
               ),
             ),
             child: Center(

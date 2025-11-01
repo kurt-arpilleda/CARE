@@ -163,39 +163,39 @@ class _VehicleBrandSelectionScreenState extends State<VehicleBrandSelectionScree
           color: Colors.white,
         ),
       ),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset(
-              _getBackgroundImage(),
-              fit: BoxFit.cover,
-              color: Colors.black.withOpacity(0.6),
-              colorBlendMode: BlendMode.darken,
-            ),
-          ),
-          Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search ${widget.vehicleType} brands...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: _buildBrandList(),
-              ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFFF6FAFD),
+              const Color(0xFF1A3D63),
             ],
           ),
-        ],
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search ${widget.vehicleType} brands...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+            ),
+            Expanded(
+              child: _buildBrandList(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -211,7 +211,7 @@ class _VehicleBrandSelectionScreenState extends State<VehicleBrandSelectionScree
             Text(
               'Loading brands...',
               style: TextStyle(
-                color: Color(0xFFF6FAFD),
+                color: Color(0xFF1A3D63),
                 fontSize: 16,
               ),
             ),
@@ -309,25 +309,6 @@ class _VehicleBrandSelectionScreenState extends State<VehicleBrandSelectionScree
         );
       },
     );
-  }
-
-  String _getBackgroundImage() {
-    switch (widget.vehicleType.toLowerCase()) {
-      case 'car':
-        return 'assets/images/car.jpg';
-      case 'motorcycle':
-        return 'assets/images/motorcycle.jpg';
-      case 'van':
-        return 'assets/images/van.jpg';
-      case 'truck':
-        return 'assets/images/truck.jpg';
-      case 'bus':
-        return 'assets/images/bus.jpg';
-      case 'jeep':
-        return 'assets/images/jeep.jpg';
-      default:
-        return 'assets/images/car.jpg';
-    }
   }
 
   IconData _getVehicleIcon() {

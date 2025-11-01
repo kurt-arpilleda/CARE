@@ -118,7 +118,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     final cacheKey = photoUrl ?? 'default_${transaction['shopId']}_$index';
 
     final borderColor = type == 'customer' ? Colors.orange : Colors.blue;
-    final roleText = type == 'customer' ? 'As a Customer' : 'As Shop Owner';
+    final roleText = type == 'customer' ? 'Your request was accepted' : 'You accepted a request for service';
 
     Widget buildImage(Uint8List? imageBytes) {
       return Container(
@@ -261,6 +261,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF6FAFD),
       appBar: AppBar(
+        centerTitle: true,
         title: const Text(
           'Transaction History',
           style: TextStyle(color: Colors.white),
@@ -269,6 +270,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
       ),
+
       body: _loading
           ? const Center(
         child: CircularProgressIndicator(
