@@ -9,6 +9,7 @@ import 'options.dart';
 import 'notification/notifList.dart';
 import 'api_service.dart';
 import 'findShop/nearestShop.dart';
+import 'faqList.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -472,6 +473,17 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const FaqListScreen()),
+          );
+        },
+        backgroundColor: const Color(0xFF1A3D63),
+        child: const Icon(Icons.help_outline, color: Colors.white),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
     );
   }
 }
